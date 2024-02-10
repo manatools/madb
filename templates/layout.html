@@ -1,0 +1,48 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+    <title>
+    </title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='nav.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='font/css/font-awesome.min.css') }}">
+
+</head>
+
+<body>
+    <div id="container">
+        <div id="header">
+            <div id="header-container">
+
+                {% include 'nav.html' %}
+
+                <div id="madb-header">
+                    <div id="madb-header-container">
+                        <div id="appname">
+                            MAGEIA APP DB<br>
+                        </div>
+                        <div id="search">
+                        </div>
+                        <div id="user_infos">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% include 'menu.html' %}
+
+        <div id="content">
+            {% block container %}{% endblock %}
+            <br />
+        </div>
+
+
+        <div id="footer">
+            {% include 'footer.html' %}
+        </div>
+
+    </div>
+</body>
+
+</html>

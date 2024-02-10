@@ -1,0 +1,60 @@
+{% extends 'layout.html' %}
+
+{% block container %}
+<div class="pagename">
+  <p>Current Update candidates</p>
+</div>
+<p>
+  See <a href="https://wiki.mageia.org/en/QA_process_for_validating_updates">QA process for validating updates</a> for
+  instructions (and join <a href="irc://irc.freenode.net/#mageia-qa">our QA IRC channel</a>).</p>
+<p>A <span class="feedback">gray background</span> means "QA team waiting for packager feedback". A star* next to the
+  update type means that an advisory has been uploaded to SVN already.
+</p>
+<br />
+{% for status in ('assigned', 'pending', 'validated_update', 'validated_backport') %}
+{% if status == 'validated_update' %}
+<br /><br /><br />Below is a list of validated <strong>updates</strong> waiting to be pushed to the updates media. Those
+without a star* need an advisory to be uploaded, first.<br /><br />
+{% endif %}
+{% if status == 'validated_backport' %}
+<br /><br /><br />Below is a list of validated <strong>backports</strong> waiting to be pushed to the backports media.
+Those without a star* need an advisory to be uploaded, first.<br /><br />
+{% endif %}
+{% for release in data.releases %}
+<h2>{{ status.capitalize().replace("_", " ") }} - Mageia {{ release }}</h2>
+{% if data.counts[release][status] == 0 %}
+There is no update with status {{ status }} for release {{ release }}<br />
+{% else %}
+<table class='buglist'>
+  <thead>
+    <tr>
+      <th>Update type</th>
+      <th>Bug number</th>
+      <th style="text-align:left;">Summary (hover for RPM name)</th>
+      <th>Test 32</th>
+      <th>Test 64</th>
+      <th>Proced. <br />avail.?</th>
+      <th>Mageia <br />Version</th>
+      <th>No action <br />for (days)</th>
+    </tr>
+  </thead>
+  {% for entry in data.bugs[release] %}
+  {% if status == entry['status'] %}
+  <tr class='{{ entry["class"] }}'>
+    <td>{{ entry.component }}</td>
+    <td><a href='https://bugs.mageia.org/show_bug.cgi?id={{entry.bug_id}}'>{{entry.bug_id}}</a></td>
+    <td style="text-align:left;" title='{{ entry["cf_rpmpkg"]}}'>{{ entry.short_desc }}</td>
+    <td>{{ entry.OK_32 }}</td>
+    <td>{{ entry.OK_64 }}</td>
+    <td>{{ "Yes" if 'has_procedure' in entry.keywords else "&nbsp;" |safe}}</td>
+    <td style="white-space:nowrap">{{ entry.versions_symbol|safe }}</td>
+    <td>{{ entry.age }}</td>
+  </tr>
+  {% endif %}
+  {% endfor %}
+</table>
+{% endif %}
+{% endfor %}
+{% endfor %}
+
+{% endblock %}

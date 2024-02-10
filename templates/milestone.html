@@ -1,0 +1,57 @@
+{% extends 'layout.html' %}
+
+{% block container %}
+<div class="pagename">
+    <p>Intended for next release, except blockers</p>
+</div>
+<p>This page lists all bug reports that have been marked as intented for next release, except release blockers
+    The <strong>bug watcher</strong> (QA contact field in bugzilla) is someone who commits to update the <strong>bug
+        status comment</strong>
+    regularly and tries to get a status from the packagers involved and remind them about the bug if needed.
+    <strong>Anyone</strong> can be bug watcher.
+</p>
+<br />
+<p><em>Total:
+        <a href="{{ data.urls.base}}">{{
+            data.counts.total }}</a>.<br />
+        In the last two weeks:
+        <a href="{{ data.urls.created }}">
+            {{ data.counts.created }}</a> created and
+        <a href="{{ data.urls.promoted}}">
+            {{ data.counts.promoted}}</a> promoted.<br>
+        <a href="{{ data.urls.closed}}">
+            {{ data.counts.closed }} </a>closed and
+        <a href="{{ data.urls.demoted}}">{{
+            data.counts.demoted }}</a> demoted.
+    </em>
+</p>
+{% for assignee in data.assignees %}
+<h2>{{ assignee[0] }}</h2>
+<table class='buglist'>
+    <thead>
+        <tr>
+            <th style="width:7%">Bug number</th>
+            <th style="width:40%">Summary</th>
+            <th style="width:10%">Bug Watcher</th>
+            <th style="width:28%">Status comment</th>
+            <th style="width:7%">Status</th>
+            <th style="width:7%">No action for</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for bug in assignee[1] %}
+        <tr>
+            <td><a href='https://bugs.mageia.org/show_bug.cgi?id={{ bug["bug_id"] }}'>{{ bug }}</a>
+            </td>
+            <td style="text-align:left;">{{ data.bugs[bug]['Summary'] }}</td>
+            <td>{{ data.bugs[bug]["QA Contact Real Name"] }}</td>
+            <td style="text-align:left;">{{ data.bugs[bug]["Status comment"] }}</td>
+            <td>{{ data.bugs[bug]["Status"] }}</td>
+            <td>{{ data.bugs[bug]["age"] }} days</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<br />
+{% endfor %}
+{% endblock %}
