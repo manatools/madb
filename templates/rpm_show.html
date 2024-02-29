@@ -1,0 +1,64 @@
+{% extends 'layout.html' %}
+
+{% block container %}
+<div class="pagename">
+<p>Package : <a href="">{{ data.basic.Name }}</a>  > RPM : {{ data.rpm }}</p>
+</div>
+<div class="rpm">
+  <div>
+  
+{# Place for bugs link #}
+<h2>Basic items</h2>
+
+<table class="infos">
+  <tbody>
+    {% for key, value in data.basic.items() %}
+    <tr>
+      <td class="name">{{ key }}</td>
+      <td>{% if key == "Url" %}<a href="{{ value }}">{{ value }}</a>
+         {% else %}
+         {{ value }}
+         {% endif %}
+     </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<ul>
+</ul>
+
+<h2>Description</h2>
+<div class="rpm-description">
+  {{ data.description|safe }}
+</div>
+
+<h2>Media information</h2>
+<table class="infos">
+  <tbody>
+    {% for item in data.media %}
+    <tr>
+      <td class="name">{{ item[0] }}</td>
+      <td>{{ item[1] }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+
+<h2>Advanced items</h2>
+<table class="infos">
+  <tbody>
+    {% for item in data.advanced %}
+    <tr>
+      <td class="name">{{ item[0] }}</td>
+      <td>{{ item[1] |safe }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+<br>
+</div>
+{% endblock %}

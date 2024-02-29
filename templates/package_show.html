@@ -1,0 +1,72 @@
+{% extends 'layout.html' %}
+
+{% block container %}
+<div class="pagename">
+<p>Package : {{ data.pkg.name }}</p>
+</div>
+<div class="package screenshots">
+    <div>
+    <h2>Package details</h2>
+    
+    <div class="package-details">
+      <div class="package-description">
+        <strong>Summary</strong>: {{ data.pkg.summary }}
+        <br />
+        <br />
+        <strong>Description</strong>:<br/>
+        {{ data.pkg.description }}
+        <br />
+        {% if data.pkg.url  %}
+        <strong>URL</strong>: <a href="{{ data.pkg.url }}">{{ data.pkg.url }}</a>
+        <br/>
+        {% endif %}
+        {% if data.pkg.license  %}
+        <strong>License</strong>: {{ data.pkg.license }}
+        <br/>
+        {% endif %}
+        {% if data.pkg.maintainer %}
+        <br/>
+        <strong>Maintainer</strong>: {{ data.pkg.maintainer }}
+        {% endif %}
+      </div>
+    
+      {% if data.pkg.screenshot %}
+      <div class='main-screenshot'>
+        <a rel="screenshots" href="{{ data.screenshot['large_image_url']}}">
+            Image
+        </a>
+      </div>
+      {% endif %}
+    </div>
+    
+    <h2>List of RPMs</h2>
+    <ul class="packlist">
+      {% for rpm in data.pkg.rpms %}
+      <li><a href="{{ rpm.url }}">{{ rpm.full_name }}</a>
+        Media: {{ rpm.repo }} 
+        <a class="install_link button" href=""><i class="icon-cloud-download"></i> Install</a>
+      </li>
+      {% endfor %}
+      {% if not data.pkg.rpms %}
+      <p>No RPM found for {{ data.name }} using the current filters, try other values.</p>
+      {% endif %}
+    </ul>
+    </div>
+    <br/>
+    
+    {% if data.pkg.other_screenshots %}
+    <h2>More screenshots</h2>
+    
+    <div id="screenshots">
+    {% for screen in data.pkg.other_screenshots %}
+      <a rel="screenshots" href="">
+        <img src="" alt="screenshot" />
+      </a>
+    {% endfor %}
+    </div>
+    {% endif %}
+    
+    <br/>
+    <br/>
+  </div>
+  {% endblock %}
