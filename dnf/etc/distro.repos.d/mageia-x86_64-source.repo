@@ -1,0 +1,49 @@
+[mageia-x86_64-source]
+name=Mageia $releasever - x86_64 - Source
+#baseurl=https://mirrors.kernel.org/mageia/distrib/$releasever/SRPMS/core/release/
+#metalink=https://mirrors.mageia.org/metalink?distrib=mageia-$releasever&arch=x86_64&section=core&repo=release&source=true
+mirrorlist=https://www.mageia.org/mirrorlist/?release=$releasever&arch=x86_64&section=core&repo=release&source=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Mageia
+fastestmirror=1
+enabled=0
+
+[updates-x86_64-source]
+name=Mageia $releasever - x86_64 - Updates - Source
+#baseurl=https://mirrors.kernel.org/mageia/distrib/$releasever/SRPMS/core/updates/
+#metalink=https://mirrors.mageia.org/metalink?distrib=mageia-$releasever&arch=x86_64&section=core&repo=updates&source=true
+mirrorlist=https://www.mageia.org/mirrorlist/?release=$releasever&arch=x86_64&section=core&repo=updates&source=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Mageia
+fastestmirror=1
+enabled=0
+
+[updates_testing-x86_64-source]
+name=Mageia $releasever - x86_64 - Test Updates - Source
+#baseurl=https://mirrors.kernel.org/mageia/distrib/$releasever/SRPMS/core/updates_testing/
+#metalink=https://mirrors.mageia.org/metalink?distrib=mageia-$releasever&arch=x86_64&section=core&repo=updates_testing&source=true
+mirrorlist=https://www.mageia.org/mirrorlist/?release=$releasever&arch=x86_64&section=core&repo=updates_testing&source=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Mageia
+fastestmirror=1
+enabled=0
+
+[backports-x86_64-source]
+name=Mageia $releasever - x86_64 - Backports - Source
+#baseurl=https://mirrors.kernel.org/mageia/distrib/$releasever/SRPMS/core/backports/
+#metalink=https://mirrors.mageia.org/metalink?distrib=mageia-$releasever&arch=x86_64&section=core&repo=backports&source=true
+mirrorlist=https://www.mageia.org/mirrorlist/?release=$releasever&arch=x86_64&section=core&repo=backports&source=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Mageia
+fastestmirror=1
+enabled=0
+
+[backports_testing-x86_64-source]
+name=Mageia $releasever - x86_64 - Test Backports - Source
+#baseurl=https://mirrors.kernel.org/mageia/distrib/$releasever/SRPMS/core/backports_testing/
+#metalink=https://mirrors.mageia.org/metalink?distrib=mageia-$releasever&arch=x86_64&section=core&repo=backports_testing&source=true
+mirrorlist=https://www.mageia.org/mirrorlist/?release=$releasever&arch=x86_64&section=core&repo=backports_testing&source=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Mageia
+fastestmirror=1
+enabled=0

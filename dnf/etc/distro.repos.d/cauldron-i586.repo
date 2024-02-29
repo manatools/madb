@@ -1,0 +1,99 @@
+[cauldron-i586]
+name=Mageia Cauldron - i586
+#baseurl=https://mirrors.kernel.org/mageia/distrib/cauldron/i586/media/core/release/
+#metalink=https://mirrors.mageia.org/metalink?distrib=cauldron&arch=i586&section=core&repo=release
+mirrorlist=https://www.mageia.org/mirrorlist/?release=cauldron&arch=i586&section=core&repo=release
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Mageia
+fastestmirror=1
+enabled=0
+
+[cauldron-updates-i586]
+name=Mageia Cauldron - i586 - Updates
+#baseurl=https://mirrors.kernel.org/mageia/distrib/cauldron/i586/media/core/updates/
+#metalink=https://mirrors.mageia.org/metalink?distrib=cauldron&arch=i586&section=core&repo=updates
+mirrorlist=https://www.mageia.org/mirrorlist/?release=cauldron&arch=i586&section=core&repo=updates
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Mageia
+fastestmirror=1
+enabled=0
+
+[cauldron-updates_testing-i586]
+name=Mageia Cauldron - i586 - Test Updates
+#baseurl=https://mirrors.kernel.org/mageia/distrib/cauldron/i586/media/core/updates_testing/
+#metalink=https://mirrors.mageia.org/metalink?distrib=cauldron&arch=i586&section=core&repo=updates_testing
+mirrorlist=https://www.mageia.org/mirrorlist/?release=cauldron&arch=i586&section=core&repo=updates_testing
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Mageia
+fastestmirror=1
+enabled=0
+
+[cauldron-backports-i586]
+name=Mageia Cauldron - i586 - Backports
+#baseurl=https://mirrors.kernel.org/mageia/distrib/cauldron/i586/media/core/backports/
+#metalink=https://mirrors.mageia.org/metalink?distrib=cauldron&arch=i586&section=core&repo=backports
+mirrorlist=https://www.mageia.org/mirrorlist/?release=cauldron&arch=i586&section=core&repo=backports
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Mageia
+fastestmirror=1
+enabled=0
+
+[cauldron-backports_testing-i586]
+name=Mageia Cauldron - i586 - Test Backports
+#baseurl=https://mirrors.kernel.org/mageia/distrib/cauldron/i586/media/core/backports_testing/
+#metalink=https://mirrors.mageia.org/metalink?distrib=cauldron&arch=i586&section=core&repo=backports_testing
+mirrorlist=https://www.mageia.org/mirrorlist/?release=cauldron&arch=i586&section=core&repo=backports_testing
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Mageia
+fastestmirror=1
+enabled=0
+
+[cauldron-i586-debuginfo]
+name=Mageia Cauldron - i586 - Debug
+#baseurl=https://mirrors.kernel.org/mageia/distrib/cauldron/i586/media/debug/core/release/
+#metalink=https://mirrors.mageia.org/metalink?distrib=cauldron&arch=i586&section=core&repo=release&debug=true
+mirrorlist=https://www.mageia.org/mirrorlist/?release=cauldron&arch=i586&section=core&repo=release&debug=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Mageia
+fastestmirror=1
+enabled=0
+
+[cauldron-updates-i586-debuginfo]
+name=Mageia Cauldron - i586 - Updates - Debug
+#baseurl=https://mirrors.kernel.org/mageia/distrib/cauldron/i586/media/debug/core/updates/
+#metalink=https://mirrors.mageia.org/metalink?distrib=cauldron&arch=i586&section=core&repo=updates&debug=true
+mirrorlist=https://www.mageia.org/mirrorlist/?release=cauldron&arch=i586&section=core&repo=updates&debug=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Mageia
+fastestmirror=1
+enabled=0
+
+[cauldron-updates_testing-i586-debuginfo]
+name=Mageia Cauldron - i586 - Test Updates - Debug
+#baseurl=https://mirrors.kernel.org/mageia/distrib/cauldron/i586/media/debug/core/updates_testing/
+#metalink=https://mirrors.mageia.org/metalink?distrib=cauldron&arch=i586&section=core&repo=updates_testing&debug=true
+mirrorlist=https://www.mageia.org/mirrorlist/?release=cauldron&arch=i586&section=core&repo=updates_testing&debug=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Mageia
+fastestmirror=1
+enabled=0
+
+[cauldron-backports-i586-debuginfo]
+name=Mageia Cauldron - i586 - Backports - Debug
+#baseurl=https://mirrors.kernel.org/mageia/distrib/cauldron/i586/media/debug/core/backports/
+#metalink=https://mirrors.mageia.org/metalink?distrib=cauldron&arch=i586&section=core&repo=backports&debug=true
+mirrorlist=https://www.mageia.org/mirrorlist/?release=cauldron&arch=i586&section=core&repo=backports&debug=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Mageia
+fastestmirror=1
+enabled=0
+
+[cauldron-backports_testing-i586-debuginfo]
+name=Mageia Cauldron - i586 - Test Backports - Debug
+#baseurl=https://mirrors.kernel.org/mageia/distrib/cauldron/i586/media/debug/core/backports_testing/
+#metalink=https://mirrors.mageia.org/metalink?distrib=cauldron&arch=i586&section=core&repo=backports_testing&debug=true
+mirrorlist=https://www.mageia.org/mirrorlist/?release=cauldron&arch=i586&section=core&repo=backports_testing&debug=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Mageia
+fastestmirror=1
+enabled=0
