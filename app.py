@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
+from .helper import groups
 from flask import Flask
 from flask import render_template
 import requests
 from csv import DictReader
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 from io import  StringIO
 import collections
 from . import config
 from urllib import parse
-
+from .dnf5madbbase import Dnf5MadbBase
+import humanize
 
 URL = "https://bugs.mageia.org/buglist.cgi"
 
@@ -17,12 +19,26 @@ app = Flask(__name__)
 app.config.from_object("madb2.config")
 data_config = {}
 data_config["Next"] = config.TOP_RELEASE + 1
+data_config["App name"] = config.APP_NAME
 
 def navbar():
     nav_html = requests.get("https://nav.mageia.org/html/?b=madb_mageia_org&w=1")
     nav_css = requests.get("http://nav.mageia.org/css/")
     data = { "html": nav_html.content.decode(), "css": nav_css.content}
     return data
+
+@app.route("/")
+def home():
+    distro = Dnf5MadbBase("9", "x86_64", config.DATA_PATH)
+    for repo in distro.repo_enabled():
+        print(repo.get_id(), repo.get_name())
+    last_updates = distro.search_updates()
+    if not last_updates:
+        last_updates = {}
+    print(list(last_updates))
+    groups1 = sorted(set([x[0] for x in groups()]))
+    data = {'groups': groups1, "config": data_config, "title": "Home", "updates": last_updates, "url_end": "/9/x86_64"}
+    return render_template("home.html", data=data)
 
 @app.route('/updates/')
 def updates():
@@ -213,7 +229,8 @@ def blockers():
     (QA contact field in bugzilla) is someone who commits to update the <strong>bug status comment</strong>
     regularly and tries to get a status from the packagers involved and remind them about the bug if needed.
     <strong>Anyone</strong> can be bug watcher."""
-    data = {"urls": urls, "counts": counts, "bugs": data_bugs, "assignees": assignees, "config": data_config, "title": title, "comments": comments}
+    nav_data = navbar()
+    data = {"urls": urls, "counts": counts, "bugs": data_bugs, "assignees": assignees, "config": data_config, "title": title, "comments": comments, "nav_html": nav_data["html"], "nav_css": nav_data["css"]}
     return render_template('bugs.html', data=data)
 
 @app.route('/milestone/')
@@ -269,7 +286,8 @@ def milestone():
     The <strong>bug watcher</strong> (QA contact field in bugzilla) is someone who commits to update the <strong>bug status comment</strong>
     regularly and tries to get a status from the packagers involved and remind them about the bug if needed.
     <strong>Anyone</strong> can be bug watcher."""
-    data = {"urls": urls, "counts": counts, "bugs": data_bugs, "assignees": assignees, "config": data_config, "title": title, "comments": comments}
+    nav_data = navbar()
+    data = {"urls": urls, "counts": counts, "bugs": data_bugs, "assignees": assignees, "config": data_config, "title": title, "comments": comments, "nav_html": nav_data["html"], "nav_css": nav_data["css"]}
     return render_template('bugs.html', data=data)
 
 @app.route("/highpriority")
@@ -334,9 +352,87 @@ The <strong>bug watcher</strong>
 (QA contact field in bugzilla) is someone who commits to update the <strong>bug status comment</strong>
 regularly and tries to get a status from the packagers involved and remind them about the bug if needed.
 <strong>Anyone</strong> can be bug watcher."""
-    data = {"urls": urls, "counts": counts, "bugs": data_bugs, "assignees": assignees, "config": data_config, "title": title, "comments": comments}
+    nav_data = navbar()
+    data = {"urls": urls, "counts": counts, "bugs": data_bugs, "assignees": assignees, "config": data_config, "title": title, "comments": comments, "nav_html": nav_data["html"], "nav_css": nav_data["css"]}
     return render_template('bugs.html', data=data)
-    
+
+@app.route("/show/<package>/<release>/<arch>")
+def show(package, release, arch):
+    distro = Dnf5MadbBase(release, arch, config.DATA_PATH)
+    dnf_pkgs = distro.search_name([package])
+    rpms = []
+    last = None
+    for dnf_pkg in dnf_pkgs:
+        rpms.append({"full_name": dnf_pkg.get_nevra(),
+        "distro_release": release,
+        "url": f"/rpmshow/{dnf_pkg.get_name()}/{release}/{arch}/{dnf_pkg.get_repo_id()}",
+        "arch": dnf_pkg.get_arch(),
+        "repo": dnf_pkg.get_repo_name(),
+         }
+        )
+        last = dnf_pkg    
+    pkg = {
+        "name": last.get_name(),
+        "rpms": rpms,
+        "license": last.get_license(),
+        "summary": last.get_summary(),
+        "description": last.get_description(),
+        "url": last.get_url(),
+        "maintainer": last.get_packager(),
+    }
+    data = {"pkg": pkg, "config": data_config,  "url_end": "/9/x86_64" }
+    return render_template("package_show.html", data=data)
+
+
+@app.route("/rpmshow/<package>/<release>/<arch>/<repo>")
+def rpmshow(package, release, arch, repo):
+    distro = Dnf5MadbBase(release, arch, config.DATA_PATH)
+    dnf_pkgs = distro.search_name([package])
+    rpms = []
+    last = None
+    for dnf_pkg in dnf_pkgs:
+        rpms.append({"full_name": dnf_pkg.get_nevra(),
+        "distro_release": release,
+        "arch": dnf_pkg.get_arch(),
+        "repo": dnf_pkg.get_repo_name() }
+        )
+        last = dnf_pkg
+    basic = {
+        "Name": last.get_name(),
+        "Version": last.get_version(),
+        "Release": last.get_release(),
+        "Arch": last.get_arch(),
+        "Summary": last.get_summary(),
+        "Group": last.get_group(),
+        "License": last.get_license(),
+        "Url": last.get_url(),
+        "Download size": humanize.naturalsize(last.get_download_size(), binary=True),
+        "Installed size": humanize.naturalsize(last.get_install_size(), binary=True),
+    }
+    description = last.get_description()
+    rpm = last.get_nevra()
+    media = [
+        ["Repository name", last.get_repo_name()],
+        ["Media ID", last.get_repo_id()],
+        ["Media arch", arch],
+    ]
+    deps = []
+    for item in distro.provides_requires(last.get_requires()):
+        if not item.get_name() in deps:
+            deps.append(item.get_name())
+    # logs = [] Not yet ready in DNF5
+    # for item in last.get_changelogs():
+        # logs.append(f"{datime.fromtimestamp(item.timestamp())}: {log.text} ({log.author})")
+    advanced = [
+        ['Source RPM', last.get_sourcerpm() or "NOT IN DATABASE ?!", ""],
+        ['Build time', datetime.fromtimestamp(last.get_build_time()), ""],
+        # ['Changelog',  "<br />\n".join(logs), ""],
+        ['Files', "<br />\n".join(last.get_files()), ""],
+        ['Dependencies', "<br />\n".join(deps), ""],
+    ]
+    data = {"basic": basic, "config": data_config, "advanced": advanced, "media": media, "description": description, "rpm": rpm}
+    return render_template("rpm_show.html", data=data)
+
 def format_bugs():
     column = ",".join(["product",
         "component",

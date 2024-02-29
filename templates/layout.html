@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='font/css/font-awesome.min.css') }}">
 
+    {% block script_column %}{% endblock %}
+
 </head>
 
 <body>
@@ -15,8 +17,8 @@
         <div id="header">
             <div id="header-container">
 
-                {% include 'nav.html' %}
-
+                {{ data.nav_html|safe }}
+                
                 <div id="madb-header">
                     <div id="madb-header-container">
                         <div id="appname">
