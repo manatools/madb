@@ -1,9 +1,10 @@
 import re
+import config
 def groups():
     grp = re.compile(r"'(.+)',")
     fin = re.compile(r"\)")
     list_grp = []
-    with open("/usr/share/rpmlint/config.d/distribution.exceptions.conf", "r") as de:
+    with open(config.DEF_GROUPS_FILE, "r") as de:
         reading_group = False
         for line in de.readlines():
             if reading_group:
