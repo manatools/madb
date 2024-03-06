@@ -1,5 +1,5 @@
 import re
-import config
+import madb.config as config
 def groups():
     grp = re.compile(r"'(.+)',")
     fin = re.compile(r"\)")
