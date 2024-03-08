@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from madb.helper import groups
-from flask import Flask
-from flask import render_template
+from flask import Flask, render_template, request
 import requests
 from csv import DictReader
 from datetime import datetime, timedelta
@@ -21,6 +20,8 @@ def create_app():
     data_config = {}
     data_config["Next"] = config.TOP_RELEASE + 1
     data_config["App name"] = config.APP_NAME
+    data_config["arches"] = config.ARCHES
+    data_config["distribution"] = config.DISTRIBUTION
 
     def navbar():
         nav_html = requests.get("https://nav.mageia.org/html/?b=madb_mageia_org&w=1")
@@ -29,16 +30,18 @@ def create_app():
         return data
 
     @app.route("/")
-    def home():
-        distro = Dnf5MadbBase("9", "x86_64", config.DATA_PATH)
-        for repo in distro.repo_enabled():
-            print(repo.get_id(), repo.get_name())
+    @app.route("/home/<release>/<arch>/<graphical>", strict_slashes=False)
+    def home(release=None, arch=None, graphical=None):
+        if not release:
+            release = next(iter(config.DISTRIBUTION.keys()))
+            arch = next(iter(config.ARCHES.keys()))
+            graphical = "1"
+        distro = Dnf5MadbBase(release, arch, config.DATA_PATH)
         last_updates = distro.search_updates()
         if not last_updates:
             last_updates = {}
-        print(list(last_updates))
         groups1 = sorted(set([x[0] for x in groups()]))
-        data = {'groups': groups1, "config": data_config, "title": "Home", "updates": last_updates, "url_end": "/9/x86_64"}
+        data = {'groups': groups1, "config": data_config, "title": "Home", "updates": last_updates, "url_end": f"/{release}/{arch}/{graphical}"}
         return render_template("home.html", data=data)
 
     @app.route('/updates/')
@@ -357,8 +360,15 @@ def create_app():
         data = {"urls": urls, "counts": counts, "bugs": data_bugs, "assignees": assignees, "config": data_config, "title": title, "comments": comments, "nav_html": nav_data["html"], "nav_css": nav_data["css"]}
         return render_template('bugs.html', data=data)
 
-    @app.route("/show/<package>/<release>/<arch>")
-    def show(package, release, arch):
+    @app.route("/show/<release>/<arch>/<graphical>/<package>")
+    @app.route("/show")
+    def show(release=None, graphical=None, arch=None, package=None):
+        print(release)
+        if release is None:
+            release = request.args.get("distribution")
+            arch = request.args.get("architecture")
+            package = request.args.get("package_name")
+            print(f"RPM: {package}")
         distro = Dnf5MadbBase(release, arch, config.DATA_PATH)
         dnf_pkgs = distro.search_name([package])
         rpms = []
@@ -371,8 +381,9 @@ def create_app():
             "repo": dnf_pkg.get_repo_name(),
             }
             )
-            last = dnf_pkg    
-        pkg = {
+            last = dnf_pkg
+        if last is not None:
+            pkg = {
             "name": last.get_name(),
             "rpms": rpms,
             "license": last.get_license(),
@@ -380,8 +391,10 @@ def create_app():
             "description": last.get_description(),
             "url": last.get_url(),
             "maintainer": last.get_packager(),
-        }
-        data = {"pkg": pkg, "config": data_config,  "url_end": "/9/x86_64" }
+            }
+        else:
+            pkg = {}
+        data = {"pkg": pkg, "config": data_config,  "url_end": f"/{release}/{arch}" }
         return render_template("package_show.html", data=data)
 
 

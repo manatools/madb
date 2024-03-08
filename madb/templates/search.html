@@ -1,0 +1,55 @@
+<script>
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const searchfieldSelectElement = document.getElementsByClassName("searchfield");
+        for (field of searchfieldSelectElement) { field.addEventListener("change", function (event) {
+            // Get actual fields and values
+            const arch_field = document.getElementById("architecture");
+            const arch = arch_field.value;
+            const dist_field = document.getElementById("distribution");
+            const dist = dist_field.value;
+            const graphical_field = document.getElementById("graphical");
+            const graphical = graphical_field.value;
+    
+            // Construit l'URL cible en combinant l'action du formulaire et la valeur sélectionnée
+            const targetUrl = `${arch_field.getAttribute("data-base-url")}/${dist}/${arch}/${graphical}`;
+    
+            //const queryString = `?distribution=${distribution}&architecture=${architecture}&graphical=${graphicalValue}`;
+
+            // Reload the page with the new query string
+            window.location.href = targetUrl;
+        });
+    };
+    });
+    
+    function onsearchfieldChange(event) {
+        this.dispatchEvent(new Event("submit"));
+    }
+</script>
+
+
+<form id="search-form" action="/show" method="get" >
+    <label for="architecture">Distribution:</label>
+
+    <select id="distribution" name="distribution" class="searchfield">
+        {% for key, value in data.config.distribution.items() %}
+        <option value="{{ key }}">{{ value }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="architecture">Architecture:</label>
+
+    <select id="architecture" name="architecture" class="searchfield" data-base-url="/home">
+        {% for key, value in data.config.arches.items() %}
+        <option value="{{ key }}">{{ value }}</option>
+        {% endfor %}
+    </select>
+    <label>Graphical applications only</label>
+        <input type="checkbox" id="graphical" value="1" checked class="searchfield">
+
+    <label for="package_name">Package:</label>
+
+    <input type="text" id="package_name" name="package_name">
+
+    <button type="submit">Search</button>
+</form>
