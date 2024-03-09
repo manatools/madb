@@ -9,7 +9,7 @@
             const dist_field = document.getElementById("distribution");
             const dist = dist_field.value;
             const graphical_field = document.getElementById("graphical");
-            const graphical = graphical_field.value;
+            const graphical = graphical_field.checked ? "1" : "0";
     
             // Construit l'URL cible en combinant l'action du formulaire et la valeur sélectionnée
             const targetUrl = `${arch_field.getAttribute("data-base-url")}/${dist}/${arch}/${graphical}`;
@@ -33,7 +33,7 @@
 
     <select id="distribution" name="distribution" class="searchfield">
         {% for key, value in data.config.distribution.items() %}
-        <option value="{{ key }}">{{ value }}</option>
+        <option value="{{ key }}" {% if '/'+key+'/' in data.url_end %}  selected="selected" {% endif %}>{{ value }}</option>
         {% endfor %}
     </select>
 
@@ -41,11 +41,11 @@
 
     <select id="architecture" name="architecture" class="searchfield" data-base-url="/home">
         {% for key, value in data.config.arches.items() %}
-        <option value="{{ key }}">{{ value }}</option>
+        <option value="{{ key }}" {% if '/'+key+'/' in data.url_end %}  selected="selected" {% endif %}>{{ value }}</option>
         {% endfor %}
     </select>
     <label>Graphical applications only</label>
-        <input type="checkbox" id="graphical" value="1" checked class="searchfield">
+        <input type="checkbox" id="graphical" value="1" {% if data.url_end.endswith("/1") %} checked{% endif %} class="searchfield">
 
     <label for="package_name">Package:</label>
 

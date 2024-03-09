@@ -1,22 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 
-<script>
-    window.onload = function() {
-        function updateColumns() {
-            var columnList = document.querySelector('.column-list');
-            var numColumns = Math.floor(window.innerWidth / 150); // Adjust 200 as needed for minimum column width
-            columnList.style.columnCount = numColumns;
-        }
-
-        // Update columns on page load
-        updateColumns();
-
-        // Update columns on window resize
-        window.addEventListener('resize', updateColumns);
-
-    };
-</script>
 <head>
     <title>{{ data.config["App name"]}}
     </title>

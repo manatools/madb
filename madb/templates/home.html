@@ -16,6 +16,23 @@
         margin-bottom: 10px;
     }
 </style>
+
+<script>
+  window.onload = function() {
+      function updateColumns() {
+          var columnList = document.querySelector('.column-list');
+          var numColumns = Math.floor(window.innerWidth / 150); // Adjust 200 as needed for minimum column width
+          columnList.style.columnCount = numColumns;
+      }
+
+      // Update columns on page load
+      updateColumns();
+
+      // Update columns on window resize
+      window.addEventListener('resize', updateColumns);
+
+  };
+</script>
 {% endblock %}
 {% block container %}
 <div class="pagename">
