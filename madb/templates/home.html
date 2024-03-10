@@ -61,11 +61,13 @@
   <table class="packlist">
     <tbody>
     {% for update in data.updates %}
+      {% if loop.index < 30 %}
         <tr class="{{ 'rpm-odd' if loop.index % 2 else 'rpm-even' }}">
           <td><a href="/show/{{ update.get_name() }}{{ data.url_end }}">{{ update.get_name() }}</a></td>
           <td class='summary'>{{ update.get_summary() }}</td>
           <td><a href="/show/{{ update.get_name() }}{{ data.url_end }}">{{ update.get_nevra() }} </a></td>
         </tr>
+      {% endif %}
     {% endfor %}
     </tbody>
   </table>
