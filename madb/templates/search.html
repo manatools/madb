@@ -12,10 +12,13 @@
             const graphical = graphical_field.checked ? "1" : "0";
             const pkg_field = document.getElementById("package_name");
             const pkg = pkg_field.value;
+            const repo_field = document.getElementById("repo");
+            const repo= repo_field.value;
     
             // Construit l'URL cible en combinant l'action du formulaire et la valeur sélectionnée
             targetUrl = `${arch_field.getAttribute("data-base-url")}?distribution=${dist}&architecture=${arch}&graphical=${graphical}`;
             targetUrl = targetUrl + ( pkg !== "" ? `&rpm=${pkg}` : "")
+            targetUrl = targetUrl + ( repo !== "" ? `&repo=${repo}` : "")
 
             // Reload the page with the new query string
             window.location.href = targetUrl;
@@ -51,6 +54,7 @@
     <label for="package_name">Package: </label>
 
     <input type="text" id="package_name" name="rpm" value="{{ data.rpm_search }}">
+    <input type="hidden" id="repo" name="repo" value="{{ data.repo }}">
 
     <button type="submit">Search</button>
 </form>

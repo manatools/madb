@@ -456,7 +456,7 @@ def create_app():
             ['Files', "<br />\n".join(last.get_files()), ""],
             ['Dependencies', "<br />\n".join(deps), ""],
         ]
-        data = {"basic": basic, "config": data_config, "advanced": advanced, "media": media, "description": description, "rpm_search": package, "base_url": "/rpmshow", "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}&rpm={package}", "nav_html": nav_data["html"], "nav_css": nav_data["css"]}
+        data = {"basic": basic, "config": data_config, "advanced": advanced, "repo": repo, "media": media, "description": description, "rpm_search": package, "base_url": "/rpmshow", "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}&rpm={package}", "nav_html": nav_data["html"], "nav_css": nav_data["css"]}
         return render_template("rpm_show.html", data=data)
 
     def format_bugs():
