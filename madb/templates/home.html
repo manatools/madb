@@ -63,9 +63,9 @@
     {% for update in data.updates %}
       {% if loop.index < 30 %}
         <tr class="{{ 'rpm-odd' if loop.index % 2 else 'rpm-even' }}">
-          <td><a href="/show/{{ update.get_name() }}{{ data.url_end }}">{{ update.get_name() }}</a></td>
+          <td><a href="/show{{ data.url_end }}&rpm={{ update.get_name() }}">{{ update.get_name() }}</a></td>
           <td class='summary'>{{ update.get_summary() }}</td>
-          <td><a href="/show/{{ update.get_name() }}{{ data.url_end }}">{{ update.get_nevra() }} </a></td>
+          <td><a href="/show{{ data.url_end }}&rpm={{ update.get_name() }}">{{ update.get_nevra() }} </a></td>
         </tr>
       {% endif %}
     {% endfor %}
@@ -80,9 +80,9 @@
       <tbody>
       {% for update in data.backports %}
           <tr class="{{ 'rpm-odd' if loop.index % 2 else 'rpm-even' }}">
-            <td><a href="{{ update['link1'] }}">{{ update["name"] }}</a></td>
+            <td><a href="/show{{ data.url_end }}&rpm={{ update.get_name() }}">{{ update["name"] }}</a></td>
             <td class='summary'>{{ update["summary"] }}</td>
-            <td><a href="{{ update['link2'] }}">{{ update["version"] }} </a></td>
+            <td><a href="/show{{ data.url_end }}&rpm={{ update.get_name() }}">{{ update["version"] }} </a></td>
           </tr>
       {% endfor %}
       </tbody>
