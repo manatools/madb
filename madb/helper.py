@@ -14,3 +14,4 @@ def groups():
             if line.startswith("valid_groups=("):
                 reading_group = True
     return list_grp
+    
