@@ -1,6 +1,7 @@
 TOP_RELEASE = 9
 APP_NAME = "Mageia App DB"
 DATA_PATH = "/home/yves/dev/madb2"
+MIRROR_URL = "https://fr2.rpmfind.net/linux/mageia/distrib/"
 DEF_GROUPS_FILE = "/usr/share/rpmlint/config.d/distribution.exceptions.conf"
 ARCHES = {
     "x86_64": "x86 64bits",

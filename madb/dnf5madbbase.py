@@ -2,6 +2,7 @@ import libdnf5
 import os
 from datetime import datetime, timedelta
 from libdnf5.common import QueryCmp_GLOB as GLOB
+import madb.config as config
 
 
 class Dnf5MadbBase(libdnf5.base.Base):
@@ -31,8 +32,12 @@ class Dnf5MadbBase(libdnf5.base.Base):
         self._base_config.module_platform_id = f"Mageia:{release}"
         # self._base_config.metadata_expire = 20
         self._repo_sack = self._base.get_repo_sack()
-        repo = self._repo_sack.create_repos_from_system_configuration()
-        #repo.get_config().baseurl = os.path.join("cache")
+        repos = {}
+        for section in ("core", "nonfree", "tainted"):
+            for cl in ("backports", "backports_testing", "release", "updates", "updates_testing"):
+                repo_name = f"{release}-{arch}-{section}-{cl}"
+                repos[repo_name] = self._repo_sack.create_repo(repo_name)
+                repos[repo_name].get_config().baseurl = os.path.join(config.MIRROR_URL, release, arch, "media", section, cl)
         self._repo_sack.update_and_load_enabled_repos(False)
 
 
@@ -46,13 +51,16 @@ class Dnf5MadbBase(libdnf5.base.Base):
         if not showdups:
             query = libdnf5.rpm.PackageQuery(self._base)
             query.filter_arch([self.arch])
-            query.filter_name(values)
+            query.filter_name(values, GLOB)
         return query
 
-    def search_updates(self):
+    def search_updates(self, backports=False):
         query = libdnf5.rpm.PackageQuery(self._base)
         query.filter_arch([self.arch])
-        query.filter_repo_id(["updates*"], GLOB)
+        if backports:
+            query.filter_repo_id(["*backports*"], GLOB)
+        else:
+            query.filter_repo_id(["*updates*"], GLOB)
         query.filter_recent(int((datetime.now() - timedelta(days=7)).timestamp()))
         return query
 
