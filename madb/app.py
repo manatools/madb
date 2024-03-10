@@ -28,20 +28,27 @@ def create_app():
         nav_css = requests.get("http://nav.mageia.org/css/")
         data = { "html": nav_html.content.decode(), "css": nav_css.content}
         return data
+    nav_data = navbar()
 
     @app.route("/")
-    @app.route("/home/<release>/<arch>/<graphical>", strict_slashes=False)
-    def home(release=None, arch=None, graphical=None):
+    @app.route("/home")
+    def home():
+        release = request.args.get("distribution", None)
+        arch = request.args.get("architecture", None)
+        graphical = request.args.get("graphical", "1")
+        rpm =  request.args.get("rpm", "")
         if not release:
             release = next(iter(config.DISTRIBUTION.keys()))
             arch = next(iter(config.ARCHES.keys()))
-            graphical = "1"
         distro = Dnf5MadbBase(release, arch, config.DATA_PATH)
         last_updates = distro.search_updates()
         if not last_updates:
             last_updates = {}
+        last_backports = distro.search_updates(backports=True)
+        if not last_backports:
+            last_backports = {}
         groups1 = sorted(set([x[0] for x in groups()]))
-        data = {'groups': groups1, "config": data_config, "title": "Home", "updates": last_updates, "url_end": f"/{release}/{arch}/{graphical}"}
+        data = {'groups': groups1, "config": data_config, "title": "Home", "updates": last_updates, "backports": last_backports, "rpm_search": rpm, "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}", "base_url": "/home", "nav_html": nav_data["html"], "nav_css": nav_data["css"]}
         return render_template("home.html", data=data)
 
     @app.route('/updates/')
@@ -360,15 +367,12 @@ def create_app():
         data = {"urls": urls, "counts": counts, "bugs": data_bugs, "assignees": assignees, "config": data_config, "title": title, "comments": comments, "nav_html": nav_data["html"], "nav_css": nav_data["css"]}
         return render_template('bugs.html', data=data)
 
-    @app.route("/show/<release>/<arch>/<graphical>/<package>")
     @app.route("/show")
-    def show(release=None, graphical=None, arch=None, package=None):
-        print(release)
-        if release is None:
-            release = request.args.get("distribution")
-            arch = request.args.get("architecture")
-            package = request.args.get("package_name")
-            print(f"RPM: {package}")
+    def show():
+        release = request.args.get("distribution", None)
+        arch = request.args.get("architecture", None)
+        package = request.args.get("rpm", "")
+        graphical =  request.args.get("graphical", "1")
         distro = Dnf5MadbBase(release, arch, config.DATA_PATH)
         dnf_pkgs = distro.search_name([package])
         rpms = []
@@ -376,7 +380,7 @@ def create_app():
         for dnf_pkg in dnf_pkgs:
             rpms.append({"full_name": dnf_pkg.get_nevra(),
             "distro_release": release,
-            "url": f"/rpmshow/{dnf_pkg.get_name()}/{release}/{arch}/{dnf_pkg.get_repo_id()}",
+            "url": f"/rpmshow?rpm={dnf_pkg.get_name()}&repo={dnf_pkg.get_repo_id()}&distribution={release}&architecture={arch}&graphical={graphical}",
             "arch": dnf_pkg.get_arch(),
             "repo": dnf_pkg.get_repo_name(),
             }
@@ -394,12 +398,20 @@ def create_app():
             }
         else:
             pkg = {}
-        data = {"pkg": pkg, "config": data_config,  "url_end": f"/{release}/{arch}" }
+        data = {"pkg": pkg, "config": data_config,  "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}", "rpm_search": package, "base_url": "/show", "nav_html": nav_data["html"], "nav_css": nav_data["css"]}
         return render_template("package_show.html", data=data)
 
 
-    @app.route("/rpmshow/<package>/<release>/<arch>/<repo>")
-    def rpmshow(package, release, arch, repo):
+    @app.route("/rpmshow")
+    def rpmshow():
+        release = request.args.get("distribution", None)
+        arch = request.args.get("architecture", None)
+        graphical = request.args.get("graphical", "1")
+        package = request.args.get("rpm", "")
+        repo = request.args.get("repo", "")
+        if package == "" or repo == "":
+            data = { "title": "Not found", "config": data_config, "url_end": f"/{release}/{arch}/{graphical}", "base_url": "/home","rpm_search": "", "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}"}
+            return render_template("notfound.html", data=data)
         distro = Dnf5MadbBase(release, arch, config.DATA_PATH)
         dnf_pkgs = distro.search_name([package])
         rpms = []
@@ -444,7 +456,7 @@ def create_app():
             ['Files', "<br />\n".join(last.get_files()), ""],
             ['Dependencies', "<br />\n".join(deps), ""],
         ]
-        data = {"basic": basic, "config": data_config, "advanced": advanced, "media": media, "description": description, "rpm": rpm}
+        data = {"basic": basic, "config": data_config, "advanced": advanced, "media": media, "description": description, "rpm_search": package, "base_url": "/rpmshow", "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}&rpm={package}", "nav_html": nav_data["html"], "nav_css": nav_data["css"]}
         return render_template("rpm_show.html", data=data)
 
     def format_bugs():
