@@ -50,7 +50,7 @@ class Dnf5MadbBase(libdnf5.base.Base):
         """
         if not showdups:
             query = libdnf5.rpm.PackageQuery(self._base)
-            query.filter_arch([self.arch])
+            query.filter_arch([self.arch, "noarch"])
             query.filter_name(values, GLOB)
         return query
 
