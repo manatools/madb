@@ -13,7 +13,9 @@
             const pkg_field = document.getElementById("package_name");
             const pkg = pkg_field.value;
             const repo_field = document.getElementById("repo");
-            const repo= repo_field.value;
+            const regx = /^[^-]+-[^-]+-(.*$)/;
+            const matches = repo_field.value.match(regx);
+            const repo = `${dist}-${arch}-${matches[1]}`;
     
             // Construit l'URL cible en combinant l'action du formulaire et la valeur sélectionnée
             targetUrl = `${arch_field.getAttribute("data-base-url")}?distribution=${dist}&architecture=${arch}&graphical=${graphical}`;
