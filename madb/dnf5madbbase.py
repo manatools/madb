@@ -18,6 +18,7 @@ class Dnf5MadbBase(libdnf5.base.Base):
         self._base = libdnf5.base.Base()
         self._base_config = self._base.get_config()
         self._base_config.installroot = root
+        # https://github.com/rpm-software-management/dnf5/issues/412#issuecomment-1493782078
         self._base_config.optional_metadata_types = ['filelists']
         self._base.setup()
         self._base.config_file_path = os.path.join(root, "dnf/dnf.conf.example")
@@ -31,7 +32,7 @@ class Dnf5MadbBase(libdnf5.base.Base):
         self._base_config.logdir = "cache"
         self._base_config.keepcache = True
         self._base_config.module_platform_id = f"Mageia:{release}"
-        # self._base_config.metadata_expire = 20
+        self._base_config.metadata_expire = 1800
         self._repo_sack = self._base.get_repo_sack()
         repos = {}
         for section in ("core", "nonfree", "tainted"):
