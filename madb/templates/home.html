@@ -66,6 +66,7 @@
           <td><a href="/show{{ data.url_end }}&rpm={{ update.get_name() }}">{{ update.get_name() }}</a></td>
           <td class='summary'>{{ update.get_summary() }}</td>
           <td><a href="/show{{ data.url_end }}&rpm={{ update.get_name() }}">{{ update.get_nevra() }} </a></td>
+          <td>{{ update.get_group() }}</td>
         </tr>
       {% endif %}
     {% endfor %}
