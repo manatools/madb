@@ -48,7 +48,7 @@ def create_app():
         if not last_backports:
             last_backports = {}
         groups1 = sorted(set([x[0] for x in groups()]))
-        data = {'groups': groups1, "config": data_config, "title": "Home", "updates": last_updates, "backports": last_backports, "rpm_search": rpm, "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}", "base_url": "/home", "nav_html": nav_data["html"], "nav_css": nav_data["css"]}
+        data = {'groups': groups1, "config": data_config, "title": "Home", "updates": last_updates, "backports": last_backports, "rpm_search": rpm, "url_end": f"?distribution={release}&architecture={arch}&graphical=0", "base_url": "/home", "nav_html": nav_data["html"], "nav_css": nav_data["css"]}
         return render_template("home.html", data=data)
 
     @app.route('/updates/')
@@ -374,7 +374,7 @@ def create_app():
         package = request.args.get("rpm", "")
         graphical =  request.args.get("graphical", "1")
         distro = Dnf5MadbBase(release, arch, config.DATA_PATH)
-        dnf_pkgs = distro.search_name([package])
+        dnf_pkgs = distro.search_name([package], graphical=(graphical == '1'))
         rpms = []
         last = None
         for dnf_pkg in dnf_pkgs:
@@ -423,18 +423,21 @@ def create_app():
             "repo": dnf_pkg.get_repo_name() }
             )
             last = dnf_pkg
-        basic = {
-            "Name": last.get_name(),
-            "Version": last.get_version(),
-            "Release": last.get_release(),
-            "Arch": last.get_arch(),
-            "Summary": last.get_summary(),
-            "Group": last.get_group(),
-            "License": last.get_license(),
-            "Url": last.get_url(),
-            "Download size": humanize.naturalsize(last.get_download_size(), binary=True),
-            "Installed size": humanize.naturalsize(last.get_install_size(), binary=True),
-        }
+        if last is not None:
+            basic = {
+                "Name": last.get_name(),
+                "Version": last.get_version(),
+                "Release": last.get_release(),
+                "Arch": last.get_arch(),
+                "Summary": last.get_summary(),
+                "Group": last.get_group(),
+                "License": last.get_license(),
+                "Url": last.get_url(),
+                "Download size": humanize.naturalsize(last.get_download_size(), binary=True),
+                "Installed size": humanize.naturalsize(last.get_install_size(), binary=True),
+            }
+        else:
+            pkg = {}
         description = last.get_description()
         rpm = last.get_nevra()
         media = [

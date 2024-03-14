@@ -18,6 +18,7 @@ class Dnf5MadbBase(libdnf5.base.Base):
         self._base = libdnf5.base.Base()
         self._base_config = self._base.get_config()
         self._base_config.installroot = root
+        self._base_config.optional_metadata_types = ['filelists']
         self._base.setup()
         self._base.config_file_path = os.path.join(root, "dnf/dnf.conf.example")
         self._base.load_config()
@@ -41,26 +42,27 @@ class Dnf5MadbBase(libdnf5.base.Base):
         self._repo_sack.update_and_load_enabled_repos(False)
 
 
-    def search_name(self, values, showdups=False):
+    def search_name(self, values, graphical=False):
         """Search in a list of package attributes for a list of keys.
 
         :param values: the values to match
         :param showdups: show duplicate packages or latest (default)
         :return: a list of package objects
         """
-        if not showdups:
-            query = libdnf5.rpm.PackageQuery(self._base)
-            query.filter_arch([self.arch, "noarch"])
-            query.filter_name(values, GLOB)
+        query = libdnf5.rpm.PackageQuery(self._base)
+        query.filter_arch([self.arch, "noarch"])
+        query.filter_name(values, GLOB)
+        if graphical:
+            query.filter_file(["/usr/share/applications/*.desktop"], GLOB)
         return query
 
     def search_updates(self, backports=False):
         query = libdnf5.rpm.PackageQuery(self._base)
-        query.filter_arch([self.arch])
+        query.filter_arch([self.arch, "noarch"])
         if backports:
-            query.filter_repo_id(["*backports*"], GLOB)
+            query.filter_repo_id(["*backports"], GLOB)
         else:
-            query.filter_repo_id(["*updates*"], GLOB)
+            query.filter_repo_id(["*updates"], GLOB)
         query.filter_recent(int((datetime.now() - timedelta(days=7)).timestamp()))
         return query
 
