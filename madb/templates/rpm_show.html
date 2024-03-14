@@ -3,6 +3,24 @@
 {% block container %}
 
 {% include 'search.html' %}
+<script>
+
+
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll('.revealIcon').forEach((icon) => {
+    icon.addEventListener('click', () => {
+      const parentTd = icon.parentElement;
+      const contentUl = parentTd.querySelector('.hiddenContent');
+      
+      if (contentUl.classList.contains('showContent')) {
+        contentUl.classList.remove('showContent');
+      } else {
+        contentUl.classList.add('showContent');
+      }
+    });
+  });
+});
+</script>
 <div class="pagename">
 <p>Package : <a href="">{{ data.basic.Name }}</a>  > RPM : {{ data.rpm }}</p>
 </div>
@@ -55,7 +73,12 @@
     {% for item in data.advanced %}
     <tr>
       <td class="name">{{ item[0] }}</td>
-      <td>{{ item[1] |safe }}</td>
+      <td class="longList">
+        {% if item[0] in ("Files", "Dependencies")%}<div class="revealIcon">&#9776;</div><ul class="hiddenContent">{{ item[1] |safe }}</ul>
+        {% else %}
+        {{ item[1] |safe }}
+        {% endif %}
+      </td>
     </tr>
     {% endfor %}
   </tbody>

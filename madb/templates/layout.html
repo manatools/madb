@@ -9,7 +9,11 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='font/css/font-awesome.min.css') }}">
 
     {% block script_column %}{% endblock %}
-
+    <style>
+        .hiddenContent { display: none; }
+        .showContent { display: block; }
+        .revealIcon { cursor: pointer; margin-left: 5px; font-size: 1.5em; vertical-align: middle; }
+    </style>
 </head>
 
 <body>
