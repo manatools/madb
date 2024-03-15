@@ -15,12 +15,14 @@
             const repo_field = document.getElementById("repo");
             const regx = /^[^-]+-[^-]+-(.*$)/;
             const matches = repo_field.value.match(regx);
-            const repo = `${dist}-${arch}-${matches[1]}`;
+            if (matches && matches.length > 1) {
+                newrepo = `${dist}-${arch}-${matches[1]}`;
+            }
+            else { newrepo = ""}
     
             // Construit l'URL cible en combinant l'action du formulaire et la valeur sélectionnée
             targetUrl = `${arch_field.getAttribute("data-base-url")}?distribution=${dist}&architecture=${arch}&graphical=${graphical}`;
-            targetUrl = targetUrl + ( pkg !== "" ? `&rpm=${pkg}` : "")
-            targetUrl = targetUrl + ( repo !== "" ? `&repo=${repo}` : "")
+            targetUrl = targetUrl + ( pkg !== "" ? `&rpm=${pkg}` : "") + ( newrepo !== "" ? `&repo=${newrepo}` : "")
 
             // Reload the page with the new query string
             window.location.href = targetUrl;
