@@ -72,10 +72,12 @@ document.addEventListener("DOMContentLoaded", function () {
   <tbody>
     {% for item in data.advanced %}
     <tr>
-      <td class="name">{{ item[0] }}</td>
-      <td class="longList">
-        {% if item[0] in ("Files", "Dependencies")%}<div class="revealIcon">&#9776;</div><ul class="hiddenContent">{{ item[1] |safe }}</ul>
-        {% else %}
+        {% if item[0] in ("Files", "Dependencies", "Changelog")%}        
+          <td class="name revealIcon">{{ item[0] }} &#9776;</td>
+          <td class="longList"><ul class="hiddenContent">{{ item[1] |safe }}</ul>
+        {% else %}      
+        <td class="name">{{ item[0] }}</td>
+        <td class="longList">
         {{ item[1] |safe }}
         {% endif %}
       </td>

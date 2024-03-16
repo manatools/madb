@@ -2070,6 +2070,7 @@ a .icon-flip-vertical:before {
     -moz-border-radius: 3px;
     -webkit-border-radius: 3px;
     -border-radius: 3px;
+    border-radius: 3px;
 }
 
 .tipsy-north {
@@ -2721,6 +2722,7 @@ div.main-screenshot {
 
 .rpm table.infos td.name {
     text-align: right;
+    vertical-align: top;
     font-size: 12px
 }
 
