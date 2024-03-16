@@ -7,7 +7,7 @@ import madb.config as config
 
 class Dnf5MadbBase(libdnf5.base.Base):
 
-    def __init__(self, release, arch, root):
+    def __init__(self, release, arch, root, refresh=False):
 
         self.release = release
         self.arch = arch
@@ -19,9 +19,9 @@ class Dnf5MadbBase(libdnf5.base.Base):
         self._base_config = self._base.get_config()
         self._base_config.installroot = root
         # https://github.com/rpm-software-management/dnf5/issues/412#issuecomment-1493782078
-        self._base_config.optional_metadata_types = ['filelists']
+        self._base_config.optional_metadata_types = ['filelists', 'other']
         self._base.setup()
-        self._base.config_file_path = os.path.join(root, "dnf/dnf.conf.example")
+        self._base.config_file_path = os.path.join(root, "dnf/dnf.conf")
         self._base.load_config()
         vars = self._base.get_vars().get()
         vars.set('releasever', release)
@@ -30,20 +30,24 @@ class Dnf5MadbBase(libdnf5.base.Base):
         self._base_config.cachedir = os.path.join(root, "dnf", "cache")
         self._base_config.reposdir = os.path.join(root, "dnf", "etc","distro.repos.d")
         self._base_config.logdir = "cache"
-        self._base_config.keepcache = True
         self._base_config.module_platform_id = f"Mageia:{release}"
-        self._base_config.metadata_expire = 1800
+        self._base_config.metadata_expire = 20 if refresh else -1
         self._repo_sack = self._base.get_repo_sack()
         repos = {}
+        if release == config.DEV_NAME:
+            repo_base = release
+        else:
+            repo_base = "mageia"
         for section in ("core", "nonfree", "tainted"):
             for cl in ("backports", "backports_testing", "release", "updates", "updates_testing"):
                 repo_name = f"{release}-{arch}-{section}-{cl}"
                 repos[repo_name] = self._repo_sack.create_repo(repo_name)
                 repos[repo_name].get_config().baseurl = os.path.join(config.MIRROR_URL, release, arch, "media", section, cl)
+                repos[repo_name].get_config().name = f"{config.DISTRIBUTION[release]} {section.capitalize()} {cl.capitalize()}"
         self._repo_sack.update_and_load_enabled_repos(False)
 
 
-    def search_name(self, values, graphical=False):
+    def search_name(self, values, graphical=False, repo=None):
         """Search in a list of package attributes for a list of keys.
 
         :param values: the values to match
@@ -55,6 +59,8 @@ class Dnf5MadbBase(libdnf5.base.Base):
         query.filter_name(values, GLOB)
         if graphical:
             query.filter_file(["/usr/share/applications/*.desktop"], GLOB)
+        if repo:
+            query.filter_repo_id([repo])
         return query
 
     def search_updates(self, backports=False):

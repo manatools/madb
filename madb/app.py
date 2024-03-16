@@ -3,7 +3,7 @@ from madb.helper import groups
 from flask import Flask, render_template, request
 import requests
 from csv import DictReader
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import re
 from io import  StringIO
 import collections
@@ -413,7 +413,7 @@ def create_app():
             data = { "title": "Not found", "config": data_config, "url_end": f"/{release}/{arch}/{graphical}", "base_url": "/home","rpm_search": "", "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}"}
             return render_template("notfound.html", data=data)
         distro = Dnf5MadbBase(release, arch, config.DATA_PATH)
-        dnf_pkgs = distro.search_name([package])
+        dnf_pkgs = distro.search_name([package], repo=repo)
         rpms = []
         last = None
         for dnf_pkg in dnf_pkgs:
@@ -436,29 +436,29 @@ def create_app():
                 "Download size": humanize.naturalsize(last.get_download_size(), binary=True),
                 "Installed size": humanize.naturalsize(last.get_install_size(), binary=True),
             }
+            description = last.get_description()
+            rpm = last.get_nevra()
+            media = [
+                ["Repository name", last.get_repo_name()],
+                ["Media arch", arch],
+            ]
+            deps = []
+            for item in distro.provides_requires(last.get_requires()):
+                if not item.get_name() in deps:
+                    deps.append(item.get_name())
+            logs = []
+            for item in last.get_changelogs():
+                logs.append(f"{date.fromtimestamp(item.timestamp)}: {item.text} ({item.author})")
+            advanced = [
+                ['Source RPM', last.get_sourcerpm() or "NOT IN DATABASE ?!", ""],
+                ['Build time', datetime.fromtimestamp(last.get_build_time()), ""],
+                ['Changelog',  "<br />\n".join(logs), ""],
+                ['Files', "<br />\n".join(last.get_files()), ""],
+                ['Dependencies', "<br />\n".join(deps), ""],
+            ]
         else:
-            pkg = {}
-        description = last.get_description()
-        rpm = last.get_nevra()
-        media = [
-            ["Repository name", last.get_repo_name()],
-            ["Media ID", last.get_repo_id()],
-            ["Media arch", arch],
-        ]
-        deps = []
-        for item in distro.provides_requires(last.get_requires()):
-            if not item.get_name() in deps:
-                deps.append(item.get_name())
-        # logs = [] Not yet ready in DNF5
-        # for item in last.get_changelogs():
-            # logs.append(f"{datime.fromtimestamp(item.timestamp())}: {log.text} ({log.author})")
-        advanced = [
-            ['Source RPM', last.get_sourcerpm() or "NOT IN DATABASE ?!", ""],
-            ['Build time', datetime.fromtimestamp(last.get_build_time()), ""],
-            # ['Changelog',  "<br />\n".join(logs), ""],
-            ['Files', "<br />\n".join(last.get_files()), ""],
-            ['Dependencies', "<br />\n".join(deps), ""],
-        ]
+            data = { "title": "Not found", "config": data_config, "url_end": f"/{release}/{arch}/{graphical}", "base_url": "/home","rpm_search": "", "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}"}
+            return render_template("notfound.html", data=data)
         data = {"basic": basic, "config": data_config, "advanced": advanced, "repo": repo, "media": media, "description": description, "rpm_search": package, "base_url": "/rpmshow", "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}&rpm={package}", "nav_html": nav_data["html"], "nav_css": nav_data["css"]}
         return render_template("rpm_show.html", data=data)
 
