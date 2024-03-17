@@ -1,0 +1,9 @@
+[Unit]
+Description=Load DNF metadata for MADB
+
+[Service]
+User=madb
+Group=madb
+WorkingDirectory=/data/www/html/madb
+ExecStart=python /data/www/html/madb/makecache.py
+
