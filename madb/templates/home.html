@@ -51,7 +51,7 @@
   <h2>Groups</h2>
   <ul class="column-list">
     {% for group in data.groups %}
-    <li>{{ group }}</li>
+    <li><a href="/group{{ data.url_end }}&group={{ group }}">{{ group }}</a></li>
     {% endfor %}
   </ul>
 </div>

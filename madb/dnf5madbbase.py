@@ -51,7 +51,6 @@ class Dnf5MadbBase(libdnf5.base.Base):
         """Search in a list of package attributes for a list of keys.
 
         :param values: the values to match
-        :param showdups: show duplicate packages or latest (default)
         :return: a list of package objects
         """
         query = libdnf5.rpm.PackageQuery(self._base)
@@ -62,6 +61,20 @@ class Dnf5MadbBase(libdnf5.base.Base):
         if repo:
             query.filter_repo_id([repo])
         return query
+
+    def search_in_group(self, value, graphical=False, repo=None):
+        """Search in a list of package in a group.
+
+        :param values: the values to match
+        :return: a list of package objects
+        """
+        query = libdnf5.rpm.PackageQuery(self._base)
+        query.filter_arch([self.arch, "noarch"])
+        if graphical:
+            query.filter_file(["/usr/share/applications/*.desktop"], GLOB)
+        if repo:
+            query.filter_repo_id([repo])
+        return [rpm for rpm in query if rpm.get_group().startswith(value)]
 
     def search_updates(self, backports=False):
         query = libdnf5.rpm.PackageQuery(self._base)

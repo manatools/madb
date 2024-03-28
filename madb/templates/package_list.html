@@ -1,0 +1,26 @@
+{% extends 'layout.html' %}
+{% block script_column %}
+
+{% endblock %}
+{% block container %}
+<div class="pagename">
+    <p>{{ data.title }}</p>
+</div>
+{% include 'search.html' %}
+
+<div id="packages">
+  <h2>{{ data.topic }}</h2>
+  <table class="packlist">
+    <tbody>
+    {% for rpm in data.rpms %}
+        <tr class="{{ 'rpm-odd' if loop.index % 2 else 'rpm-even' }}">
+          <td><a href="/show{{ data.url_end }}&rpm={{ rpm.get_name() }}">{{ rpm.get_name() }}</a></td>
+          <td class='summary'>{{ rpm.get_summary() }}</td>
+          <td class='summary'>{{ rpm.get_group() }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+  

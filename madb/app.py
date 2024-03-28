@@ -437,6 +437,47 @@ def create_app():
         }
         return render_template("bugs.html", data=data)
 
+    @app.route("/group")
+    def group():
+        release = request.args.get("distribution", None)
+        arch = request.args.get("architecture", None)
+        req_group = request.args.get("group", None)
+        if not release:
+            release = next(iter(config.DISTRIBUTION.keys()))
+            arch = next(iter(config.ARCHES.keys()))
+        level = len(req_group.split("/")) 
+        matches = [grp for grp in groups() if "/".join(grp).startswith(req_group)]
+        if len(matches) > 1:
+            # this is not a leaf group
+            data = {
+                "config": data_config,
+                "title": "By group",
+                "topic": f"Subgroups of {req_group}",
+                "req_group": req_group,
+                "groups": sorted(set([ match[level] for match in matches])),
+                "url_end": f"?distribution={release}&architecture={arch}&graphical=0",
+                "base_url": "/group",
+                "nav_html": nav_data["html"],
+                "nav_css": nav_data["css"],
+            }
+            return render_template("group.html", data=data)
+
+        distro = Dnf5MadbBase(release, arch, config.DATA_PATH)
+        rpms_list = distro.search_in_group(req_group)
+        if not rpms_list:
+            rpms_list = {}
+        data = {
+            "config": data_config,
+            "title": "By group",
+            "topic": f"Group: {req_group}",
+            "rpms": rpms_list,
+            "url_end": f"?distribution={release}&architecture={arch}&graphical=0",
+            "base_url": "/group",
+            "nav_html": nav_data["html"],
+            "nav_css": nav_data["css"],
+        }
+        return render_template("package_list.html", data=data)
+
     @app.route("/show")
     def show():
         release = request.args.get("distribution", None)
@@ -469,7 +510,15 @@ def create_app():
                 "maintainer": last.get_packager(),
             }
         else:
-            pkg = {}
+            data = {
+                "title": "Not found",
+                "config": data_config,
+                "url_end": f"/{release}/{arch}/{graphical}",
+                "base_url": "/home",
+                "rpm_search": "",
+                "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}",
+            }
+            return render_template("notfound.html", data=data)
         data = {
             "pkg": pkg,
             "config": data_config,

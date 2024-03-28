@@ -1,0 +1,58 @@
+{% extends 'layout.html' %}
+{% block script_column %}
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+    .column-list {
+        padding: 20px;
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+    }
+    .column-list li {
+        margin-bottom: 10px;
+    }
+</style>
+
+<script>
+  window.onload = function() {
+      function updateColumns() {
+          var columnList = document.querySelector('.column-list');
+          var numColumns = Math.floor(window.innerWidth / 150); // Adjust 200 as needed for minimum column width
+          columnList.style.columnCount = numColumns;
+      }
+
+      // Update columns on page load
+      updateColumns();
+
+      // Update columns on window resize
+      window.addEventListener('resize', updateColumns);
+
+  };
+</script>
+{% endblock %}
+{% block container %}
+<div class="pagename">
+    <p>{{ data.title }}</p>
+</div>
+{% include 'search.html' %}
+<div id="intro" class="links">
+<p>{{ data.comments|safe }}</p>
+  <h2>{{ data.topic }}</h2>
+</div>
+
+<div class="homepage">
+  <div id="groups" class="links">
+    <h2>Groups</h2>
+    <ul class="column-list">
+        {% for group in data.groups %}
+        <li><a href="/group{{ data.url_end }}&group={{ '/'.join([data.req_group, group] )}}">{{ group }}</a></li>
+        {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}
+  
