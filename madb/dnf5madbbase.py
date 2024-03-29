@@ -31,8 +31,8 @@ class Dnf5MadbBase(libdnf5.base.Base):
         self._base_config.cachedir = os.path.join(root, "dnf", "cache")
         self._base_config.reposdir = os.path.join(root, "dnf", "etc","distro.repos.d")
         log_router = self._base.get_logger()
-        self.global_logger = libdnf5.logger.GlobalLogger()
-        self.global_logger.set(log_router.get(), libdnf5.logger.Logger.Level_INFO)
+        # self.global_logger = libdnf5.logger.GlobalLogger()
+        # self.global_logger.set(log_router.get(), libdnf5.logger.Logger.Level_INFO)
         logger = libdnf5.logger.create_file_logger(self._base)
         log_router.add_logger(logger)
         self._base_config.module_platform_id = f"Mageia:{release}"
@@ -89,6 +89,8 @@ class Dnf5MadbBase(libdnf5.base.Base):
 
     def provides_requires(self, rpm_list):
         query = libdnf5.rpm.PackageQuery(self._base)
+        query.filter_arch([self.arch, "noarch"])
+        query.filter_repo_id([self.release], GLOB)
         query.filter_provides(rpm_list)
         return query
 
