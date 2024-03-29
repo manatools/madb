@@ -437,6 +437,78 @@ def create_app():
         }
         return render_template("bugs.html", data=data)
 
+
+    @app.route("/mageiatools/")
+    def mageiatools():
+        urls = {}
+        counts = {}
+        params = {}
+        created, status_open, closed, column, param_csv = format_bugs()
+        column_full = [("columnlist", column)]
+        column_short = [("columnlist", "bug_id")]
+        params_base = [
+            ("priority", "High"),
+            ("priority", "Normal"),
+            ("priority", "Low"),
+            ("email1", "mageiatools@ml.mageia.org"),
+            ("emailassigned_to1",1),
+            ("emailtype1", "substring")
+        ]
+        params["closed"] = params_base + closed
+        params["created"] = params_base + created + status_open
+        params["promoted"] = (
+            params_base
+            + status_open
+            + [
+                ("chfield", "assigned_to"),
+                ("chfieldfrom", "2w"),
+                ("chfieldvalue", "mageiatools@ml.mageia.org"),
+                ("chfieldto", "Now"),
+                ("f1", "creation_ts"),
+                ("o1", "lessthan"),
+                ("v1", "2w"),
+            ]
+        )
+        params["demoted"] = (
+            params_base
+            + status_open
+            + [
+                ("j_top", "AND_G"),
+                ("f1", "assigned_to"),
+                ("o1", "changedfrom"),
+                ("o2", "changedafter"),
+                ("chfieldto", "Now"),
+                ("query_format", "advanced"),
+                ("chfieldfrom", "2w"),
+                ("f2", "email1"),
+                ("v1", "mageiatools@ml.mageia.org"),
+                ("v2", "2w"),
+            ]
+        )
+        for status in ("closed", "created", "promoted", "demoted"):
+            a = requests.get(URL, params=params[status] + param_csv + column_short)
+            urls[status] = URL + "?" + parse.urlencode(params[status] + column_full)
+            counts[status] = len(a.content.split(b"\n")) - 1
+        data_bugs, counts["base"], assignees = list_bugs(
+            params_base + status_open + param_csv + column_full
+        )
+        title = "About Mageia tools"
+        comments = """This page lists all bug reports that have been assigned to Mageia tools maintainers.
+        """
+        nav_data = navbar()
+        data = {
+            "urls": urls,
+            "counts": counts,
+            "bugs": data_bugs,
+            "assignees": assignees,
+            "config": data_config,
+            "title": title,
+            "comments": comments,
+            "nav_html": nav_data["html"],
+            "nav_css": nav_data["css"],
+        }
+        return render_template("bugs.html", data=data)
+
     @app.route("/group")
     def group():
         release = request.args.get("distribution", None)

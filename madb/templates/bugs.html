@@ -28,10 +28,11 @@
 <table class='buglist'>
     <thead>
         <tr>
-            <th style="width:7%">Bug number</th>
-            <th style="width:40%">Summary</th>
+            <th style="width:5%">Bug number</th>
+            <th style="width:30%">Summary</th>
             <th style="width:10%">Bug Watcher</th>
             <th style="width:28%">Status comment</th>
+            <th style="width:10%">Source</th>
             <th style="width:7%">Status</th>
             <th style="width:7%">No action for</th>
         </tr>
@@ -44,6 +45,7 @@
             <td style="text-align:left;">{{ data.bugs[bug]['Summary'] }}</td>
             <td>{{ data.bugs[bug]["QA Contact Real Name"] }}</td>
             <td style="text-align:left;">{{ data.bugs[bug]["Status comment"] }}</td>
+            <td style="text-align:left;">{{ data.bugs[bug]["Source RPM"] }}</td>
             <td>{{ data.bugs[bug]["Status"] }}</td>
             <td>{{ data.bugs[bug]["age"] }} days</td>
         </tr>
