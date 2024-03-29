@@ -26,18 +26,19 @@ class Dnf5MadbBase(libdnf5.base.Base):
         vars = self._base.get_vars().get()
         vars.set('releasever', release)
         # vars.set('basearch', arch)
+        self._base_config.logdir = os.path.join(root, "dnf","logs")
         vars.set('distarch', arch)
         self._base_config.cachedir = os.path.join(root, "dnf", "cache")
         self._base_config.reposdir = os.path.join(root, "dnf", "etc","distro.repos.d")
-        self._base_config.logdir = "cache"
+        log_router = self._base.get_logger()
+        self.global_logger = libdnf5.logger.GlobalLogger()
+        self.global_logger.set(log_router.get(), libdnf5.logger.Logger.Level_INFO)
+        logger = libdnf5.logger.create_file_logger(self._base)
+        log_router.add_logger(logger)
         self._base_config.module_platform_id = f"Mageia:{release}"
         self._base_config.metadata_expire = 20 if refresh else -1
         self._repo_sack = self._base.get_repo_sack()
         repos = {}
-        if release == config.DEV_NAME:
-            repo_base = release
-        else:
-            repo_base = "mageia"
         for section in ("core", "nonfree", "tainted"):
             for cl in ("backports", "backports_testing", "release", "updates", "updates_testing"):
                 repo_name = f"{release}-{arch}-{section}-{cl}"
