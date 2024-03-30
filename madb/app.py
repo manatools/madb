@@ -664,9 +664,10 @@ def create_app():
             ]
             deps = []
             reqs = last.get_requires()
-            logging.debug(f"Requires: {reqs}")
-            for item in distro.provides_requires(reqs):
-                logging.debug(item.get_name())
+            # logging.debug(f"Requires: {reqs}")
+            #for item in distro.provides_requires(reqs):
+            #    logging.debug(item.get_name())
+            for item in reqs:
                 if not item.get_name() in deps:
                     deps.append(item.get_name())
             logs = []
