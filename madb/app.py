@@ -11,6 +11,12 @@ import madb.config as config
 from urllib import parse
 from madb.dnf5madbbase import Dnf5MadbBase
 import humanize
+import logging
+import os
+
+logger = logging.getLogger(__name__)
+log_level = getattr(logging, config.LOG_LEVEL.upper())
+logging.basicConfig(filename=os.path.join(config.DATA_PATH,'madb.log'), encoding='utf-8', level=log_level)
 
 URL = "https://bugs.mageia.org/buglist.cgi"
 
@@ -657,13 +663,16 @@ def create_app():
                 ["Media arch", arch],
             ]
             deps = []
-            for item in distro.provides_requires(last.get_requires()):
+            reqs = last.get_requires()
+            logging.debug(f"Requires: {reqs}")
+            for item in distro.provides_requires(reqs):
+                logging.debug(item.get_name())
                 if not item.get_name() in deps:
                     deps.append(item.get_name())
             logs = []
             for item in last.get_changelogs():
                 logs.append(
-                    f"{date.fromtimestamp(item.timestamp)}: {item.text} ({item.author})"
+                    f"{date.fromtimestamp(item.timestamp)}:<br /> {item.text} <br />({item.author})"
                 )
             advanced = [
                 ["Source RPM", last.get_sourcerpm() or "NOT IN DATABASE ?!", ""],

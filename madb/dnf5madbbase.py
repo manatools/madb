@@ -90,7 +90,7 @@ class Dnf5MadbBase(libdnf5.base.Base):
     def provides_requires(self, rpm_list):
         query = libdnf5.rpm.PackageQuery(self._base)
         query.filter_arch([self.arch, "noarch"])
-        query.filter_repo_id([self.release], GLOB)
+        query.filter_repo_id([self.release + "*"], GLOB)
         query.filter_provides(rpm_list)
         return query
 
