@@ -523,14 +523,18 @@ def create_app():
         if not release:
             release = next(iter(config.DISTRIBUTION.keys()))
             arch = next(iter(config.ARCHES.keys()))
-        level = len(req_group.split("/")) 
-        matches = [grp for grp in groups() if "/".join(grp).startswith(req_group)]
+        if req_group is not None:
+            level = len(req_group.split("/"))
+            matches = [grp for grp in groups() if "/".join(grp).startswith(req_group)]
+        else:
+            level = 0
+            matches = groups()
         if len(matches) > 1:
             # this is not a leaf group
             data = {
                 "config": data_config,
                 "title": "By group",
-                "topic": f"Subgroups of {req_group}",
+                "topic": f"Subgroups of {req_group}" if req_group else "Main groups",
                 "req_group": req_group,
                 "groups": sorted(set([ match[level] for match in matches])),
                 "url_end": f"?distribution={release}&architecture={arch}&graphical=0",

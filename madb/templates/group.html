@@ -49,7 +49,7 @@
     <h2>Groups</h2>
     <ul class="column-list">
         {% for group in data.groups %}
-        <li><a href="/group{{ data.url_end }}&group={{ '/'.join([data.req_group, group] )}}">{{ group }}</a></li>
+        <li><a href="/group{{ data.url_end }}&group={{ group if not data.req_group else '/'.join([data.req_group, group] )}}">{{ group }}</a></li>
         {% endfor %}
     </ul>
   </div>
