@@ -25,14 +25,13 @@ class Dnf5MadbBase(libdnf5.base.Base):
         self._base.load_config()
         vars = self._base.get_vars().get()
         vars.set('releasever', release)
-        # vars.set('basearch', arch)
+        vars.set('basearch', arch)
+        vars.set('arch', arch)
         self._base_config.logdir = os.path.join(root, "dnf","logs")
         vars.set('distarch', arch)
         self._base_config.cachedir = os.path.join(root, "dnf", "cache")
         self._base_config.reposdir = os.path.join(root, "dnf", "etc","distro.repos.d")
         log_router = self._base.get_logger()
-        # self.global_logger = libdnf5.logger.GlobalLogger()
-        # self.global_logger.set(log_router.get(), libdnf5.logger.Logger.Level_INFO)
         logger = libdnf5.logger.create_file_logger(self._base)
         log_router.add_logger(logger)
         self._base_config.module_platform_id = f"Mageia:{release}"
@@ -42,9 +41,13 @@ class Dnf5MadbBase(libdnf5.base.Base):
         for section in ("core", "nonfree", "tainted"):
             for cl in ("backports", "backports_testing", "release", "updates", "updates_testing"):
                 repo_name = f"{release}-{arch}-{section}-{cl}"
+                repo_srpms_name = f"{release}-SRPMS-{section}-{cl}"
                 repos[repo_name] = self._repo_sack.create_repo(repo_name)
                 repos[repo_name].get_config().baseurl = os.path.join(config.MIRROR_URL, release, arch, "media", section, cl)
-                repos[repo_name].get_config().name = f"{config.DISTRIBUTION[release]} {section.capitalize()} {cl.capitalize()}"
+                repos[repo_name].get_config().name = f"{config.DISTRIBUTION[release]} {arch} {section.capitalize()} {cl.capitalize()}"
+                repos[repo_srpms_name] = self._repo_sack.create_repo(repo_srpms_name)
+                repos[repo_srpms_name].get_config().baseurl = os.path.join(config.MIRROR_URL, release, "SRPMS", section, cl)
+                repos[repo_srpms_name].get_config().name = f"{config.DISTRIBUTION[release]} SRPMS {section.capitalize()} {cl.capitalize()}"
         self._repo_sack.update_and_load_enabled_repos(False)
 
 
@@ -55,12 +58,12 @@ class Dnf5MadbBase(libdnf5.base.Base):
         :return: a list of package objects
         """
         query = libdnf5.rpm.PackageQuery(self._base)
-        query.filter_arch([self.arch, "noarch"])
+        #query.filter_arch([self.arch, "noarch"])
         query.filter_name(values, GLOB)
         if graphical:
             query.filter_file(["/usr/share/applications/*.desktop"], GLOB)
         if repo:
-            query.filter_repo_id([repo])
+            query.filter_repo_id([repo], GLOB)
         return query
 
     def search_in_group(self, value, graphical=False, repo=None):
@@ -85,6 +88,15 @@ class Dnf5MadbBase(libdnf5.base.Base):
         else:
             query.filter_repo_id(["*updates"], GLOB)
         query.filter_recent(int((datetime.now() - timedelta(days=7)).timestamp()))
+        return query
+
+    def search_by_sources(self, values, repo=None):
+        query = libdnf5.rpm.PackageQuery(self._base)
+        query.filter_arch([self.arch, "noarch"])
+        if repo:
+            query.filter_repo_id([repo])
+        query.filter_sourcerpm(values)
+        print(list(query))
         return query
 
     def provides_requires(self, rpm_list):
