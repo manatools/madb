@@ -9,6 +9,7 @@ DEF_GROUPS_FILE = "/usr/share/rpmlint/config.d/distribution.exceptions.conf"
 DEV_NAME = "cauldron"
 # Level of logging
 LOG_LEVEL = "DEBUG"
+BUGZILLA_URL = "http://bugs.mageia.org"
 # List of architectures managed
 ARCHES = {
     "x86_64": "x86 64bits",

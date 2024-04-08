@@ -36,6 +36,7 @@ There is no update with status {{ status }} for release {{ release }}<br />
       <th>Proced. <br />avail.?</th>
       <th>Mageia <br />Version</th>
       <th>No action <br />for (days)</th>
+      <th style="width:7%">List</th>
     </tr>
   </thead>
   {% for entry in data.bugs[release] %}
@@ -49,6 +50,7 @@ There is no update with status {{ status }} for release {{ release }}<br />
     <td>{{ "Yes" if 'has_procedure' in entry.keywords else "&nbsp;" |safe}}</td>
     <td style="white-space:nowrap">{{ entry.versions_symbol|safe }}</td>
     <td>{{ entry.age }}</td>
+    <td><a href={{ "/rpmsforqa/" + entry.bug_id }}>RPMS</a></td>
   </tr>
   {% endif %}
   {% endfor %}

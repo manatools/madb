@@ -1,0 +1,24 @@
+{% extends 'layout.html' %}
+
+{% block container %}
+<div class="pagename">
+    <p>{{ data.title }}</p>
+</div>
+<p>{{ data.comments|safe }}
+
+</p>
+<br />
+{% for release in data.releases %}
+  <h2>Release {{ release }}</h2>
+    {% for src_arch in data[release].keys() %}
+    <h3>Source RPMS</h3>
+    {% for rpm in data[release][src_arch]["srpms"] %}
+      {{ rpm.get_name() + "-" +rpm.get_evr() }}<br />
+    {% endfor %}
+    <h3>Binaries RPMS in {{ src_arch }} </h3>
+    {% for rpm in data[release][src_arch]["binaries"] %}
+      {{ rpm.get_nevra() }}<br />
+    {% endfor %}
+  {% endfor %}
+{% endfor %}
+{% endblock %}

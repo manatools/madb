@@ -5,7 +5,7 @@ from libdnf5.common import QueryCmp_GLOB as GLOB
 import madb.config as config
 
 
-class Dnf5MadbBase(libdnf5.base.Base):
+class Dnf5MadbBase():
 
     def __init__(self, release, arch, root, refresh=False):
 
@@ -13,7 +13,6 @@ class Dnf5MadbBase(libdnf5.base.Base):
         self.arch = arch
         self.root = root
 
-        libdnf5.base.Base.__init__(self)
         # Create a new Base object
         self._base = libdnf5.base.Base()
         self._base_config = self._base.get_config()
@@ -25,10 +24,8 @@ class Dnf5MadbBase(libdnf5.base.Base):
         self._base.load_config()
         vars = self._base.get_vars().get()
         vars.set('releasever', release)
-        vars.set('basearch', arch)
         vars.set('arch', arch)
         self._base_config.logdir = os.path.join(root, "dnf","logs")
-        vars.set('distarch', arch)
         self._base_config.cachedir = os.path.join(root, "dnf", "cache")
         self._base_config.reposdir = os.path.join(root, "dnf", "etc","distro.repos.d")
         log_router = self._base.get_logger()
@@ -94,9 +91,9 @@ class Dnf5MadbBase(libdnf5.base.Base):
         query = libdnf5.rpm.PackageQuery(self._base)
         query.filter_arch([self.arch, "noarch"])
         if repo:
-            query.filter_repo_id([repo])
-        query.filter_sourcerpm(values)
-        print(list(query))
+            query.filter_repo_id([repo], GLOB)
+        query.filter_sourcerpm(values, GLOB)
+        print(repo, values, list(query))
         return query
 
     def provides_requires(self, rpm_list):

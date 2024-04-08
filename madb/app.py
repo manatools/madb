@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 from madb.helper import groups
+from madb.helper import BugReport
+from madb.helper import load_content_or_cache, clean_cache
 from flask import Flask, render_template, request
 import requests
 from csv import DictReader
@@ -13,13 +15,17 @@ from madb.dnf5madbbase import Dnf5MadbBase
 import humanize
 import logging
 import os
+import threading
 
 logger = logging.getLogger(__name__)
 log_level = getattr(logging, config.LOG_LEVEL.upper())
 logging.basicConfig(filename=os.path.join(config.DATA_PATH,'madb.log'), encoding='utf-8', level=log_level)
 
-URL = "https://bugs.mageia.org/buglist.cgi"
+URL = config.BUGZILLA_URL + "/buglist.cgi"
 
+# start thread for cleaning cache
+clean_thread = threading.Thread(target=clean_cache)
+# clean_thread.start()
 
 def create_app():
     app = Flask(__name__)
@@ -31,9 +37,9 @@ def create_app():
     data_config["distribution"] = config.DISTRIBUTION
 
     def navbar():
-        nav_html = requests.get("https://nav.mageia.org/html/?b=madb_mageia_org&w=1")
-        nav_css = requests.get("http://nav.mageia.org/css/")
-        data = {"html": nav_html.content.decode(), "css": nav_css.content}
+        nav_html = load_content_or_cache("https://nav.mageia.org/html/?b=madb_mageia_org&w=1")
+        nav_css = load_content_or_cache("http://nav.mageia.org/css/")
+        data = {"html": nav_html, "css": nav_css}
         return data
 
     nav_data = navbar()
@@ -103,7 +109,6 @@ def create_app():
             ("ctype", "csv"),
         ]
         f = requests.get(URL, params=params)
-        # f = open("bugs-2023-12-03.csv","r")
         content = f.content.decode("utf-8")
         bugs = DictReader(StringIO(content))
 
@@ -111,7 +116,7 @@ def create_app():
         releases = []
         temp_bugs = []
         severity_weight = {
-            "enhancment": 0,
+            "enhancement": 0,
             "minor": 1,
             "normal": 2,
             "major": 3,
@@ -120,7 +125,6 @@ def create_app():
         for bug in bugs:
             # Error if cauldron, not conform to our policy
             entry = bug
-            print(entry)
             if entry["version"] not in releases:
                 releases.append(entry["version"])
             wb = re.findall(r"\bMGA(\d+)TOO", entry["status_whiteboard"])
@@ -153,7 +157,6 @@ def create_app():
                         versions_list += (v,)
                 # union of the 2 lists, without duplication
                 versions = " ".join(wb + list(set(versions_list) - set(wb)))
-                print(f"Versions {versions}")
                 entry["versions_symbol"] = ""
                 # Build field Versions
                 for version in versions.split(" "):
@@ -371,6 +374,31 @@ def create_app():
             "nav_css": nav_data["css"],
         }
         return render_template("bugs.html", data=data)
+
+    @app.route("/rpmsforqa/<bug_number>")
+    def rpmsforqa(bug_number):
+        report = BugReport()
+        # load data
+        report.from_number(bug_number)
+        srpms =  [x + "*" for x in report.get_srpms()]
+        releases = report.get_releases()
+        data = {}
+        for release in releases:
+            if "release" not in data.keys():
+                data[release] = {}
+            distro = {}
+            for src_arch in ("x86_64", "i586"):
+                data[release][src_arch] = {}
+                distro[src_arch] = Dnf5MadbBase(release, src_arch, config.DATA_PATH)
+                data[release][src_arch]["srpms"] = distro[src_arch].search_name(srpms, repo=f"{release}-SRPMS-*testing*")
+                data[release][src_arch]["binaries"] = distro[src_arch].search_by_sources(
+                    [x.get_name() + "*" for x in data[release][src_arch]["srpms"]],
+                    repo=f"{release}-*testing*"
+                    )
+        data["config"] = data_config
+        data["releases"] = releases 
+        data["title"] = "Packages for bug report {num}".format(num=bug_number)
+        return render_template("rpms_for_qa.html", data=data)
 
     @app.route("/highpriority/")
     def highpriority():
@@ -668,10 +696,7 @@ def create_app():
             ]
             deps = []
             reqs = last.get_requires()
-            # logging.debug(f"Requires: {reqs}")
-            #for item in distro.provides_requires(reqs):
-            #    logging.debug(item.get_name())
-            for item in reqs:
+            for item in distro.provides_requires(reqs):
                 if not item.get_name() in deps:
                     deps.append(item.get_name())
             logs = []
@@ -685,6 +710,7 @@ def create_app():
                 ["Changelog", "<br />\n".join(logs), ""],
                 ["Files", "<br />\n".join(last.get_files()), ""],
                 ["Dependencies", "<br />\n".join(deps), ""],
+                ["Provides", "<br />\n".join([x.get_name() for x in last.get_provides()]), ""],
             ]
         else:
             data = {

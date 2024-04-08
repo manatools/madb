@@ -35,6 +35,7 @@
             <th style="width:10%">Source</th>
             <th style="width:7%">Status</th>
             <th style="width:7%">No action for</th>
+            <th style="width:7%">List</th>
         </tr>
     </thead>
     <tbody>
@@ -48,6 +49,7 @@
             <td style="text-align:left;">{{ data.bugs[bug]["Source RPM"] }}</td>
             <td>{{ data.bugs[bug]["Status"] }}</td>
             <td>{{ data.bugs[bug]["age"] }} days</td>
+            <td><a href={{ "/rpmsforqa/" + data.bugs[bug]["Bug ID"] }}>RPMS</a></td>
         </tr>
         {% endfor %}
     </tbody>
