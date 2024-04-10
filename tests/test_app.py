@@ -49,6 +49,34 @@ def test_milestone(client):
     assert resp.status_code == 200
     assert b"Intended for next release" in resp.data
 
+def test_group(client):
+    """Check that group page is accessible."""
+    resp = client.get("/group?group=Accessibility")
+    assert resp.status_code == 200
+    assert b"Group: Accessibility" in resp.data
+    resp = client.get("/group")
+    assert resp.status_code == 200
+    assert b"Main groups" in resp.data
+
+
+def test_show(client):
+    """Check that RPM list page is accessible."""
+    resp = client.get("/show?distribution=cauldron&architecture=x86_64&rpm=dnf&repo=")
+    assert resp.status_code == 200
+    assert b"Package manager" in resp.data
+
+def test_rpmshow(client):
+    """Check that RPM detail page is accessible."""
+    resp = client.get("/rpmshow?rpm=dnf&repo=cauldron-x86_64-core-release&distribution=cauldron&architecture=x86_64&graphical=0")
+    assert resp.status_code == 200
+    assert b"Package manager" in resp.data
+
+def test_rpms(client):
+    """Check that bug rpms page is accessible."""
+    resp = client.get("/rpmsforqa/32571")
+    assert resp.status_code == 200
+    assert b"RPMS" in resp.data
+
 #def test_submission(client):
 #    """Vérifier que la soumission du formulaire fonctionne."""
 #    resp = client.post("/package", data={"package_name": "numpy", "architecture": "x86"}, follow_redirects=True)
