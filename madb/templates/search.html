@@ -12,8 +12,10 @@
             const graphical = graphical_field.checked ? "1" : "0";
             const pkg_field = document.getElementById("package_name");
             const pkg = pkg_field.value;
+            // in hidden field
             const group_field = document.getElementById("group");
             const group = group_field.value;
+            // in hidden field
             const repo_field = document.getElementById("repo");
             const regx = /^[^-]+-[^-]+-(.*$)/;
             const matches = repo_field.value.match(regx);
@@ -61,6 +63,7 @@
 
     <input type="text" id="package_name" name="rpm" value="{{ data.rpm_search }}">
     <input type="hidden" id="repo" name="repo" value="{{ data.repo }}">
+    <input type="hidden" id="group" name="group" value="{{ data.group }}">
 
     <button type="submit">Search</button>
 </form>

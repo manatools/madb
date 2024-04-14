@@ -550,7 +550,7 @@ def create_app():
         release = request.args.get("distribution", None)
         arch = request.args.get("architecture", None)
         req_group = request.args.get("group", None)
-        graphical = request.args.get("graphical", None)
+        graphical = request.args.get("graphical", "0")
         nav_data = navbar(lang=request.accept_languages.best)
         if not release:
             release = next(iter(config.DISTRIBUTION.keys()))
@@ -569,8 +569,9 @@ def create_app():
                 "topic": f"Subgroups of {req_group}" if req_group else "Main groups",
                 "req_group": req_group,
                 "groups": sorted(set([ match[level] for match in matches])),
-                "url_end": f"?distribution={release}&architecture={arch}&graphical=0",
+                "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}",
                 "base_url": "/group",
+                "group": req_group,
                 "nav_html": nav_data["html"],
                 "nav_css": nav_data["css"],
             }
@@ -585,8 +586,9 @@ def create_app():
             "title": "By group",
             "topic": f"Group: {req_group}",
             "rpms": rpms_list,
-            "url_end": f"?distribution={release}&architecture={arch}&graphical=0",
+            "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}",
             "base_url": "/group",
+            "group": req_group,
             "nav_html": nav_data["html"],
             "nav_css": nav_data["css"],
         }
