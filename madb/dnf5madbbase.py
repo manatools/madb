@@ -71,7 +71,7 @@ class Dnf5MadbBase():
         """
         query = libdnf5.rpm.PackageQuery(self._base)
         query.filter_arch([self.arch, "noarch"])
-        if graphical:
+        if graphical and graphical == "1":
             query.filter_file(["/usr/share/applications/*.desktop"], GLOB)
         if repo:
             query.filter_repo_id([repo])
