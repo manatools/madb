@@ -229,7 +229,7 @@ def create_app():
                 key=lambda item: item["severity_weight"],
                 reverse=True,
             )
-        nav_data = navbar()
+        nav_data = navbar(lang=request.accept_languages.best)
         data = {
             "bugs": data_bugs,
             "releases": releases,
@@ -247,7 +247,7 @@ def create_app():
         column_full = [("columnlist", column)]
         column_short = [("columnlist", "bug_id")]
         params = {}
-        nav_data = navbar()
+        nav_data = navbar(lang=request.accept_languages.best)
         params_base = status_open + [
             ("human", "1"),
             ("priority", "release_blocker"),
@@ -309,7 +309,7 @@ def create_app():
         urls = {}
         counts = {}
         params = {}
-        nav_data = navbar()
+        nav_data = navbar(lang=request.accept_languages.best)
         created, status_open, closed, column, param_csv = format_bugs()
         column_full = [("columnlist", column)]
         column_short = [("columnlist", "bug_id")]
@@ -362,7 +362,7 @@ def create_app():
         The <strong>bug watcher</strong> (QA contact field in bugzilla) is someone who commits to update the <strong>bug status comment</strong>
         regularly and tries to get a status from the packagers involved and remind them about the bug if needed.
         <strong>Anyone</strong> can be bug watcher."""
-        nav_data = navbar()
+        nav_data = navbar(lang=request.accept_languages.best)
         data = {
             "urls": urls,
             "counts": counts,
@@ -384,7 +384,7 @@ def create_app():
         srpms =  [x + "*" for x in report.get_srpms()]
         releases = report.get_releases()
         data = {}
-        nav_data = navbar()
+        nav_data = navbar(lang=request.accept_languages.best)
         for release in releases:
             if "release" not in data.keys():
                 data[release] = {}
@@ -459,7 +459,7 @@ def create_app():
     (QA contact field in bugzilla) is someone who commits to update the <strong>bug status comment</strong>
     regularly and tries to get a status from the packagers involved and remind them about the bug if needed.
     <strong>Anyone</strong> can be bug watcher."""
-        nav_data = navbar()
+        nav_data = navbar(lang=request.accept_languages.best)
         data = {
             "urls": urls,
             "counts": counts,
@@ -531,7 +531,7 @@ def create_app():
         title = "About Mageia tools"
         comments = """This page lists all bug reports that have been assigned to Mageia tools maintainers.
         """
-        nav_data = navbar()
+        nav_data = navbar(lang=request.accept_languages.best)
         data = {
             "urls": urls,
             "counts": counts,
@@ -550,7 +550,8 @@ def create_app():
         release = request.args.get("distribution", None)
         arch = request.args.get("architecture", None)
         req_group = request.args.get("group", None)
-        nav_data = navbar()
+        graphical = request.args.get("graphical", None)
+        nav_data = navbar(lang=request.accept_languages.best)
         if not release:
             release = next(iter(config.DISTRIBUTION.keys()))
             arch = next(iter(config.ARCHES.keys()))
@@ -576,7 +577,7 @@ def create_app():
             return render_template("group.html", data=data)
 
         distro = Dnf5MadbBase(release, arch, config.DATA_PATH)
-        rpms_list = distro.search_in_group(req_group)
+        rpms_list = distro.search_in_group(req_group, graphical=graphical)
         if not rpms_list:
             rpms_list = {}
         data = {
@@ -601,7 +602,7 @@ def create_app():
         dnf_pkgs = distro.search_name([package], graphical=(graphical == "1"))
         rpms = []
         last = None
-        nav_data = navbar()
+        nav_data = navbar(lang=request.accept_languages.best)
         for dnf_pkg in dnf_pkgs:
             rpms.append(
                 {
@@ -653,7 +654,7 @@ def create_app():
         graphical = request.args.get("graphical", "1")
         package = request.args.get("rpm", "")
         repo = request.args.get("repo", "")
-        nav_data = navbar()
+        nav_data = navbar(lang=request.accept_languages.best)
         if package == "" or repo == "":
             data = {
                 "title": "Not found",
