@@ -36,17 +36,15 @@ def create_app():
     data_config["arches"] = config.ARCHES
     data_config["distribution"] = config.DISTRIBUTION
 
-    def navbar():
-        nav_html = load_content_or_cache("https://nav.mageia.org/html/?b=madb_mageia_org&w=1")
+    def navbar(lang=None):
+        nav_html = load_content_or_cache("https://nav.mageia.org/html/?b=madb_mageia_org&w=1" + (f"&l={lang}" if lang is not None else ""))
         nav_css = load_content_or_cache("http://nav.mageia.org/css/")
         data = {"html": nav_html, "css": nav_css}
         return data
 
-    nav_data = navbar()
-
     @app.route("/")
     @app.route("/home")
-    def home():
+    def home():        
         release = request.args.get("distribution", None)
         arch = request.args.get("architecture", None)
         graphical = request.args.get("graphical", "1")
@@ -62,6 +60,7 @@ def create_app():
         if not last_backports:
             last_backports = {}
         groups1 = sorted(set([x[0] for x in groups()]))
+        nav_data = navbar(lang=request.accept_languages.best)
         data = {
             "groups": groups1,
             "config": data_config,
@@ -248,6 +247,7 @@ def create_app():
         column_full = [("columnlist", column)]
         column_short = [("columnlist", "bug_id")]
         params = {}
+        nav_data = navbar()
         params_base = status_open + [
             ("human", "1"),
             ("priority", "release_blocker"),
@@ -290,7 +290,7 @@ def create_app():
         (QA contact field in bugzilla) is someone who commits to update the <strong>bug status comment</strong>
         regularly and tries to get a status from the packagers involved and remind them about the bug if needed.
         <strong>Anyone</strong> can be bug watcher."""
-        nav_data = navbar()
+        nav_data = navbar(lang=request.accept_languages.best)
         data = {
             "urls": urls,
             "counts": counts,
@@ -309,6 +309,7 @@ def create_app():
         urls = {}
         counts = {}
         params = {}
+        nav_data = navbar()
         created, status_open, closed, column, param_csv = format_bugs()
         column_full = [("columnlist", column)]
         column_short = [("columnlist", "bug_id")]
@@ -383,6 +384,7 @@ def create_app():
         srpms =  [x + "*" for x in report.get_srpms()]
         releases = report.get_releases()
         data = {}
+        nav_data = navbar()
         for release in releases:
             if "release" not in data.keys():
                 data[release] = {}
@@ -548,6 +550,7 @@ def create_app():
         release = request.args.get("distribution", None)
         arch = request.args.get("architecture", None)
         req_group = request.args.get("group", None)
+        nav_data = navbar()
         if not release:
             release = next(iter(config.DISTRIBUTION.keys()))
             arch = next(iter(config.ARCHES.keys()))
@@ -598,6 +601,7 @@ def create_app():
         dnf_pkgs = distro.search_name([package], graphical=(graphical == "1"))
         rpms = []
         last = None
+        nav_data = navbar()
         for dnf_pkg in dnf_pkgs:
             rpms.append(
                 {
@@ -627,6 +631,8 @@ def create_app():
                 "base_url": "/home",
                 "rpm_search": "",
                 "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}",
+                "nav_html": nav_data["html"],
+                "nav_css": nav_data["css"],
             }
             return render_template("notfound.html", data=data)
         data = {
@@ -647,6 +653,7 @@ def create_app():
         graphical = request.args.get("graphical", "1")
         package = request.args.get("rpm", "")
         repo = request.args.get("repo", "")
+        nav_data = navbar()
         if package == "" or repo == "":
             data = {
                 "title": "Not found",
@@ -720,6 +727,8 @@ def create_app():
                 "base_url": "/home",
                 "rpm_search": "",
                 "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}",
+                "nav_html": nav_data["html"],
+                "nav_css": nav_data["css"],
             }
             return render_template("notfound.html", data=data)
         data = {
