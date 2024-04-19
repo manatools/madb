@@ -44,7 +44,7 @@ There is no update with status {{ status }} for release {{ release }}<br />
   <tr class='{{ entry["class"] }}'>
     <td>{{ entry.component }}</td>
     <td><a href='https://bugs.mageia.org/show_bug.cgi?id={{entry.bug_id}}'>{{entry.bug_id}}</a></td>
-    <td style="text-align:left;" title='{{ entry["cf_rpmpkg"]}}'>{{ entry.short_desc }}</td>
+    <td style="text-align:left;" title='{{ entry["cf_rpmpkg"]}}'><a href='https://bugs.mageia.org/show_bug.cgi?id={{entry.bug_id}}'>{{ entry.short_desc }}</a></td>
     <td>{{ entry.OK_32 }}</td>
     <td>{{ entry.OK_64 }}</td>
     <td>{{ "Yes" if 'has_procedure' in entry.keywords else "&nbsp;" |safe}}</td>
