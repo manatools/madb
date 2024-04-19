@@ -15,6 +15,15 @@
         .showContent { display: block; }
         .revealIcon { cursor: pointer; margin-left: 5px; font-size: 1.5em; vertical-align: middle; }
     </style>
+    <script>
+        (function () {
+            window.onpageshow = function(event) {
+                if (event.persisted) {
+                    window.location.reload();
+                }
+            };
+        })();
+    </script>
 </head>
 
 <body>
