@@ -2459,7 +2459,6 @@ div.pager-bottom {
 }
 
 #footer {
-    position: absolute;
     margin-top: -30px;
     height: 30px;
     clear: both;
