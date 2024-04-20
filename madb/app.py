@@ -378,6 +378,7 @@ def create_app():
 
     @app.route("/rpmsforqa/<bug_number>")
     def rpmsforqa(bug_number):
+        raw = request.args.get("raw", 0)
         report = BugReport()
         # load data
         report.from_number(bug_number)
@@ -407,7 +408,11 @@ def create_app():
         data["config"] = data_config
         data["releases"] = releases 
         data["title"] = "Packages for bug report {num}".format(num=bug_number)
-        return render_template("rpms_for_qa.html", data=data)
+        data["number"] = bug_number
+        if raw:
+            return render_template("rpms_for_qa_raw.html", data=data)
+        else:
+            return render_template("rpms_for_qa.html", data=data)
 
     @app.route("/highpriority/")
     def highpriority():

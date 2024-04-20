@@ -1,33 +1,24 @@
-{% extends 'layout.html' %}
-
-{% block container %}
-<div class="pagename">
-    <p>{{ data.title }}</p>
-</div>
-<p>{{ data.comments|safe }}
-
-</p>
-<a href="/rpmsforqa/{{ data.number }}?raw=1">Raw format</a>
-<br />
 {% for release in data.releases %}
-  <h2>Release {{ release }}</h2>
-    {% for src_arch in data[release].keys() %}
+  <p>Release {{ release }}</p>
+  {% for src_arch in data[release].keys() %}
     {% if loop.index == 1 %}
     <br />
-    <h3>Source RPMS</h3>
+    <p>Source RPMS</p>
+    <p>-----------</p>
     {% for rpm in data[release][src_arch]["srpms"] %}
       {{ rpm.get_name() + "-" +rpm.get_evr() }}<br />
     {% endfor %}
     {% endif %}
     <br />
-    <h3>Binaries RPMS in {{ src_arch }} </h3>
+    <p>Binaries RPMS in {{ src_arch }} </p>
+    <p>---------------------------------</p>
     {% for repo in data[release][src_arch]["binaries"].keys() %}
       <br />
-      <h4>Repository: {{ repo }}</h4>
+      <p>Repository: {{ repo }}</p>
+      <p>---------------------------------</p>
       {% for rpm in data[release][src_arch]["binaries"][repo] %}
         {{ rpm }}<br />
       {% endfor %}
     {% endfor %}
   {% endfor %}
 {% endfor %}
-{% endblock %}
