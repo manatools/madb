@@ -393,10 +393,17 @@ def create_app():
                 data[release][src_arch] = {}
                 distro[src_arch] = Dnf5MadbBase(release, src_arch, config.DATA_PATH)
                 data[release][src_arch]["srpms"] = distro[src_arch].search_name(srpms, repo=f"{release}-SRPMS-*testing*")
-                data[release][src_arch]["binaries"] = distro[src_arch].search_by_sources(
+                # Get all binaries rpms having the source in the provided list
+                binaries = distro[src_arch].search_by_sources(
                     [x.get_name() + "*" for x in data[release][src_arch]["srpms"]],
                     repo=f"{release}-*testing*"
                     )
+                # order binaries by repo
+                data[release][src_arch]["binaries"] = {}
+                for repo in set([x.get_repo_id() for x in binaries]):
+                    data[release][src_arch]["binaries"][repo] = []
+                for binary in binaries:
+                    data[release][src_arch]["binaries"][binary.get_repo_id()].append(binary.get_nevra())
         data["config"] = data_config
         data["releases"] = releases 
         data["title"] = "Packages for bug report {num}".format(num=bug_number)
