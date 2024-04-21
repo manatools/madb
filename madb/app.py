@@ -2,7 +2,9 @@
 from madb.helper import groups
 from madb.helper import BugReport
 from madb.helper import load_content_or_cache, clean_cache
-from flask import Flask, render_template, request
+#from madb.cerisier import RpmGraph
+from flask import Flask, render_template, request, Response
+from flask.helpers import send_file
 import requests
 from csv import DictReader
 from datetime import datetime, timedelta, date
@@ -410,7 +412,11 @@ def create_app():
         data["title"] = "Packages for bug report {num}".format(num=bug_number)
         data["number"] = bug_number
         if raw:
-            return render_template("rpms_for_qa_raw.html", data=data)
+            text_file = render_template("rpms_for_qa_raw.html", data=data)
+            return Response(text_file,
+                    mimetype='text/plain',
+                    headers={'Content-disposition': f'attachment; filename=r{bug_number}.txt'})
+
         else:
             return render_template("rpms_for_qa.html", data=data)
 
@@ -831,6 +837,10 @@ def create_app():
             data_bugs[bug["Bug ID"]] = entry
         return data_bugs, counts, assignees
 
+    @app.route("/graph/<pkg>")
+    def graph(pkg):
+        graph = RpmGraph("9", "x86_64")
+        return graph.run(pkg)
     if __name__ == "__main__":
         app.run(host="0.0.0.0")
 

@@ -1,24 +1,18 @@
-{% for release in data.releases %}
-  <p>Release {{ release }}</p>
-  {% for src_arch in data[release].keys() %}
-    {% if loop.index == 1 %}
-    <br />
-    <p>Source RPMS</p>
-    <p>-----------</p>
-    {% for rpm in data[release][src_arch]["srpms"] %}
-      {{ rpm.get_name() + "-" +rpm.get_evr() }}<br />
+{% for release in data.releases %}Release {{ release }}
+{% for src_arch in data[release].keys() %}
+{% if loop.index == 1 %}
+Source RPMS
+-----------
+    {% for rpm in data[release][src_arch]["srpms"] %}{{ rpm.get_name() + "-" +rpm.get_evr() }}
     {% endfor %}
     {% endif %}
-    <br />
-    <p>Binaries RPMS in {{ src_arch }} </p>
-    <p>---------------------------------</p>
+Binaries RPMS in {{ src_arch }} 
+---------------------------
     {% for repo in data[release][src_arch]["binaries"].keys() %}
-      <br />
-      <p>Repository: {{ repo }}</p>
-      <p>---------------------------------</p>
-      {% for rpm in data[release][src_arch]["binaries"][repo] %}
-        {{ rpm }}<br />
-      {% endfor %}
+Repository: {{ repo }}
+---------------------------------------
+    {% for rpm in data[release][src_arch]["binaries"][repo] %}{{ rpm }}
     {% endfor %}
-  {% endfor %}
+{% endfor %}
+{% endfor %}
 {% endfor %}
