@@ -39,7 +39,7 @@
         </tr>
     </thead>
     <tbody>
-        {% for bug in assignee.bugs %}
+        {% for bug in assignee.bugs |sort() %}
         <tr>
             <td><a href='https://bugs.mageia.org/show_bug.cgi?id={{ data.bugs[bug]["Bug ID"] }}'>{{ bug }}</a>
             </td>
