@@ -81,10 +81,10 @@ class Dnf5MadbBase():
         query = libdnf5.rpm.PackageQuery(self._base)
         query.filter_arch([self.arch, "noarch"])
         if backports:
-            query.filter_repo_id(["*backports*"], GLOB)
+            query.filter_repo_id(["*backports"], GLOB)
         else:
             query.filter_repo_id(["*updates"], GLOB)
-        query.filter_recent(int((datetime.now() - timedelta(days=7)).timestamp()))
+            query.filter_recent(int((datetime.now() - timedelta(days=7)).timestamp()))
         return query
 
     def search_by_sources(self, values, repo=None):
