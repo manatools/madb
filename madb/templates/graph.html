@@ -1,0 +1,9 @@
+{% extends 'layout.html' %}
+{% block container %}
+<div class="pagename">
+    <p>{{ data.title }}</p>
+</div>
+<p>{{ data.comments|safe }}
+{{ div | safe }} 
+{{ script | safe }} 
+{% endblock %}

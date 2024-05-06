@@ -2,9 +2,9 @@
 from madb.helper import groups
 from madb.helper import BugReport
 from madb.helper import load_content_or_cache, clean_cache
-#from madb.cerisier import RpmGraph
+from madb.cerisier import RpmGraph
 from flask import Flask, render_template, request, Response
-from flask.helpers import send_file
+from bokeh.embed import components
 import requests
 from csv import DictReader
 from datetime import datetime, timedelta, date
@@ -839,9 +839,27 @@ def create_app():
 
     @app.route("/graph/<pkg>")
     def graph(pkg):
+        nav_data = navbar(lang=request.accept_languages.best)
+        data = {
+            "nav_html": nav_data["html"],
+            "nav_css": nav_data["css"],
+            "config": data_config,
+        }
         graph = RpmGraph("9", "x86_64")
-        return graph.run(pkg)
-    if __name__ == "__main__":
-        app.run(host="0.0.0.0")
+            
+        # Get Chart Components 
+        script, div = components(graph.run(pkg)) 
+        print(div)
+    
+        # Return the components to the HTML template 
+        return render_template( 
+            template_name_or_list='graph.html', 
+            script=script, 
+            div=div,
+            data=data
+        ) 
 
     return app
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0")

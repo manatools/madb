@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Create and draw an interactive representation of packages dependencies.
@@ -17,100 +16,173 @@ from bokeh.plotting import figure, from_networkx, curdoc
 from bokeh.models import Rect, HoverTool, LabelSet, CustomJSTransform, TextInput, Slider, MultiLine, Div, Button
 from bokeh.transform import transform
 from bokeh.layouts import column, row
-
+from bokeh.resources import CDN
+import madb.config as config
 
 class RpmGraph():
     def __init__(self, release, arch):
         self.base = Dnf5MadbBase(release, arch, config.DATA_PATH)
 
-    def run(self):
-        global field
+    def run(self, current_rpm):
+        self.current_rpm = current_rpm
         self.level = 2
         self.hist = []
-        self.current_rpm = "workrave"
+        plot = self.render(self.current_rpm)
         self.field = TextInput(value=self.current_rpm, title="Select package: ")
-        self.level_slider = Slider(start=1, end=5, step=1, value=level, title="Deepth")
-        self.back_bt = Button(label="Back")
+        self.level_slider = Slider(start=1, end=5, step=1, value=self.level, title="Deepth")
+        back_bt = Button(label="Back")
+        self.field.on_change('value', self.update)
+        self.level_slider.on_change('value', self.update_level)
+        back_bt.on_click(self.back)
 
-    def add_requires(ref, deepth, G):
+        # put the field, slider, button and plot in a layout and add to the document
+        self.layout = column(row(self.field, self.level_slider, back_bt), plot)
+        self.layout.sizing_mode ="scale_width"
+        curdoc().add_root(self.layout)
+        return plot
+
+    def add_requires(self, ref, deepth):
         '''
         Add all kind of dependencies
         '''
-        global sack
-        process = [(ref.requires,"blue"),(ref.recommends,"green"),(ref.suggests,"orange"),(ref.supplements, "braun")]
-        for query, link_color in process:
+        deps = []
+        process = [(ref.get_requires(),"blue"),
+                   (ref.get_recommends(),"green"),
+                   (ref.get_suggests(),"orange"),
+                   (ref.get_supplements(), "braun")
+                ]
+        for l, link_color in process:
             previous = ""
+            if l is None:
+                print(f"{link_color} is void")
+                continue
             i = 1
-            for req in list(query):
-                # req is a _hawkey.Reldep object
-                i += 1
-                f = sack.query().filter(provides=req).latest()
-                p_name = ""
-                r = 1
-                for p in list(f):
-                    r += 1
-                    if (p.name == p_name) :
+            p_name = ""
+            for req in l:
+                query = self.base.provides_requires(req)
+                for p in list(query):
+                    if not p.get_name() in deps:
+                        deps.append(p.get_name())
+                    # p is a libdnf5.rpm.Package object
+                    i += 1
+                    if (p.get_name() == p_name) :
                         continue
-                    p_name = p.name
-                    if p.name in G.nodes() :
-                        attrs = get_node_attributes(G, 'req')
-                        attrs[p.name] = f"{attrs[p.name]} {str(req)}/{ref.name}"
-                        set_node_attributes(G,attrs,'req')
+                    p_name = p.get_name()
+                    if p_name in self.G.nodes() :
+                    # il faut avoir le lien de dépendance, perdu par la relation provides_requires
+                        attrs = get_node_attributes(self.G, 'req')
+                        attrs[p_name] = f"{attrs[p_name]} {str(req)}/{ref.get_name()}"
+                        set_node_attributes(self.G,attrs,'req')
                     else:
-                        G.add_node(p.name,
-                            name=p.name,
-                                version=p.evr,
-                                width=(len(p.name) * 0.018 + 0.05 ),
-                                offset= -len(p.name) * 2.5 - 6,
+                        self.G.add_node(p_name,
+                                name=p_name,
+                                version=p.get_evr(),
+                                width=(len(p_name) * 0.018 + 0.05 ),
+                                offset= -len(p_name) * 2.5 - 6,
                                 color= ' cornsilk',
-                                req= f"{str(req)}/{ref.name}" )
-                    G.add_edge(ref.name,p.name,
-                            name=ref.name,
-                                version= ref.version,
+                                req= f"{str(req)}/{ref.get_name()}",
+                            )
+                    self.G.add_edge(ref.get_name(), p_name,
+                                name=ref.get_name(),
+                                version= ref.get_version(),
                                 req=str(req) ,
                                 color=link_color)
-                    if p.name != previous:
+                    if p_name != previous:
                         if deepth <= self.level - 2:
-                            add_requires(p, deepth + 1, G)
-                    previous = p.name
+                            self.add_requires(p, deepth + 1)
+                    previous = p_name
 
-    def graphe(name, G):
-        global sack
-        i = sack.query().filter(name=name)
+
+
+    def add_parents(self, ref, deepth):
+        '''
+        Add all kind of parent dependencies
+        '''
+        deps = []
+        process = [("requires","blue"),
+                   ("recommends","green"),
+                   ("suggests","orange"),
+                   ("supplements", "braun")
+                ]
+        for link_type, link_color in process:
+            previous = ""
+            l = self.base.search(link_type, [ref])
+            if l is None:
+                print(f"{link_color} is void")
+                continue
+            i = 1
+            p_name = ""
+            for p in l:
+                #query = self.base.provides_requires(req)
+                #for p in list(query):
+                    if not p.get_name() in deps:
+                        deps.append(p.get_name())
+                    # p is a libdnf5.rpm.Package object
+                    i += 1
+                    if (p.get_name() == p_name) :
+                        continue
+                    p_name = p.get_name()
+                    if p_name in self.G.nodes() :
+                        attrs = get_node_attributes(self.G, 'req')
+                        attrs[p_name] = f"{attrs[p_name]} {str(req)}/{ref.get_name()}"
+                        set_node_attributes(self.G,attrs,'req')
+                    else:
+                        self.G.add_node(p_name,
+                                name=p_name,
+                                version=p.get_evr(),
+                                width=(len(p_name) * 0.018 + 0.05 ),
+                                offset= -len(p_name) * 2.5 - 6,
+                                color= ' cornsilk',
+                                req= f"{str(req)}/{ref.get_name()}",
+                            )
+                    self.G.add_edge(ref.get_name(), p_name,
+                                name=ref.get_name(),
+                                version= ref.get_version(),
+                                req=str(req) ,
+                                color=link_color)
+                    if p_name != previous:
+                        if deepth <= self.level - 2:
+                            self.add_requires(p, deepth + 1)
+                    previous = p_name
+
+    def graphe(self, name, descending=True):
+        i = self.base.search_name([name])
         packages = list(i)
         for pkg in packages:
-            G.add_node(pkg.name, name=pkg.name,
-                                version=pkg.version,
-                                width=(len(pkg.name) * 0.018 + 0.05 ),
-                                offset=- len(pkg.name) * 2.5 - 6,
+            self.G.add_node(pkg.get_name(), name=pkg.get_name(),
+                                version=pkg.get_version(),
+                                width=(len(pkg.get_name()) * 0.018 + 0.05 ),
+                                offset=- len(pkg.get_name()) * 2.5 - 6,
                                 color= ' red',
                                 req="")
-            add_requires(pkg, 0, G)
+            if descending:
+                self.add_requires(pkg, 0)
+            else:
+                self.add_parents(pkg, 0)
         if len(packages) == 0:
             print("Found nothing") 
-        return (G.number_of_nodes(), G.number_of_edges())
+        return (self.G.number_of_nodes(), self.G.number_of_edges())
 
 
-    def update_level(attr, old, new):
+    def update_level(self, attr, old, new):
         # triggerred when level slider is updated
         self.level = int(new)
-        update(attr, self.current_rpm, self.current_rpm)
+        self.update(attr, self.current_rpm, self.current_rpm)
 
-    def update(attr, old, new):
+    def update(self, attr, old, new):
         # triggered when field value is changed or called when level is changed
         print(f"Selected {new}")
-        newplot = render(new)
-        layout.children[1] = newplot
+        newplot = self.render(new)
+        self.layout.children[1] = newplot
 
-    def render(pkg):
-        global hover
+    def render(self, pkg):
         self.current_rpm = pkg
         self.hist.append([pkg, self.level])
-        newG = Graph()
-        nrn, nre = graphe(pkg, newG)
+        self.G = Graph()
+        nrn, nre = self.graphe(pkg)
         if nrn == 0:
             return Div(text="This package is unknown")
-        newgraph = from_networkx(newG, spring_layout, scale=2, center=(0,0))
+        newgraph = from_networkx(self.G, spring_layout, scale=2, center=(0,0))
         newplot = figure(title="RPM network", sizing_mode ="scale_width", aspect_ratio=2, x_range=(-2.2, 2.2), y_range=(-2.1, 2.1),
                 tools="tap", toolbar_location=None)
         newplot.axis.visible = False
@@ -120,9 +192,9 @@ class RpmGraph():
             newgraph.edge_renderer.glyph = MultiLine(line_color="color", line_alpha=0.8)
         newplot.renderers.append(newgraph)
         self.source = newgraph.node_renderer.data_source
-        xcoord = CustomJSTransform(v_func=code % "0", args=dict(provider=newgraph.layout_provider))
-        ycoord = CustomJSTransform(v_func=code % "1", args=dict(provider=newgraph.layout_provider))
-        self.source.selected.on_change('indices', selected)
+        xcoord = CustomJSTransform(v_func=self.code % "0", args=dict(provider=newgraph.layout_provider))
+        ycoord = CustomJSTransform(v_func=self.code % "1", args=dict(provider=newgraph.layout_provider))
+        self.source.selected.on_change('indices', self.selected)
         labels = LabelSet(x=transform('index', xcoord),
                     y=transform('index', ycoord),
                     text='name', text_font_size="12px",
@@ -130,11 +202,11 @@ class RpmGraph():
                     background_fill_color='color', background_fill_alpha=0.85,
                     border_line_color='color', border_line_alpha=1.0,
                     source=self.source, render_mode='canvas')
-        newplot.add_tools(hover)
+        newplot.add_tools(self.hover)
         newplot.add_layout(labels)
         return newplot
 
-    def selected(attr, old, new):
+    def selected(self, attr, old, new):
         # triggered when package tag is clicked
         pkg = self.source.data['name'][new[0]]
         self.field.value = pkg
@@ -149,7 +221,7 @@ class RpmGraph():
             if new_level != self.level :
                 self.level = new_level
                 # trigger rendering
-                level_slider.value = self.level
+                self.level_slider.value = self.level
             if pkg != self.current_rpm :
                 # trigger rendering
                 self.field.value = pkg
@@ -169,12 +241,3 @@ class RpmGraph():
             ('link through/by','@req')
             ]
 
-    plot = render(current_rpm)
-    field.on_change('value', update)
-    level_slider.on_change('value', update_level)
-    back_bt.on_click(back)
-
-    # put the field, slider, button and plot in a layout and add to the document
-    layout = column(row(field, level_slider,back_bt), plot)
-    layout.sizing_mode ="scale_width"
-    curdoc().add_root(layout)

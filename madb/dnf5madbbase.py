@@ -64,7 +64,7 @@ class Dnf5MadbBase():
         return query
 
     def search_in_group(self, value, graphical=False, repo=None):
-        """Search in a list of package in a group.
+        """Search a list of package in a group.
 
         :param values: the values to match
         :return: a list of package objects
@@ -81,7 +81,7 @@ class Dnf5MadbBase():
         query = libdnf5.rpm.PackageQuery(self._base)
         query.filter_arch([self.arch, "noarch"])
         if backports:
-            query.filter_repo_id(["*backports"], GLOB)
+            query.filter_repo_id(["*backports*"], GLOB)
         else:
             query.filter_repo_id(["*updates"], GLOB)
         query.filter_recent(int((datetime.now() - timedelta(days=7)).timestamp()))
@@ -101,6 +101,29 @@ class Dnf5MadbBase():
         query.filter_arch([self.arch, "noarch"])
         query.filter_repo_id([self.release + "*"], GLOB)
         query.filter_provides(rpm_list)
+        return query
+
+    def search_provides(self, rpm_list):
+        query = libdnf5.rpm.PackageQuery(self._base)
+        query.filter_arch([self.arch, "noarch"])
+        query.filter_repo_id([self.release + "*"], GLOB)
+        query.filter_provides(rpm_list)
+        return query
+
+    def search(self, search_type, rpm_list):
+        query = libdnf5.rpm.PackageQuery(self._base)
+        query.filter_arch([self.arch, "noarch"])
+        query.filter_repo_id([self.release + "*"], GLOB)
+        if search_type == "requires":
+            query.filter_requires(rpm_list)
+        elif search_type == "recommends":
+            query.filter_recommends(rpm_list)
+        elif search_type == "suggests":
+            query.filter_suggests(rpm_list)
+        elif search_type == "supplements":
+            query.filter_supplements(rpm_list)
+        elif search_type == "provides":
+            query.filter_provides(rpm_list)
         return query
 
 
