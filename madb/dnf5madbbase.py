@@ -77,13 +77,19 @@ class Dnf5MadbBase():
             query.filter_repo_id([repo])
         return [rpm for rpm in query if rpm.get_group().startswith(value)]
 
-    def search_updates(self, backports=False):
+    def search_updates(self, backports=False, last=False, testing=True, graphical=False):
         query = libdnf5.rpm.PackageQuery(self._base)
         query.filter_arch([self.arch, "noarch"])
         if backports:
-            query.filter_repo_id(["*backports"], GLOB)
+            repo = "*backports"
         else:
-            query.filter_repo_id(["*updates"], GLOB)
+            repo = "*updates"
+        if testing:
+            repo += "_testing"
+        query.filter_repo_id([repo], GLOB)
+        if graphical:
+            query.filter_file(["/usr/share/applications/*.desktop"], GLOB)
+        if last:
             query.filter_recent(int((datetime.now() - timedelta(days=7)).timestamp()))
         return query
 

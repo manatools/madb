@@ -1,0 +1,48 @@
+{% extends 'layout.html' %}
+{% block container %}
+<div class="pagename">
+    <p>{{ data.title }}</p>
+</div>
+<p>
+{% include 'search.html' %}
+<div id="sfcontent">
+    <div class="pager">
+    {{ data.links |safe}}
+    </div>
+
+
+<table class="packlist">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Summary</th>
+      <th>Version</th>
+      <th>Release</th>
+      <th>Build date</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for rpm in data.rpms %}
+    <tr class="{{ 'rpm-odd' if loop.index % 2 else 'rpm-even'}}">
+      <td><a href="">{{ rpm }}</a></td>
+      <td class='summary'>{{ rpm.get_summary() }}</td>
+      <td><a href="/rpmshow">{{ rpm.get_version() }}</a></td>
+      <td>{{ rpm.get_release() }}</td>
+      <td>{{ rpm.get_build_time()|format_date }} </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+
+
+
+<div class="pager pager-bottom">
+    <div id="pagercount">
+        {{ data.counts }}<br>
+    </div>
+    {{ data.links |safe}}
+</div>
+</div>
+
+{% endblock %}

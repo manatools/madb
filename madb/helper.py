@@ -5,6 +5,7 @@ import requests
 import hashlib
 import os
 import time
+from itertools import chain
 
 def groups():
     """
@@ -117,3 +118,88 @@ class BugReport():
 
     def get_releases(self):
         return self.data["releases"]
+
+class Pagination():
+    def __init__(self, data, page_size=0, pages_number=0, byweek=False):
+        """
+        Pages number is starting from 1
+        Only one of page_size, pages_number or byweek has to be set
+        If byweek is True, data are truncated in pages by week of build time, from more recent to older
+        rpm index in data starts from 0
+        """
+        self.data = data
+        self.byweek = byweek
+        self.lentgh = len(data)
+        if pages_number != 0:
+            self.page_size = (self.lentgh - 1) // pages_number + 1
+            self.pages_max = pages_number
+        elif page_size != 0:
+            self.page_size = page_size
+            self.pages_max = (self.lentgh - 1) // page_size + 1
+        elif byweek:
+            self._w_start = []
+            self._w_end = []
+            self._weeks = []
+            now = int(time.time()) # in seconds
+            previous = now - 7 * 24 * 3600 # in seconds
+            i = 0
+            self._w_start.append(0)
+            first = True
+            for rpm in data:
+                bt = int(rpm.get_build_time())
+                if first:
+                    previous = bt - 7* 24 * 3600
+                    first = False
+                    self._weeks.append((now - bt) // (7* 24 * 3600))
+                elif bt < previous:
+                    previous = bt - 7* 24 * 3600
+                    self._w_end.append(i - 1)
+                    self._w_start.append(i)
+                    self._weeks.append((now - bt) // (7* 24 * 3600))
+                i += 1
+
+            self._w_end.append(i - 1)
+            older = min([rpm.get_build_time() for rpm in data])
+            self.pages_max = len(self._w_start)
+
+    def data_page(self, page):
+        if page >= 1 and page <= self.pages_max:
+            return self.data[self._start(page):self._end(page) + 1]
+    
+    def links(self, base, page):
+        pages_list =chain(range(1, 2) , \
+            range(10, page + 1, 10), \
+            range(max(2, page // 10 * 10 + 1), min((page //10) * 10 + 10, self.pages_max )), \
+            range((page + 10) // 10 * 10 , self.pages_max, 10), \
+            range(self.pages_max, self.pages_max + 1))
+        full_links = """
+    <div id="pagerbuttons">
+        <ul>
+        """
+        for p in pages_list:
+            if p == page:
+                full_links += f'<li class="current"><div title="{self._weeks[p-1]} weeks ago">{p}</div></li>'
+            else:
+                full_links += f'<li><a href="{base}&page={p}" title="{self._weeks[p-1]} weeks ago">{p}</a></li>'
+        full_links += """
+        </ul>
+    </div>
+            """
+        return full_links
+
+    def counts(self, page):
+        """
+        Indexes are given starting from 1 
+        """
+        return f"{self._start(page) + 1}-{self._end(page) + 1} of {self.lentgh}."
+
+    def _start(self, page):
+        if self.byweek:
+            return self._w_start[page - 1]
+        return (page-1)*self.page_size
+
+    def _end(self, page):
+        if self.byweek:
+            return self._w_end[page - 1]
+        return page * self.page_size if page < self.pages_max else self.lentgh
+

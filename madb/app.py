@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from madb.helper import groups
-from madb.helper import BugReport
+from madb.helper import BugReport, Pagination
 from madb.helper import load_content_or_cache, clean_cache
 from madb.cerisier import RpmGraph
 from flask import Flask, render_template, request, Response
@@ -55,10 +55,10 @@ def create_app():
             release = next(iter(config.DISTRIBUTION.keys()))
             arch = next(iter(config.ARCHES.keys()))
         distro = Dnf5MadbBase(release, arch, config.DATA_PATH)
-        last_updates = distro.search_updates()
+        last_updates = distro.search_updates(last=True)
         if not last_updates:
             last_updates = {}
-        last_backports = distro.search_updates(backports=True)
+        last_backports = distro.search_updates(backports=True, last=True)
         if not last_backports:
             last_backports = {}
         groups1 = sorted(set([x[0] for x in groups()]))
@@ -76,6 +76,44 @@ def create_app():
             "nav_css": nav_data["css"],
         }
         return render_template("home.html", data=data)
+
+    @app.route("/list")
+    def rpmlist():
+        release = request.args.get("distribution", None)
+        page = request.args.get("page", 1, type = int)
+        arch = request.args.get("architecture", None)
+        graphical = request.args.get("graphical", "0")
+        rpm = request.args.get("rpm", "")
+        type_list = request.args.get("type", "updates")
+        testing = "testing" in type_list
+        backports = "backports" in type_list
+        if backports:
+            title = "Backports"
+        else:
+            title = "Updates"
+        if testing:
+            title += " Candidates"
+        if not release:
+            release = str(config.TOP_RELEASE)
+            arch = next(iter(config.ARCHES.keys()))
+        distro = Dnf5MadbBase(release, arch, config.DATA_PATH)
+        rpms = distro.search_updates(backports=backports, testing=testing, graphical=(graphical == "1"))
+        rpms = sorted(rpms, key=lambda rpm: rpm.get_build_time(), reverse=True)
+
+        pager = Pagination(list(rpms), byweek=True)
+        nav_data = navbar(lang=request.accept_languages.best)
+        data = {
+            "title": title,
+            "rpms": pager.data_page(page),
+            "links": pager.links(f"/list?distribution={release}&architecture={arch}&graphical={graphical}&type={type_list}", page),
+            "counts": pager.counts(page),
+            "config": data_config,
+            "base_url": "/list",
+            "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}",     
+            "nav_html": nav_data["html"],
+            "nav_css": nav_data["css"],
+        }
+        return render_template("packages_list.html", data=data)
 
     @app.route("/updates/")
     def updates():
@@ -858,6 +896,10 @@ def create_app():
             div=div,
             data=data
         ) 
+
+    @app.template_filter()
+    def format_date(timestamp):
+        return datetime.fromtimestamp(timestamp).date()
 
     return app
 
