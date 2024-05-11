@@ -63,12 +63,16 @@ def create_app():
             last_backports = {}
         groups1 = sorted(set([x[0] for x in groups()]))
         nav_data = navbar(lang=request.accept_languages.best)
+        links = {}
+        links["updates"] = "/list?type=updates"
+        links["backports"] = "/list?type=backports"
         data = {
             "groups": groups1,
             "config": data_config,
             "title": "Home",
             "updates": last_updates,
             "backports": last_backports,
+            "links": links,
             "rpm_search": rpm,
             "url_end": f"?distribution={release}&architecture={arch}&graphical=0",
             "base_url": "/home",
@@ -92,7 +96,7 @@ def create_app():
         else:
             title = "Updates"
         if testing:
-            title += " Candidates"
+            title += " candidates"
         if not release:
             release = str(config.TOP_RELEASE)
             arch = next(iter(config.ARCHES.keys()))
