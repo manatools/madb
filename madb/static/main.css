@@ -81,7 +81,7 @@
 #cboxOverlay {
     background: #fff;
     opacity: 0.9;
-    filter: alpha(opacity=90)
+    filter: opacity(90%)
 }
 
 #colorbox {
@@ -290,8 +290,6 @@ a [class*=" icon-"] {
 .icon-border {
     border: solid 1px #eee;
     padding: 0.2em 0.25em 0.15em;
-    -webkit-border-radius: 3px;
-    -moz-border-radius: 3px;
     border-radius: 3px
 }
 
@@ -301,8 +299,6 @@ a [class*=" icon-"] {
 
 .icon-2x.icon-border {
     border-width: 2px;
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
     border-radius: 4px
 }
 
@@ -312,8 +308,6 @@ a [class*=" icon-"] {
 
 .icon-3x.icon-border {
     border-width: 3px;
-    -webkit-border-radius: 5px;
-    -moz-border-radius: 5px;
     border-radius: 5px
 }
 
@@ -323,8 +317,6 @@ a [class*=" icon-"] {
 
 .icon-4x.icon-border {
     border-width: 4px;
-    -webkit-border-radius: 6px;
-    -moz-border-radius: 6px;
     border-radius: 6px
 }
 
@@ -334,8 +326,6 @@ a [class*=" icon-"] {
 
 .icon-5x.icon-border {
     border-width: 5px;
-    -webkit-border-radius: 7px;
-    -moz-border-radius: 7px;
     border-radius: 7px
 }
 
@@ -517,16 +507,6 @@ a .icon-spin {
     }
 }
 
-@-o-keyframes spin {
-    0% {
-        -o-transform: rotate(0deg);
-    }
-
-    100% {
-        -o-transform: rotate(359deg);
-    }
-}
-
 @keyframes spin {
     0% {
         transform: rotate(0deg);
@@ -543,7 +523,6 @@ a .icon-spin {
     -ms-transform: rotate(90deg);
     -o-transform: rotate(90deg);
     transform: rotate(90deg);
-    filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1)
 }
 
 .icon-rotate-180:before {
@@ -552,7 +531,6 @@ a .icon-spin {
     -ms-transform: rotate(180deg);
     -o-transform: rotate(180deg);
     transform: rotate(180deg);
-    filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=2)
 }
 
 .icon-rotate-270:before {
@@ -561,7 +539,6 @@ a .icon-spin {
     -ms-transform: rotate(270deg);
     -o-transform: rotate(270deg);
     transform: rotate(270deg);
-    filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3)
 }
 
 .icon-flip-horizontal:before {
@@ -2053,7 +2030,7 @@ a .icon-flip-vertical:before {
     padding: 5px;
     font-size: 10px;
     opacity: 0.8;
-    filter: alpha(opacity=80);
+    filter: opacity(80%);
     background-repeat: no-repeat;
     background-image: url(../images/tipsy.gif)
 }
@@ -2067,8 +2044,6 @@ a .icon-flip-vertical:before {
 }
 
 .tipsy-inner {
-    -moz-border-radius: 3px;
-    -webkit-border-radius: 3px;
     -border-radius: 3px;
     border-radius: 3px;
 }
@@ -2140,7 +2115,7 @@ a:visited {
     background: -o-linear-gradient(top, #2383c2 0%, #1272b1 50%);
     background: -ms-linear-gradient(top, #2383c2 0%, #1272b1 50%);
     background: linear-gradient(to bottom, #2383c2 0%, #1272b1 50%);
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#2383c2', endColorstr='#1272b1', GradientType=0);
+    background-image: linear-gradient(to right, #2383c2, #1272b1);
     min-height: 47px;
     width: auto;
     min-height: 47px;
@@ -2409,7 +2384,6 @@ div.pager {
     margin-top: -25px;
     margin-bottom: 3px;
     text-align: center;
-    padding-bottom: -3px;
     height: 21px
 }
 
@@ -2734,12 +2708,10 @@ div#login_form {
     background: -o-linear-gradient(top, #1272b1 0%, #2383c2 100%);
     background: -ms-linear-gradient(top, #1272b1 0%, #2383c2 100%);
     background: linear-gradient(to bottom, #1272b1 0%, #2383c2 100%);
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#1272b1', endColorstr='#2383c2', GradientType=0);
-    -moz-box-shadow: 4px 4px 5px 0px #656565;
+    background-image: linear-gradient(to right,#1272b1,#2383c2);
     -webkit-box-shadow: 4px 4px 5px 0px #656565;
     -o-box-shadow: 4px 4px 5px 0px #656565;
     box-shadow: 4px 4px 5px 0px #656565;
-    filter: progid:DXImageTransform.Microsoft.Shadow(color=#656565, Direction=134, Strength=5);
     margin: 0 auto;
     margin-top: -7px;
     margin-top: 50px;
@@ -2857,11 +2829,9 @@ div.disabled_filter div.button span {
     position: absolute;
     z-index: 1200;
     font-size: 13px;
-    -moz-box-shadow: -2px 2px 4px 0px #656565;
     -webkit-box-shadow: -2px 2px 4px 0px #656565;
     -o-box-shadow: -2px 2px 4px 0px #656565;
     box-shadow: -2px 2px 4px 0px #656565;
-    filter: progid:DXImageTransform.Microsoft.Shadow(color=#656565, Direction=224, Strength=4)
 }
 
 .filterwidget div.widgetcontent1 input[type=text] {
@@ -2943,7 +2913,7 @@ div.disabled_filter div.button span {
     cursor: pointer;
     margin-right: 8px;
     float: right;
-    top: 4;
+    top: 4px;
     right: 0;
     color: #000;
     font-size: 11px
