@@ -25,8 +25,9 @@
             else { newrepo = ""}
     
             // Construit l'URL cible en combinant l'action du formulaire et la valeur sélectionnée
-            targetUrl = `${arch_field.getAttribute("data-base-url")}?distribution=${dist}&architecture=${arch}&graphical=${graphical}&group=${group}`;
+            targetUrl = `${arch_field.getAttribute("data-base-url")}?distribution=${dist}&architecture=${arch}&graphical=${graphical}`;
             targetUrl = targetUrl + ( pkg !== "" ? `&rpm=${pkg}` : "") + ( newrepo !== "" ? `&repo=${newrepo}` : "")
+            targetUrl = targetUrl + ( group !== "" ? `&group=${group}` : "")
 
             // Reload the page with the new query string
             window.location.href = targetUrl;
@@ -61,9 +62,9 @@
 
     <label for="package_name">Package: </label>
 
-    <input type="text" id="package_name" name="rpm" value="{{ data.rpm_search }}">
-    <input type="hidden" id="repo" name="repo" value="{{ data.repo }}">
-    <input type="hidden" id="group" name="group" value="{{ data.group }}">
+    <input type="text" id="package_name" name="rpm" value="{{ data.rpm_search if data.rpm_search is not none }}">
+    <input type="hidden" id="repo" name="repo" value="{{ data.repo if data.repo is not none }}">
+    <input type="hidden" id="group" name="group" value="{{ data.group if data.group is not none }}">
 
     <button type="submit">Search</button>
 </form>
