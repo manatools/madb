@@ -1,9 +1,10 @@
 {% extends 'layout.html' %}
 {% block container %}
+{% include 'search.html' %}
 <div class="pagename">
     <p>{{ data.title }}</p>
 </div>
 <p>{{ data.comments|safe }}
-{{ div | safe }} 
+{{ content | safe }} 
 {{ script | safe }} 
 {% endblock %}

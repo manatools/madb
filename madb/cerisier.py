@@ -20,12 +20,13 @@ from bokeh.resources import CDN
 import madb.config as config
 
 class RpmGraph():
-    def __init__(self, release, arch):
+    def __init__(self, release, arch, level, descending):
         self.base = Dnf5MadbBase(release, arch, config.DATA_PATH)
+        self.level = level
+        self.descending = bool(descending)
 
     def run(self, current_rpm):
         self.current_rpm = current_rpm
-        self.level = 2
         self.hist = []
         plot = self.render(self.current_rpm)
         self.field = TextInput(value=self.current_rpm, title="Select package: ")
@@ -106,7 +107,7 @@ class RpmGraph():
                 ]
         for link_type, link_color in process:
             previous = ""
-            l = self.base.search(link_type, [ref])
+            l = self.base.search(link_type, [ref.get_name(),])
             if l is None:
                 print(f"{link_color} is void")
                 continue
@@ -123,9 +124,10 @@ class RpmGraph():
                         continue
                     p_name = p.get_name()
                     if p_name in self.G.nodes() :
-                        attrs = get_node_attributes(self.G, 'req')
-                        attrs[p_name] = f"{attrs[p_name]} {str(req)}/{ref.get_name()}"
-                        set_node_attributes(self.G,attrs,'req')
+                    #    attrs = get_node_attributes(self.G, 'req')
+                    #    attrs[p_name] = f"{attrs[p_name]} {str(req)}/{ref.get_name()}"
+                    #    set_node_attributes(self.G,attrs,'req')
+                        pass
                     else:
                         self.G.add_node(p_name,
                                 name=p_name,
@@ -133,16 +135,18 @@ class RpmGraph():
                                 width=(len(p_name) * 0.018 + 0.05 ),
                                 offset= -len(p_name) * 2.5 - 6,
                                 color= ' cornsilk',
-                                req= f"{str(req)}/{ref.get_name()}",
+                                #req= f"{str(req)}/{ref.get_name()}",
+                                req = "",
                             )
                     self.G.add_edge(ref.get_name(), p_name,
                                 name=ref.get_name(),
                                 version= ref.get_version(),
-                                req=str(req) ,
+                                #req=str(req) ,
+                                req = "",
                                 color=link_color)
                     if p_name != previous:
                         if deepth <= self.level - 2:
-                            self.add_requires(p, deepth + 1)
+                            self.add_parents(p, deepth + 1)
                     previous = p_name
 
     def graphe(self, name, descending=True):
@@ -157,8 +161,10 @@ class RpmGraph():
                                 req="")
             if descending:
                 self.add_requires(pkg, 0)
+                print("Descending")
             else:
                 self.add_parents(pkg, 0)
+                print("Ascending")
         if len(packages) == 0:
             print("Found nothing") 
         return (self.G.number_of_nodes(), self.G.number_of_edges())
@@ -179,11 +185,11 @@ class RpmGraph():
         self.current_rpm = pkg
         self.hist.append([pkg, self.level])
         self.G = Graph()
-        nrn, nre = self.graphe(pkg)
+        nrn, nre = self.graphe(pkg, self.descending)
         if nrn == 0:
             return Div(text="This package is unknown")
         newgraph = from_networkx(self.G, spring_layout, scale=2, center=(0,0))
-        newplot = figure(title="RPM network", sizing_mode ="scale_width", aspect_ratio=2, x_range=(-2.2, 2.2), y_range=(-2.1, 2.1),
+        newplot = figure( sizing_mode ="scale_width", aspect_ratio=2, x_range=(-2.2, 2.2), y_range=(-2.1, 2.1),
                 tools="tap", toolbar_location=None)
         newplot.axis.visible = False
         newplot.grid.visible = False

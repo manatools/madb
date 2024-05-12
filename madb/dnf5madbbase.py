@@ -116,20 +116,21 @@ class Dnf5MadbBase():
         query.filter_provides(rpm_list)
         return query
 
-    def search(self, search_type, rpm_list):
+    def search(self, search_type, search_list):
         query = libdnf5.rpm.PackageQuery(self._base)
         query.filter_arch([self.arch, "noarch"])
         query.filter_repo_id([self.release + "*"], GLOB)
+        #search_list = self.search_name(rpm_list)
         if search_type == "requires":
-            query.filter_requires(rpm_list)
+            query.filter_requires(search_list)
         elif search_type == "recommends":
-            query.filter_recommends(rpm_list)
+            query.filter_recommends(search_list)
         elif search_type == "suggests":
-            query.filter_suggests(rpm_list)
+            query.filter_suggests(search_list)
         elif search_type == "supplements":
-            query.filter_supplements(rpm_list)
+            query.filter_supplements(search_list)
         elif search_type == "provides":
-            query.filter_provides(rpm_list)
+            query.filter_provides(search_list)
         return query
 
 

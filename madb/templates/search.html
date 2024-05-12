@@ -9,7 +9,7 @@
             const dist_field = document.getElementById("distribution");
             const dist = dist_field.value;
             const graphical_field = document.getElementById("graphical");
-            const graphical = graphical_field.checked ? "1" : "0";
+            if (graphical_field !== null){ var graphical = graphical_field.checked ? "1" : "0"};
             const pkg_field = document.getElementById("package_name");
             const pkg = pkg_field.value;
             // in hidden field
@@ -23,11 +23,18 @@
                 newrepo = `${dist}-${arch}-${matches[1]}`;
             }
             else { newrepo = ""}
+            const slider = document.getElementById("graphLevel");
+            if (slider !== null) {var level = slider.value;}
+            const descend_field = document.getElementById("descending");
+            if (descend_field !== null) {var descending = descend_field.checked ? "1" : "0";}
     
             // Construit l'URL cible en combinant l'action du formulaire et la valeur sélectionnée
-            targetUrl = `${arch_field.getAttribute("data-base-url")}?distribution=${dist}&architecture=${arch}&graphical=${graphical}`;
-            targetUrl = targetUrl + ( pkg !== "" ? `&rpm=${pkg}` : "") + ( newrepo !== "" ? `&repo=${newrepo}` : "")
-            targetUrl = targetUrl + ( group !== "" ? `&group=${group}` : "")
+            targetUrl = `${arch_field.getAttribute("data-base-url")}?distribution=${dist}&architecture=${arch}`;
+            targetUrl = targetUrl + ( graphical_field !== null ? `&graphical=${graphical}` : "");
+            targetUrl = targetUrl + ( pkg !== "" ? `&rpm=${pkg}` : "") + ( newrepo !== "" ? `&repo=${newrepo}` : "");
+            targetUrl = targetUrl + ( group !== "" ? `&group=${group}` : "");
+            targetUrl = targetUrl + ( slider !== null ? `&level=${level}` : "");
+            targetUrl = targetUrl + ( descending !== "" ? `&descending=${descending}` : "");
 
             // Reload the page with the new query string
             window.location.href = targetUrl;
@@ -38,10 +45,12 @@
     function onsearchfieldChange(event) {
         this.dispatchEvent(new Event("submit"));
     }
+
+
 </script>
 
 
-<form id="search-form" action="/show" method="get" >
+<form id="search-form" action="{{ '/graph' if data.graph else '/show' }}" method="get" >
     <label for="architecture">Distribution: </label>
 
     <select id="distribution" name="distribution" class="searchfield">
@@ -57,15 +66,22 @@
         <option value="{{ key }}" {% if '='+key+'&' in data.url_end %}  selected="selected" {% endif %}>{{ value }}</option>
         {% endfor %}
     </select>
+    {% if not data.graph %}
     <label>Graphical applications only</label>
         <input type="checkbox" id="graphical" value="1" {% if 'graphical=1' in data.url_end %} checked{% endif %} class="searchfield">
+    {% endif%}
 
     <label for="package_name">Package: </label>
 
     <input type="text" id="package_name" name="rpm" value="{{ data.rpm_search if data.rpm_search is not none }}">
     <input type="hidden" id="repo" name="repo" value="{{ data.repo if data.repo is not none }}">
     <input type="hidden" id="group" name="group" value="{{ data.group if data.group is not none }}">
-
+    {% if data.graph %}
+    <label>Deepth: 1 </label>
+    <input type="range" min="1" max="3" value="{{ data.level }}" class="searchfield" id="graphLevel">
+    <label>3  Descending requirements: </label>
+    <input type="checkbox" id="descending" value="1" {{ 'checked' if data.descending }} class="searchfield">
+    {% endif%}
     <button type="submit">Search</button>
 </form>
 <br />

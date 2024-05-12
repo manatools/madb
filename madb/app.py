@@ -777,6 +777,7 @@ def create_app():
             advanced = [
                 ["Source RPM", last.get_sourcerpm() or "NOT IN DATABASE ?!", ""],
                 ["Build time", datetime.fromtimestamp(last.get_build_time()), ""],
+                ["Dependencies graph", f"<a href='/graph?distribution={release}&architecture={arch}&rpm={last.get_name()}'>Open</a>", ""],
                 ["Changelog", "<br />\n".join(logs), ""],
                 ["Files", "<br />\n".join(last.get_files()), ""],
                 ["Dependencies", "<br />\n".join(deps), ""],
@@ -879,25 +880,39 @@ def create_app():
             data_bugs[bug["Bug ID"]] = entry
         return data_bugs, counts, assignees
 
-    @app.route("/graph/<pkg>")
-    def graph(pkg):
+    @app.route("/graph")
+    def graph():
+        release = request.args.get("distribution", None)
+        arch = request.args.get("architecture", None)
+        pkg = request.args.get("rpm", "dnf")
+        level = request.args.get("level", 2, type=int)
+        descending = request.args.get("descending", 1, type=int)
+        if not release:
+            release = next(iter(config.DISTRIBUTION.keys()))
+            arch = next(iter(config.ARCHES.keys()))
         nav_data = navbar(lang=request.accept_languages.best)
         data = {
             "nav_html": nav_data["html"],
             "nav_css": nav_data["css"],
             "config": data_config,
+            "title": "Rpms children network" if descending else "Rpms parents network",
+            "base_url" : "/graph",
+            "graph": True,
+            "level": level,
+            "rpm_search": pkg,
+            "descending": descending,
+            "url_end": f"?distribution={release}&architecture={arch}&graphical=0",
         }
-        graph = RpmGraph("9", "x86_64")
+        graph = RpmGraph(release, arch, level, descending)
             
         # Get Chart Components 
-        script, div = components(graph.run(pkg)) 
-        print(div)
+        script, content = components(graph.run(pkg))
     
         # Return the components to the HTML template 
         return render_template( 
             template_name_or_list='graph.html', 
             script=script, 
-            div=div,
+            content=content,
             data=data
         ) 
 
