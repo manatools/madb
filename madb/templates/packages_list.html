@@ -24,9 +24,9 @@
   <tbody>
   {% for rpm in data.rpms %}
     <tr class="{{ 'rpm-odd' if loop.index % 2 else 'rpm-even'}}">
-      <td><a href="">{{ rpm }}</a></td>
+      <td><a href="/show{{ data.url_end }}&rpm={{ rpm.get_name()}}">{{ rpm }}</a></td>
       <td class='summary'>{{ rpm.get_summary() }}</td>
-      <td><a href="/rpmshow">{{ rpm.get_version() }}</a></td>
+      <td><a href="/show{{ data.url_end }}&rpm={{ rpm.get_name()}}">{{ rpm.get_version() }}</a></td>
       <td>{{ rpm.get_release() }}</td>
       <td>{{ rpm.get_build_time()|format_date }} </td>
     </tr>
