@@ -155,7 +155,6 @@ def create_app():
         content = f.content.decode("utf-8")
         bugs = DictReader(StringIO(content))
 
-        # bug_id,"bug_severity","priority","op_sys","assigned_to","bug_status","resolution","short_desc", "status_whiteboard","keywords","version","cf_rpmpkg","component","changeddate"
         releases = []
         temp_bugs = []
         severity_weight = {
@@ -227,8 +226,14 @@ def create_app():
                         ]
                     )
                 if rel in versions:
-                    if entry["component"] != "Security":
-                        entry["component"] = "Bugfix"
+                    if entry["component"] == "Security":
+                        entry["component"] = "security"
+                    elif entry["component"] == "Backports":
+                        entry["component"] = "backport"
+                    elif entry["bug_severity"] == "enhancement":
+                        entry["component"] = "enhancement"
+                    else:
+                        entry["component"] = "bugfix"
                     entry["age"] = (
                         now - datetime.fromisoformat(entry["changeddate"])
                     ).days
@@ -245,7 +250,7 @@ def create_app():
                     entry["severity_weight"] = severity_weight[entry["bug_severity"]]
                     if (
                         entry["bug_severity"] == "enhancement"
-                        or entry["component"] == "Backports"
+                        or entry["component"] == "backport"
                     ):
                         tr_class = "enhancement"
                         entry["severity_weight"] = severity_weight["enhancement"]
@@ -253,12 +258,12 @@ def create_app():
                         tr_class = "low"
                     elif (
                         entry["bug_severity"] in ("major", "critical")
-                        and entry["component"] != "Security"
+                        and entry["component"] != "security"
                     ):
                         tr_class = "major"
                     else:
                         tr_class = entry["bug_severity"]
-                    if entry["component"] == "Security":
+                    if entry["component"] == "security":
                         entry["severity_weight"] += 8
                     if "advisory" in entry["keywords"]:
                         entry["component"] += "*"
@@ -906,7 +911,13 @@ def create_app():
         graph = RpmGraph(release, arch, level, descending)
             
         # Get Chart Components 
-        script, content = components(graph.run(pkg))
+        graph_run = graph.run(pkg)
+        if graph_run is None:
+            return render_template( 
+                template_name_or_list='notfound.html', 
+                data = data
+                ) 
+        script, content = components(graph_run)
     
         # Return the components to the HTML template 
         return render_template( 
