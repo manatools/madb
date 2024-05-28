@@ -5,6 +5,16 @@
     <p>{{ data.title }}</p>
 </div>
 <p>{{ data.comments|safe }}
-{{ content | safe }} 
-{{ script | safe }} 
+    <div id="mynetwork" class="card-body"></div>
+    <div id="loadingBar">
+        <div class="outerBorder">
+            <div id="text">
+            </div>
+            <div id="border">
+                <div id="bar"></div>
+            </div>
+        </div>
+    </div>
+        
+    {{ content| safe }}
 {% endblock %}

@@ -3,9 +3,9 @@ from madb.helper import groups
 from madb.helper import BugReport, Pagination
 from madb.helper import load_content_or_cache, clean_cache
 from madb.cerisier import RpmGraph
-from flask import Flask, render_template, request, Response
-from bokeh.embed import components
+from flask import Flask, render_template, request, Response, send_from_directory
 import requests
+from bs4 import BeautifulSoup 
 from csv import DictReader
 from datetime import datetime, timedelta, date
 import re
@@ -37,6 +37,12 @@ def create_app():
     data_config["App name"] = config.APP_NAME
     data_config["arches"] = config.ARCHES
     data_config["distribution"] = config.DISTRIBUTION
+
+    @app.route('/lib/<path:path>')
+    def send_report(path):
+        """ For serving files used by pyvis
+        """
+        return send_from_directory('lib', path)
 
     def navbar(lang=None):
         nav_html = load_content_or_cache("https://nav.mageia.org/html/?b=madb_mageia_org&w=1" + (f"&l={lang}" if lang is not None else ""))
@@ -900,7 +906,7 @@ def create_app():
             "nav_html": nav_data["html"],
             "nav_css": nav_data["css"],
             "config": data_config,
-            "title": "Rpms children network" if descending else "Rpms parents network",
+            "title": f"Children Rpms network of {pkg}" if descending else f"Parents Rpms network of {pkg}",
             "base_url" : "/graph",
             "graph": True,
             "level": level,
@@ -911,21 +917,29 @@ def create_app():
         graph = RpmGraph(release, arch, level, descending)
             
         # Get Chart Components 
-        graph_run = graph.run(pkg)
+        graph_run = graph.render_vis(pkg)
         if graph_run is None:
             return render_template( 
                 template_name_or_list='notfound.html', 
                 data = data
                 ) 
-        script, content = components(graph_run)
-    
+        # script, content = components(graph_run)
+        graph_run.save_graph("graph.html")
+
+        # We select all script, link, style from the head section, and script from body. We need <div id="mynetwork" class="card-body"></div> to place the graph.
+        with open("graph.html") as f:
+            soup = BeautifulSoup(f.read(), 'html.parser')
+            head = "\n".join([str(a) for a in soup.head.find_all(["script", "style", "link"])])
+            body_script = head +"\n" + str(soup.body.script)
+            ody_script = body_script.replace("lib/","static/lib/")
+
         # Return the components to the HTML template 
         return render_template( 
             template_name_or_list='graph.html', 
-            script=script, 
-            content=content,
+            content=body_script,
             data=data
         ) 
+
 
     @app.template_filter()
     def format_date(timestamp):
