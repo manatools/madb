@@ -906,7 +906,7 @@ def create_app():
             "nav_html": nav_data["html"],
             "nav_css": nav_data["css"],
             "config": data_config,
-            "title": f"Children Rpms network of {pkg}" if descending else f"Parents Rpms network of {pkg}",
+            "title": f"Network of packages required  by {pkg}" if descending else f"Network of packages which require {pkg}",
             "base_url" : "/graph",
             "graph": True,
             "level": level,
