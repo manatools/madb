@@ -77,7 +77,7 @@
     <input type="hidden" id="repo" name="repo" value="{{ data.repo if data.repo is not none }}">
     <input type="hidden" id="group" name="group" value="{{ data.group if data.group is not none }}">
     {% if data.graph %}
-    <label>Deepth: 1 </label>
+    <label>Depth: 1 </label>
     <input type="range" min="1" max="3" value="{{ data.level }}" class="searchfield" id="graphLevel">
     <label>3  Descending requirements: </label>
     <input type="checkbox" id="descending" value="1" {{ 'checked' if data.descending }} class="searchfield">

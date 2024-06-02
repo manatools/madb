@@ -22,7 +22,7 @@ class RpmGraph():
         self.level = level
         self.descending = bool(descending)
 
-    def add_requires(self, ref, deepth):
+    def add_requires(self, ref, depth):
         '''
         Add all kind of dependencies
         '''
@@ -68,11 +68,11 @@ class RpmGraph():
                                 title=str(req) ,
                                 color=link_color)
                     if p_name != previous:
-                        if deepth <= self.level - 2:
-                            self.add_requires(p, deepth + 1)
+                        if depth <= self.level - 2:
+                            self.add_requires(p, depth + 1)
                     previous = p_name
 
-    def add_parents(self, ref, deepth):
+    def add_parents(self, ref, depth):
         '''
         Add all kind of parent dependencies
         '''
@@ -114,8 +114,8 @@ class RpmGraph():
                                 arrows="from",
                                 color=link_color)
                     if p_name != previous:
-                        if deepth <= self.level - 2:
-                            self.add_parents(p, deepth + 1)
+                        if depth <= self.level - 2:
+                            self.add_parents(p, depth + 1)
                     previous = p_name
 
     def graphe(self, name, descending=True):
