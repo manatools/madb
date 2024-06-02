@@ -16,7 +16,7 @@
     <br />
     <h3>Source RPMS</h3>
     {% for rpm in data[release][src_arch]["srpms"] %}
-      {{ rpm.get_name() + "-" +rpm.get_evr() }}<br />
+      {{ rpm.get_name() + "-" + rpm.get_version() + "-" + rpm.get_release() }}<br />
     {% endfor %}
     {% endif %}
     <br />

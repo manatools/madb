@@ -459,7 +459,8 @@ def create_app():
                 for repo in set([x.get_repo_id() for x in binaries]):
                     data[release][src_arch]["binaries"][repo] = []
                 for binary in binaries:
-                    data[release][src_arch]["binaries"][binary.get_repo_id()].append(binary.get_nevra())
+                    label = binary.get_name() + "-" + binary.get_version() + "-" + binary.get_release()
+                    data[release][src_arch]["binaries"][binary.get_repo_id()].append(label)
         data["config"] = data_config
         data["releases"] = releases 
         data["title"] = "Packages for bug report {num}".format(num=bug_number)

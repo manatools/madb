@@ -3,7 +3,7 @@
 {% if loop.index == 1 %}
 Source RPMS
 -----------
-    {% for rpm in data[release][src_arch]["srpms"] %}{{ rpm.get_name() + "-" +rpm.get_evr() }}
+    {% for rpm in data[release][src_arch]["srpms"] %}{{ rpm.get_name() + "-" + rpm.get_version() + "-" + rpm.get_release() }}
     {% endfor %}
     {% endif %}
 Binaries RPMS in {{ src_arch }} 
