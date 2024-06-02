@@ -99,7 +99,6 @@ class Dnf5MadbBase():
         if repo:
             query.filter_repo_id([repo], GLOB)
         query.filter_sourcerpm(values, GLOB)
-        print(repo, values, list(query))
         return query
 
     def provides_requires(self, rpm_list):
