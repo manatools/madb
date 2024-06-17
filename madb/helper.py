@@ -6,6 +6,7 @@ import hashlib
 import os
 import time
 from itertools import chain
+import string
 
 def groups():
     """
@@ -120,15 +121,17 @@ class BugReport():
         return self.data["releases"]
 
 class Pagination():
-    def __init__(self, data, page_size=0, pages_number=0, byweek=False):
+    def __init__(self, data, page_size=0, pages_number=0, byweek=False, byfirstchar=False):
         """
         Pages number is starting from 1
-        Only one of page_size, pages_number or byweek has to be set
+        Only one of page_size, pages_number, byweek or byfirstchar has to be set
         If byweek is True, data are truncated in pages by week of build time, from more recent to older
+        If byfirstchar is True, data are truncated by the first character or grouping the numbers, represented by zero
         rpm index in data starts from 0
         """
         self.data = data
         self.byweek = byweek
+        self.byfirstchar = byfirstchar
         self.lentgh = len(data)
         if pages_number != 0:
             self.page_size = (self.lentgh - 1) // pages_number + 1
@@ -161,6 +164,8 @@ class Pagination():
             self._w_end.append(i - 1)
             older = min([rpm.get_build_time() for rpm in data])
             self.pages_max = len(self._w_start)
+        elif byfirstchar:
+            self._char_list = ["0"] + list(string.ascii_uppercase)
 
     def data_page(self, page):
         if page >= 1 and page <= self.pages_max:
@@ -187,10 +192,28 @@ class Pagination():
             """
         return full_links
 
+    def links_by_char(self, base, page):
+        full_links = """
+    <div id="pagerbuttons">
+        <ul>
+        """
+        for p in self._char_list:
+            if p == page:
+                full_links += f'<li class="current"><div>{p}</div></li>'
+            else:
+                full_links += f'<li><a href="{base}&page={p}">{p}</a></li>'
+        full_links += """
+        </ul>
+    </div>
+            """
+        return full_links
+
     def counts(self, page):
         """
         Indexes are given starting from 1 
         """
+        if self.byfirstchar:
+            return ""
         return f"{self._start(page) + 1}-{self._end(page) + 1} of {self.lentgh}."
 
     def _start(self, page):

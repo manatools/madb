@@ -115,10 +115,13 @@ class Dnf5MadbBase():
         query.filter_provides(rpm_list)
         return query
 
-    def search(self, search_type, search_list):
+    def search(self, search_type, search_list, graphical=False, repo=""):
         query = libdnf5.rpm.PackageQuery(self._base)
         query.filter_arch([self.arch, "noarch"])
-        query.filter_repo_id([self.release + "*"], GLOB)
+        if repo == "":
+            query.filter_repo_id([self.release + "*"], GLOB)
+        else:
+            query.filter_repo_id([repo], GLOB)
         #search_list = self.search_name(rpm_list)
         if search_type == "requires":
             query.filter_requires(search_list)
@@ -130,6 +133,10 @@ class Dnf5MadbBase():
             query.filter_supplements(search_list)
         elif search_type == "provides":
             query.filter_provides(search_list)
+        else:
+            query.filter_name(search_list, GLOB)
+        if graphical:
+            query.filter_file(["/usr/share/applications/*.desktop"], GLOB)
         return query
 
 

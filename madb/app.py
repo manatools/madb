@@ -18,6 +18,8 @@ import humanize
 import logging
 import os
 import threading
+from packaging import version as pvers
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 log_level = getattr(logging, config.LOG_LEVEL.upper())
@@ -821,6 +823,123 @@ def create_app():
             "nav_css": nav_data["css"],
         }
         return render_template("rpm_show.html", data=data)
+
+    @app.route("/comparison")
+    def comparison():
+        repo_classes = ('release', 'updates', 'updates_testing', 'backports', 'backports_testing')
+        def merge_summaries(rpm):
+            if pd.isnull(rpm["Summaryrelease"]):
+                for cl in repo_classes:
+                    if not pd.isnull(rpm["Summarydev"+cl]):
+                        print(rpm["Summarydev"+cl])
+                        return rpm["Summarydev"+cl]
+            else:
+                return rpm["Summaryrelease"]
+
+        def versions_compare(rpm):
+            v_dev = {}
+            v_stable = {}
+            new = True
+            old = False
+            testing = False 
+            backported = False
+            for cl in repo_classes:
+                key_dev = label_dev[cl]
+                if key_dev in rpm.keys() and not pd.isnull(rpm[key_dev]):
+                    try:
+                        v_dev[cl] = pvers.Version(rpm[key_dev])
+                    except:
+                        return ""
+                if label[cl] in rpm.keys():
+                    if not pd.isnull(rpm[label[cl]]) :
+                        try:
+                            v_stable[cl] = pvers.Version(rpm[label[cl]])
+                            if "testing" in cl:
+                                testing = testing or (v_stable[cl] == v_dev["release"])
+                            if "backport" in cl and v_stable[cl] == v_dev[ "release"]:
+                                backported = True
+                        except:
+                            return ""
+                        if cl == "updates":
+                            v_stable["release"] = v_stable[cl]
+                        # check if package is new in dev
+                        new = False
+                        if v_dev != {} and not new:
+                            old = old or (v_dev["release"] < v_stable[cl])
+            if new:
+                # added in dev
+                return "newpackage"
+            if old:
+                # version in dev is older
+                return "older"
+            if testing:
+                # being tested and same version in dev
+                return "testing"
+            if backported:
+                return "backported"
+        release = request.args.get("distribution", str(config.TOP_RELEASE))
+        arch = request.args.get("architecture", "x86_64")
+        graphical = request.args.get("graphical", "1")
+        page = request.args.get("page", "A", type = str)
+        distro1 = Dnf5MadbBase(release, arch, config.DATA_PATH)
+        distro2 = Dnf5MadbBase(config.DEV_NAME, arch, config.DATA_PATH)
+        rpms_temp = {}
+        rpms_dev_temp = {}
+        label = {}
+        label_dev = {}
+        label["release"] = f"Stable {release}"
+        label["updates"] = f"Update {release}"
+        label["updates_testing"] = "Update candidate"
+        label["backports"] = "Backport"
+        label["backports_testing"] = "Backport candidate"
+        label_dev["release"] = f"{config.DISTRIBUTION[config.DEV_NAME]}"
+        label_dev["updates"] = f"Update {config.DISTRIBUTION[config.DEV_NAME]}"
+        label_dev["updates_testing"] = f"{config.DISTRIBUTION[config.DEV_NAME]} Update candidate"
+        label_dev["backports"] = f"{config.DISTRIBUTION[config.DEV_NAME]} Backport"
+        label_dev["backports_testing"] = f"{config.DISTRIBUTION[config.DEV_NAME]} Backport candidate"
+        # search packages with name starting by a number or specified character
+        if page == "0":
+            criteria = [str(i) + "*" for i in range(0, 10)]
+        else:
+            criteria = [page + "*", page.lower() + "*"]
+        for cl in repo_classes:
+            rpms_temp[cl] = {x.get_name():{
+            "Summary"+cl: x.get_summary(),
+            label[cl]: x.get_version(),
+            } for x in distro1.search([], criteria, graphical=(graphical == "1"), repo=f"{release}-{arch}-*-{cl}")}
+            rpms1 = pd.DataFrame(rpms_temp[cl])
+            if cl == "release":
+                rpms = rpms1
+            else:
+                rpms = pd.concat([rpms, rpms1])
+        for cl in repo_classes:
+            rpms_dev_temp[cl] = {
+                x.get_name():{
+                    "Summarydev"+cl: x.get_summary(),
+                    label_dev[cl]: x.get_version(),
+                    }
+                for x in distro2.search([], criteria, graphical=(graphical == "1"), repo=f"{config.DEV_NAME}-{arch}-*-{cl}")}
+            rpms2 = pd.DataFrame(rpms_dev_temp[cl])
+            rpms = pd.concat([rpms, rpms2])
+        rpms.loc["classes"] = rpms.apply(lambda x : versions_compare(x), axis=0)
+        # merge column Summary
+        rpms.loc["Summaryrelease"] = rpms.apply(lambda x : merge_summaries(x), axis=0)
+        # remove NaN content
+        rpms.where(pd.notna, "", inplace=True)
+        # sort by package names
+        rpms.sort_index(axis=1, inplace=True)
+        pager = Pagination(list(rpms.index), byfirstchar=True)
+        nav_data = navbar(lang=request.accept_languages.best)
+        data = {
+            "rpms": rpms,
+            "links": pager.links_by_char(f"/comparison?distribution={release}&architecture={arch}&graphical={graphical}", page),
+            "release": release,
+            "arch": arch,
+            "rel": data_config["distribution"][release],
+            "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}",  # used for setting the search fields
+            "config": data_config,
+        }
+        return render_template("comparison.html", data=data)
 
     def format_bugs():
         column = ",".join(

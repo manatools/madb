@@ -1,0 +1,56 @@
+{% extends 'layout.html' %}
+
+{% block container %}
+{% include 'search.html' %}
+<div class="pagename">
+  <p>Comparison between releases {{ data.rel }} and Mageia cauldron</p>
+</div>
+<p>
+    This page compares the packages present in {{ data.rel }} with those in Mageia cauldron. It can be customized by using the filters available at the top of the page.
+</p>
+<br />
+<p>Legend:
+<span class="newpackage bordered">added in {{ data.config.distribution.cauldron }}</span> 
+<span class="testing bordered">being tested: same version as in {{ data.config.distribution.cauldron }}</span>
+<span class="bordered">newer version in {{ data.config.distribution.cauldron }}</span> 
+<span class="newer_avail bordered">newer available outside {{ data.config.distribution.cauldron }} </span>
+<span class="backported bordered">backported</span>
+<span class="older bordered">older version in {{ data.config.distribution.cauldron }}</span> 
+</p>
+<div id="sfcontent">
+<div class="pager">
+{{ data.links |safe}}
+</div>
+<table class="comparisontable">
+  <thead>
+    <tr>
+      <th>Name</th>
+      {% for label in data.rpms.index %}
+        {% if label != "classes" and "Summary" not in label %}
+        <th>{{ label }}</th>
+        {% endif %}
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+  {% for rpm in data.rpms %}
+    <tr class="{{ data.rpms.at['classes',rpm] }}">
+      <td class='summary'> 
+        <a href="/show?rpm={{ rpm }}&distribution={{ data.release}}&architecture={{ data.arch }}">{{ rpm }}</a>
+        <span class="description">{{ data.rpms.at['Summaryrelease',rpm] }}</span></td>
+        {% for label in data.rpms.index %}
+        {% if "Summary" not in label and label != "classes" %}
+        <td>{{ data.rpms.at[label, rpm] }}</td>
+        {% endif %}
+      {% endfor %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+  <div class="pager pager-bottom">
+    {{ data.links |safe}}
+  </div>
+
+</div>
+{% endblock %}
