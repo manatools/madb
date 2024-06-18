@@ -829,10 +829,12 @@ def create_app():
         repo_classes = ('release', 'updates', 'updates_testing', 'backports', 'backports_testing')
         def merge_summaries(rpm):
             if pd.isnull(rpm["Summaryrelease"]):
+                keys = rpm.keys()
                 for cl in repo_classes:
-                    if not pd.isnull(rpm["Summarydev"+cl]):
-                        print(rpm["Summarydev"+cl])
+                    key = "Summarydev" + cl
+                    if key in keys and not pd.isnull(key):
                         return rpm["Summarydev"+cl]
+                return ""
             else:
                 return rpm["Summaryrelease"]
 
