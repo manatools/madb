@@ -853,9 +853,12 @@ def create_app():
             old = False
             testing = False 
             backported = False
+            dropped = True
+            updated = False
             for cl in repo_classes:
                 key_dev = label_dev[cl]
                 if key_dev in rpm.keys() and not pd.isnull(rpm[key_dev]):
+                    dropped = False
                     try:
                         v_dev[cl] = pvers.Version(rpm[key_dev])
                     except:
@@ -876,6 +879,7 @@ def create_app():
                         new = False
                         if v_dev != {} and not new:
                             old = old or (v_dev["release"] < v_stable[cl])
+                            updated = updated or (v_dev["release"] > v_stable[cl])
             if new:
                 # added in dev
                 return "newpackage"
@@ -887,6 +891,11 @@ def create_app():
                 return "testing"
             if backported:
                 return "backported"
+            if updated:
+                # version in dev is newer
+                return "updated"
+            if dropped:
+                return "dropped"
         release = request.args.get("distribution", str(config.TOP_RELEASE))
         arch = request.args.get("architecture", "x86_64")
         graphical = request.args.get("graphical", "1")

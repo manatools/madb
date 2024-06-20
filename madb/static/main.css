@@ -2579,6 +2579,15 @@ table.comparisontable {
     background-color: #f66
 }
 
+.dropped {
+    background-color: rgb(236, 204, 218)
+}
+
+
+.updated {
+    background-color: rgb(234, 248, 225)
+}
+
 .bordered {
     border: 1px solid #000;
     white-space: nowrap
