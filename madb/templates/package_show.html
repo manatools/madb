@@ -34,8 +34,11 @@
     
       {% if data.pkg.screenshot %}
       <div class='main-screenshot'>
-        <a rel="screenshots" href="{{ data.screenshot['large_image_url']}}">
-            Image
+        <a rel="screenshots" class="cboxElement" href="{{ data.pkg.screenshot['large']}}">
+          <img src="{{ data.pkg.screenshot['large'] }}">
+        </a>
+      </div>
+
         </a>
       </div>
       {% endif %}
@@ -61,8 +64,8 @@
     
     <div id="screenshots">
     {% for screen in data.pkg.other_screenshots %}
-      <a rel="screenshots" href="">
-        <img src="" alt="screenshot" />
+      <a rel="screenshots" href="{{ screen['large'] }}">
+        <img src="{{ screen['small'] }}" alt="screenshot" />
       </a>
     {% endfor %}
     </div>

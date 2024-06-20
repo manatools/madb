@@ -3,6 +3,7 @@ from madb.helper import groups
 from madb.helper import BugReport, Pagination
 from madb.helper import load_content_or_cache, clean_cache
 from madb.cerisier import RpmGraph
+from madb.screenshots import Screenshots
 from flask import Flask, render_template, request, Response, send_from_directory
 import requests
 from bs4 import BeautifulSoup 
@@ -691,6 +692,11 @@ def create_app():
             )
             last = dnf_pkg
         if last is not None:
+            sc = Screenshots()
+            links = sc.image_links(last.get_name())
+            first_sc = None
+            if links is not None and len(links) != 0:
+                first_sc = links[0]
             pkg = {
                 "name": last.get_name(),
                 "rpms": rpms,
@@ -699,6 +705,8 @@ def create_app():
                 "description": last.get_description(),
                 "url": last.get_url(),
                 "maintainer": last.get_packager(),
+                "screenshot": first_sc,
+                "other_screenshots": links,
             }
         else:
             data = {
