@@ -4,7 +4,6 @@ import tempfile
 import pytest
 from flask import Flask
 from flask import request
-import pytest
 from madb.app import create_app
 
 @pytest.fixture
@@ -77,12 +76,15 @@ def test_rpms(client):
     assert resp.status_code == 200
     assert b"RPMS" in resp.data
 
-#def test_submission(client):
-#    """Vérifier que la soumission du formulaire fonctionne."""
-#    resp = client.post("/package", data={"package_name": "numpy", "architecture": "x86"}, follow_redirects=True)
-#    assert b"Informations complémentaires sur numpy" in resp.data
+def test_comparison(client):
+    """Check that comparison page is accessible."""
+    resp = client.get("/comparison")
+    assert resp.status_code == 200
+    assert b"Comparison between releases" in resp.data
+    assert b"Name" in resp.data
 
-#def test_invalid_submission(client):
-#    """Vérifier qu'une tentative de validation non valide renvoie une erreur."""
-#    resp = client.post("/show", data={}, follow_redirects=True)
-#    assert b"Error" in resp.data
+def test_graph(client):
+    """Check that graph page is accessible."""
+    resp = client.get("/graph")
+    assert resp.status_code == 200
+    assert b"Network of packages" in resp.data
