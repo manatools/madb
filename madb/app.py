@@ -896,6 +896,25 @@ def create_app():
                 return "updated"
             if dropped:
                 return "dropped"
+
+        def really_dropped(rpm):
+            if rpm["classes"] == "dropped" and graphical == "1":
+                dev = list(distro2.search_name([rpm.name], repo= "*release*"))
+                if len(dev) != 0:
+                    return dev[0].get_version()
+                return pd.NA
+            else:
+                return rpm[label_dev["release"]]
+
+        def really_dropped_classes(rpm):
+            if rpm["classes"] == "dropped" and graphical == "1":
+                dev = list(distro2.search_name([rpm.name], repo= "*release*"))
+                if len(dev) != 0:
+                    return versions_compare(rpm)
+                return  "dropped"
+            else:
+                return rpm["classes"]
+
         release = request.args.get("distribution", str(config.TOP_RELEASE))
         arch = request.args.get("architecture", "x86_64")
         graphical = request.args.get("graphical", "1")
@@ -940,7 +959,11 @@ def create_app():
                 for x in distro2.search([], criteria, graphical=(graphical == "1"), repo=f"{config.DEV_NAME}-{arch}-*-{cl}")}
             rpms2 = pd.DataFrame(rpms_dev_temp[cl])
             rpms = pd.concat([rpms, rpms2])
+        # determine classes
         rpms.loc["classes"] = rpms.apply(lambda x : versions_compare(x), axis=0)
+        # fix false dropped if graphical has changed
+        rpms.loc[label_dev["release"]] = rpms.apply(really_dropped)
+        rpms.loc["classes"] = rpms.apply(really_dropped_classes)
         # merge column Summary
         rpms.loc["Summaryrelease"] = rpms.apply(lambda x : merge_summaries(x), axis=0)
         # remove NaN content
