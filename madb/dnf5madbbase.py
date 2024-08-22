@@ -52,6 +52,8 @@ class Dnf5MadbBase():
         """Search in a list of package attributes for a list of keys.
 
         :param values: the values to match
+        :params graphical: boolean, filter on *.desktop files in /usr/share/applications
+        :param repo: name of the repository to search in. Accept wildcards.
         :return: a list of package objects
         """
         query = libdnf5.rpm.PackageQuery(self._base)
