@@ -7,6 +7,10 @@ import os
 import time
 from itertools import chain
 import string
+from csv import DictReader
+from io import StringIO
+import collections
+from datetime import datetime, timedelta, date
 
 def groups():
     """
@@ -32,20 +36,24 @@ def advisories():
 
 
 CACHE_DIR = os.path.join(config.DATA_PATH, "cache")
+LONG_CACHE_DIR = os.path.join(config.DATA_PATH, "cache/long")
 CACHE_TTL = 60 * 60 * 24  # Cache expiration time: 1 day
+LONG_CACHE_TTL = 60 * 60 * 24 * 100 # Cache expiration time: 100 days
 CACHE_SIZE = 5
 os.makedirs(CACHE_DIR, exist_ok=True)
+os.makedirs(LONG_CACHE_DIR, exist_ok=True)
 
 #  absolute path of cached file for specified URL
-def _get_cache_filepath(url):
+def _get_cache_filepath(url, long=True):
     filename = hashlib.sha256(url.encode("utf-8")).hexdigest()[:10]
-    filepath = os.path.join(CACHE_DIR, filename)
+    filepath = os.path.join(LONG_CACHE_DIR, filename) if long else os.path.join(CACHE_DIR, filename)
     return filepath
 
 # Load cache content or from URL after expiration
-def load_content_or_cache(url):
-    filepath = _get_cache_filepath(url)
-    if not os.path.exists(filepath) or time.time() - os.path.getctime(filepath) > CACHE_TTL:
+def load_content_or_cache(url, long=True):
+    filepath = _get_cache_filepath(url, long=long)
+    ttl = LONG_CACHE_TTL if long else CACHE_TTL
+    if not os.path.exists(filepath) or time.time() - os.path.getctime(filepath) > ttl:
         response = requests.get(url)
         with open(filepath, "w") as f:
             f.write(response.content.decode())
@@ -54,7 +62,7 @@ def load_content_or_cache(url):
         content = f.read()
     return content
 
-# Clean the cache every day
+# Clean the cache
 def clean_cache():
     time.sleep(10)
     while True:
@@ -63,9 +71,7 @@ def clean_cache():
                 os.remove(cached_file)
         time.sleep(3600 * 24)
 
-
-class BugReport():
-    column = ",".join(
+_column = ",".join(
         [
             "bug_severity",
             "priority",
@@ -83,42 +89,228 @@ class BugReport():
         ]
     )
 
+
+class BugsList():
+    
+    params = [
+            ("bug_status", "REOPENED"),
+            ("bug_status", "NEW"),
+            ("bug_status", "ASSIGNED"),
+            ("bug_status", "UNCONFIRMED"),
+            ("columnlist", _column),
+            ("field0-0-0", "assigned_to"),
+            ("query_format", "advanced"),
+            ("type0-0-0", "substring"),
+            ("type1-0-0", "notsubstring"),
+            ("value0-0-0", "qa-bugs"),
+            ("ctype", "csv"),
+        ]
+
     def __init__(self):
+        self.bugs = []
+
+    def qa_updates(self):
+        f = requests.get(config.BUGZILLA_URL + "/buglist.cgi", params=self.params)
+        content = f.content.decode("utf-8")
+        bugs = DictReader(StringIO(content))
+
+        releases = []
+        temp_bugs = []
+        for bug in bugs:
+            # Error if cauldron, not conform to our policy
+            entry = bug
+            if entry["version"] not in releases:
+                releases.append(entry["version"])
+            wb = re.findall(r"\bMGA(\d+)TOO", entry["status_whiteboard"])
+            for key in wb:
+                if key not in releases:
+                    self.releases.append(key)
+            temp_bugs.append(entry)
+        
+        self.bugs = {}
+        counts = {}
+        for rel in releases:
+            self.bugs[rel] = []
+            counts[rel] = []
+            for entry in temp_bugs:
+                bug = BugReport()
+                bug.from_data(entry)
+                self.bugs[rel].append(bug)
+           # if rel != "unspecified":
+                #print(rel)
+                #for x in self.bugs[rel]:
+                #    print(x.get_data_bugs(rel))
+            counts[rel] = collections.Counter([x.get_data_bugs(rel)["status"] for x in self.bugs[rel] if x.get_data_bugs(rel)["status"] != "unspecified"])
+        bugs_list = {}
+        for rel in releases:
+            bugs_list[rel] = []
+            for bug in self.bugs[rel]:
+                bugs_list[rel].append(bug.get_data_bugs(rel))
+        return bugs_list, releases, counts
+
+class BugReport():
+    column = _column
+
+    severity_weight = {
+            "enhancement": 0,
+            "minor": 1,
+            "normal": 2,
+            "major": 3,
+            "critical": 4,
+        }
+
+    def __init__(self):
+        """
+        data: Dict
+        - releases: string, cited in the bug report in version field or in white board like MGA9TOO
+        - srpms: set of strings, with the name of source packages
+
+        """
         self.data = {}
 
     def from_number(self, number):
         self.number = number
-        self.url = os.path.join(config.BUGZILLA_URL, "rest/bug", self.number)
-
+        url = os.path.join(config.BUGZILLA_URL, "rest/bug", self.number)
         headers = {'Accept': 'application/json'}
-        r = requests.get(self.url, params = [("include_fields", self.column)], headers=headers)
+        r = requests.get(url, params = [("include_fields", self.column)], headers=headers)
         if r.status_code == 200 and r.json()["faults"] == []:
-            releases = []
+            #releases = []
             entry =  r.json()['bugs'][0]
-            results = []
-            for srpm in  re.split(';|,| ',entry['cf_rpmpkg']):
-                pkg = srpm.strip()
-                if pkg == "":
-                    continue
-                analyze = re.search(r"([\w\-\+_]+)-\d", pkg)
-                if analyze is not None:
-                    pkg = analyze.group(1)
-                results += [pkg]
-            self.data["srpms"] = results
-            if entry["version"] not in releases:
-                releases.append(entry["version"].lower())
-            if "status_whiteboard" in entry.keys():
-                wb = re.findall(r"\bMGA(\d+)TOO", entry["status_whiteboard"])
-                for key in wb:
-                    if key not in releases:
-                        releases.append(key)
-            self.data["releases"] = releases
+            #entry["srpms"] = self.get_srpms()
+            for rel in self.get_releases(entry):
+                self.data[rel] = entry
+
+    def get_releases(self, entry):
+        result = {}
+        if entry["version"] in ("Cauldron", ):
+            # we skip it
+            versions_list = ()
+        else:
+            versions_list = (entry["version"],)
+        wb = re.findall(r"\bMGA(\d+)TOO", entry["status_whiteboard"])
+        wbo = re.findall(r"\bMGA(\d+)-(\d+).OK", entry["status_whiteboard"])
+        for v, a in wbo:
+            if v not in versions_list:
+                versions_list += (v,)
+        # union of the 2 lists, without duplication
+        return " ".join(wb + list(set(versions_list) - set(wb)))
+
+    def from_data(self, entry):
+        self.number = entry["bug_id"]
+        entry["OK_64"] = ""
+        entry["OK_32"] = ""
+        wbo = re.findall(r"\bMGA(\d+)-(\d+).OK", entry["status_whiteboard"])
+        for v, a in wbo:
+            if a == "64":
+                entry["OK_64"] += f" {v}"
+            if a == "32":
+                entry["OK_32"] += f" {v}"
+        for rel in self.get_releases(entry):
+            self.data[rel] = entry
+        if self.data == {}:
+            print(f"no release for {self.number}")
+
+    def get_data_bugs(self, rel):
+        if  rel not in self.data.keys():
+            return {"status": "unspecified", "severity_weight": 0}
+        if type(rel) == "int":
+            rel = str(rel)
+        self.data[rel]["versions_symbol"] = ""
+        # Build field Versions
+        releases = self.get_releases(self.data[rel])
+        now = datetime.now()
+        for version in releases.split(" "):
+            OK_64 = version in self.data[rel]["OK_64"]
+            OK_32 = version in self.data[rel]["OK_32"]
+            full = OK_32 and OK_64
+            partial = (OK_32 and not OK_64) or (not OK_32 and OK_64)
+            not_tested = not OK_64 and not OK_32
+            if full:
+                testing_class = "testing_complete"
+                title = "Testing complete for both archs"
+                symbol = "⚈"
+            if partial:
+                testing_class = "testing_one_ok"
+                title = "Testing partial (at least one arch)"
+                symbol = "⚉"
+            if not_tested:
+                testing_class = "testing_not_ok"
+                title = "Testing not complete for any arch"
+                symbol = "⚈"
+            self.data[rel]["versions_symbol"] = " ".join(
+                [
+                    self.data[rel]["versions_symbol"],
+                    f'{version}<span class="{testing_class}" title= "{title}"><span>{symbol}</span></span>',
+                ]
+            )
+        if rel in releases:
+            if self.data[rel]["component"] == "Security":
+                self.data[rel]["component"] = "security"
+            elif self.data[rel]["component"] == "Backports":
+                self.data[rel]["component"] = "backport"
+            elif self.data[rel]["bug_severity"] == "enhancement":
+                self.data[rel]["component"] = "enhancement"
+            else:
+                self.data[rel]["component"] = "bugfix"
+            self.data[rel]["age"] = (
+                now - datetime.fromisoformat(self.data[rel]["changeddate"])
+            ).days
+            self.data[rel]["versions"] = releases
+            if "validated_backport" in self.data[rel]["keywords"]:
+                self.data[rel]["status"] = "validated_backport"
+            elif "validated_update" in self.data[rel]["keywords"]:
+                self.data[rel]["status"] = "validated_update"
+            elif "validated_" in self.data[rel]["keywords"]:
+                self.data[rel]["status"] = "pending"
+            else:
+                self.data[rel]["status"] = "assigned"
+            tr_class = ""
+            self.data[rel]["severity_weight"] = self.severity_weight[self.data[rel]["bug_severity"]]
+            if (
+                self.data[rel]["bug_severity"] == "enhancement"
+                or self.data[rel]["component"] == "backport"
+            ):
+                tr_class = "enhancement"
+                self.data[rel]["severity_weight"] = self.severity_weight["enhancement"]
+            elif self.data[rel]["bug_severity"] == "minor":
+                tr_class = "low"
+            elif (
+                self.data[rel]["bug_severity"] in ("major", "critical")
+                and self.data[rel]["component"] != "security"
+            ):
+                tr_class = "major"
+            else:
+                tr_class = self.data[rel]["bug_severity"]
+            if self.data[rel]["component"] == "security":
+                self.data[rel]["severity_weight"] += 8
+            if "advisory" in self.data[rel]["keywords"]:
+                self.data[rel]["component"] += "*"
+            if "feedback" in self.data[rel]["keywords"]:
+                tr_class = " ".join([tr_class, "feedback"])
+            self.data[rel]["class"] = tr_class
+            self.data[rel]["srpms"] = self._srpms(self.data[rel]["cf_rpmpkg"])
+        return self.data[rel]
 
     def get_srpms(self):
-        return self.data["srpms"]
+        """
+        Return a set with the names of source packages
+        """
+        return self._srpms(self.data['cf_rpmpkg'])
 
-    def get_releases(self):
-        return self.data["releases"]
+    def _srpms(self, field):
+        """
+        Return a set with the names of source packages
+        """
+        results = []
+        for srpm in re.split(';|,| ', field):
+            pkg = srpm.strip()
+            if pkg == "":
+                continue
+            analyze = re.search(r"([\w\-\+_]+)-\d", pkg)
+            if analyze is not None:
+                pkg = analyze.group(1)
+            results += [pkg]
+        return results
 
 class Pagination():
     def __init__(self, data, page_size=0, pages_number=0, byweek=False, byfirstchar=False):

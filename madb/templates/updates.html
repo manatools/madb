@@ -21,6 +21,7 @@ without a star* need an advisory to be uploaded, first.<br /><br />
 Those without a star* need an advisory to be uploaded, first.<br /><br />
 {% endif %}
 {% for release in data.releases %}
+{% if (data.counts[release]|bugs_sum) != 0 %}
 <h2>{{ status.capitalize().replace("_", " ") }} - Mageia {{ release }}</h2>
 {% if data.counts[release][status] == 0 %}
 There is no update with status {{ status }} for release {{ release }}<br />
@@ -37,6 +38,7 @@ There is no update with status {{ status }} for release {{ release }}<br />
       <th>Mageia <br />Version</th>
       <th>No action <br />for (days)</th>
       <th style="width:7%">List</th>
+      <th style="width:7%">Quick links</th>
     </tr>
   </thead>
   {% for entry in data.bugs[release] %}
@@ -51,10 +53,15 @@ There is no update with status {{ status }} for release {{ release }}<br />
     <td style="white-space:nowrap">{{ entry.versions_symbol|safe }}</td>
     <td>{{ entry.age }}</td>
     <td><a href={{ "/rpmsforqa/" + entry.bug_id }}>RPMS</a></td>
+    <td>
+      {% for srpm in entry['srpms'] %}
+      <a href="https://bugs.mageia.org/buglist.cgi?columnlist=version%2Cassigned_to%2Cbug_status%2Cresolution%2Cshort_desc%2Ccf_rpmpkg%2Cstatus_whiteboard&email1=qa-bugs@ml.mageia.org&emailassigned_to1=1&emailcc1=1&emailtype1=substring&field0-0-0=cf_rpmpkg&field0-0-2=short_desc&order=bug_id%20DESC&product=Mageia&query_format=advanced&type0-0-0=substring&type0-0-1=substring&type0-0-2=substring&type0-0-3=matches&value0-0-0={{ srpm }}&value0-0-1=ffmpeg&value0-0-2={{ srpm }}&value0-0-3=%22{{ srpm }}%22">Bugzilla</a> ({{ srpm }})</td>
+      {% endfor %}
   </tr>
   {% endif %}
   {% endfor %}
 </table>
+{% endif %}
 {% endif %}
 {% endfor %}
 {% endfor %}

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from madb.helper import groups
-from madb.helper import BugReport, Pagination
+from madb.helper import BugReport, Pagination, BugsList
 from madb.helper import load_content_or_cache, clean_cache
 from madb.cerisier import RpmGraph
 from madb.screenshots import Screenshots
@@ -40,6 +40,12 @@ def create_app():
     data_config["App name"] = config.APP_NAME
     data_config["arches"] = config.ARCHES
     data_config["distribution"] = config.DISTRIBUTION
+
+    # filter dor usage in templates
+    @app.template_filter('bugs_sum')
+    def bugs_sum(list_to_sum):
+        print(f"To sum: {list_to_sum}")
+        return collections.Counter.total(list_to_sum)
 
     @app.route('/lib/<path:path>')
     def send_report(path):
@@ -130,158 +136,8 @@ def create_app():
 
     @app.route("/updates/")
     def updates():
-        column = ",".join(
-            [
-                "bug_severity",
-                "priority",
-                "op_sys",
-                "assigned_to",
-                "bug_status",
-                "resolution",
-                "short_desc",
-                "status_whiteboard",
-                "keywords",
-                "version",
-                "cf_rpmpkg",
-                "component",
-                "changeddate",
-            ]
-        )
-        params = [
-            ("bug_status", "REOPENED"),
-            ("bug_status", "NEW"),
-            ("bug_status", "ASSIGNED"),
-            ("bug_status", "UNCONFIRMED"),
-            ("columnlist", column),
-            ("field0-0-0", "assigned_to"),
-            ("query_format", "advanced"),
-            ("type0-0-0", "substring"),
-            ("type1-0-0", "notsubstring"),
-            ("value0-0-0", "qa-bugs"),
-            ("ctype", "csv"),
-        ]
-        f = requests.get(URL, params=params)
-        content = f.content.decode("utf-8")
-        bugs = DictReader(StringIO(content))
-
-        releases = []
-        temp_bugs = []
-        severity_weight = {
-            "enhancement": 0,
-            "minor": 1,
-            "normal": 2,
-            "major": 3,
-            "critical": 4,
-        }
-        for bug in bugs:
-            # Error if cauldron, not conform to our policy
-            entry = bug
-            if entry["version"] not in releases:
-                releases.append(entry["version"])
-            wb = re.findall(r"\bMGA(\d+)TOO", entry["status_whiteboard"])
-            for key in wb:
-                if key not in releases:
-                    releases.append(key)
-            temp_bugs.append(entry)
-        data_bugs = {}
-        now = datetime.now()
-        counts = {}
-        for rel in releases:
-            data_bugs[rel] = []
-            counts[str] = []
-            for entry in temp_bugs:
-                entry["OK_64"] = ""
-                entry["OK_32"] = ""
-                if entry["version"] == "Cauldron":
-                    # we skip it
-                    versions_list = ()
-                else:
-                    versions_list = (entry["version"],)
-                wb = re.findall(r"\bMGA(\d+)TOO", entry["status_whiteboard"])
-                wbo = re.findall(r"\bMGA(\d+)-(\d+).OK", entry["status_whiteboard"])
-                for v, a in wbo:
-                    if a == "64":
-                        entry["OK_64"] += f" {v}"
-                    if a == "32":
-                        entry["OK_32"] += f" {v}"
-                    if v not in versions_list:
-                        versions_list += (v,)
-                # union of the 2 lists, without duplication
-                versions = " ".join(wb + list(set(versions_list) - set(wb)))
-                entry["versions_symbol"] = ""
-                # Build field Versions
-                for version in versions.split(" "):
-                    OK_64 = version in entry["OK_64"]
-                    OK_32 = version in entry["OK_32"]
-                    full = OK_32 and OK_64
-                    partial = (OK_32 and not OK_64) or (not OK_32 and OK_64)
-                    not_tested = not OK_64 and not OK_32
-                    if full:
-                        testing_class = "testing_complete"
-                        title = "Testing complete for both archs"
-                        symbol = "⚈"
-                    if partial:
-                        testing_class = "testing_one_ok"
-                        title = "Testing partial (at least one arch)"
-                        symbol = "⚉"
-                    if not_tested:
-                        testing_class = "testing_not_ok"
-                        title = "Testing not complete for any arch"
-                        symbol = "⚈"
-                    entry["versions_symbol"] = " ".join(
-                        [
-                            entry["versions_symbol"],
-                            f'{version}<span class="{testing_class}" title= "{title}"><span>{symbol}</span></span>',
-                        ]
-                    )
-                if rel in versions:
-                    if entry["component"] == "Security":
-                        entry["component"] = "security"
-                    elif entry["component"] == "Backports":
-                        entry["component"] = "backport"
-                    elif entry["bug_severity"] == "enhancement":
-                        entry["component"] = "enhancement"
-                    else:
-                        entry["component"] = "bugfix"
-                    entry["age"] = (
-                        now - datetime.fromisoformat(entry["changeddate"])
-                    ).days
-                    entry["versions"] = versions
-                    if "validated_backport" in entry["keywords"]:
-                        entry["status"] = "validated_backport"
-                    elif "validated_update" in entry["keywords"]:
-                        entry["status"] = "validated_update"
-                    elif "validated_" in entry["keywords"]:
-                        entry["status"] = "pending"
-                    else:
-                        entry["status"] = "assigned"
-                    tr_class = ""
-                    entry["severity_weight"] = severity_weight[entry["bug_severity"]]
-                    if (
-                        entry["bug_severity"] == "enhancement"
-                        or entry["component"] == "backport"
-                    ):
-                        tr_class = "enhancement"
-                        entry["severity_weight"] = severity_weight["enhancement"]
-                    elif entry["bug_severity"] == "minor":
-                        tr_class = "low"
-                    elif (
-                        entry["bug_severity"] in ("major", "critical")
-                        and entry["component"] != "security"
-                    ):
-                        tr_class = "major"
-                    else:
-                        tr_class = entry["bug_severity"]
-                    if entry["component"] == "security":
-                        entry["severity_weight"] += 8
-                    if "advisory" in entry["keywords"]:
-                        entry["component"] += "*"
-                    if "feedback" in entry["keywords"]:
-                        tr_class = " ".join([tr_class, "feedback"])
-                    entry["class"] = tr_class
-                    data_bugs[rel].append(entry)
-            counts[rel] = collections.Counter([x["status"] for x in data_bugs[rel]])
-        for version in versions:
+        data_bugs, releases, counts = BugsList().qa_updates()
+        for version in releases:
             data_bugs[version] = sorted(
                 data_bugs[version],
                 key=lambda item: item["severity_weight"],
