@@ -44,7 +44,6 @@ def create_app():
     # filter dor usage in templates
     @app.template_filter('bugs_sum')
     def bugs_sum(list_to_sum):
-        print(f"To sum: {list_to_sum}")
         return collections.Counter.total(list_to_sum)
 
     @app.route('/lib/<path:path>')
@@ -296,13 +295,13 @@ def create_app():
         report = BugReport()
         # load data
         report.from_number(bug_number)
-        srpms =  report.get_srpms()
         releases = report.get_releases()
         data = {}
         nav_data = navbar(lang=request.accept_languages.best)
         for release in releases:
             if "release" not in data.keys():
-                data[release] = {}
+                        data[release] = {}
+            srpms =  report.get_srpms(release)
             distro = {}
             for src_arch in ("x86_64", "i586"):
                 data[release][src_arch] = {}

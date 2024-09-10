@@ -172,28 +172,34 @@ class BugReport():
         self.number = number
         url = os.path.join(config.BUGZILLA_URL, "rest/bug", self.number)
         headers = {'Accept': 'application/json'}
-        r = requests.get(url, params = [("include_fields", self.column)], headers=headers)
-        if r.status_code == 200 and r.json()["faults"] == []:
+        r = requests.get(url, params = [("include_fields", _column)], headers=headers)
+        myjson = r.json()
+        if r.status_code == 200 and myjson["faults"] == []:
             #releases = []
-            entry =  r.json()['bugs'][0]
+            entry =  myjson['bugs'][0]
             #entry["srpms"] = self.get_srpms()
-            for rel in self.get_releases(entry):
+            for rel in self._releases(entry):
                 self.data[rel] = entry
 
-    def get_releases(self, entry):
+    def _releases(self, entry):
         result = {}
         if entry["version"] in ("Cauldron", ):
             # we skip it
             versions_list = ()
         else:
             versions_list = (entry["version"],)
-        wb = re.findall(r"\bMGA(\d+)TOO", entry["status_whiteboard"])
-        wbo = re.findall(r"\bMGA(\d+)-(\d+).OK", entry["status_whiteboard"])
-        for v, a in wbo:
-            if v not in versions_list:
-                versions_list += (v,)
-        # union of the 2 lists, without duplication
-        return " ".join(wb + list(set(versions_list) - set(wb)))
+        if "status_whiteboard" in entry.keys():
+            wb = re.findall(r"\bMGA(\d+)TOO", entry["status_whiteboard"])
+            wbo = re.findall(r"\bMGA(\d+)-(\d+).OK", entry["status_whiteboard"])
+            for v, a in wbo:
+                if v not in versions_list:
+                    versions_list += (v,)
+            # union of the 2 lists, without duplication
+            return " ".join(wb + list(set(versions_list) - set(wb)))
+        return versions_list
+
+    def get_releases(self):
+        return list(self.data.keys())
 
     def from_data(self, entry):
         self.number = entry["bug_id"]
@@ -205,7 +211,7 @@ class BugReport():
                 entry["OK_64"] += f" {v}"
             if a == "32":
                 entry["OK_32"] += f" {v}"
-        for rel in self.get_releases(entry):
+        for rel in self._releases(entry):
             self.data[rel] = entry
         if self.data == {}:
             print(f"no release for {self.number}")
@@ -217,7 +223,7 @@ class BugReport():
             rel = str(rel)
         self.data[rel]["versions_symbol"] = ""
         # Build field Versions
-        releases = self.get_releases(self.data[rel])
+        releases = self._releases(self.data[rel])
         now = datetime.now()
         for version in releases.split(" "):
             OK_64 = version in self.data[rel]["OK_64"]
@@ -291,11 +297,13 @@ class BugReport():
             self.data[rel]["srpms"] = self._srpms(self.data[rel]["cf_rpmpkg"])
         return self.data[rel]
 
-    def get_srpms(self):
+    def get_srpms(self, release):
         """
         Return a set with the names of source packages
         """
-        return self._srpms(self.data['cf_rpmpkg'])
+        if "cf_rpmpkg" in self.data[release].keys():
+            return self._srpms(self.data[release]['cf_rpmpkg'])
+        return []
 
     def _srpms(self, field):
         """
