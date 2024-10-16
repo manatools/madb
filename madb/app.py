@@ -941,10 +941,10 @@ def create_app():
                 data = data
                 ) 
         # script, content = components(graph_run)
-        graph_run.save_graph("graph.html")
+        graph_run.save_graph("/tmp/graph.html")
 
         # We select all script, link, style from the head section, and script from body. We need <div id="mynetwork" class="card-body"></div> to place the graph.
-        with open("graph.html") as f:
+        with open("/tmp/graph.html") as f:
             soup = BeautifulSoup(f.read(), 'html.parser')
             head = "\n".join([str(a) for a in soup.head.find_all(["script", "style", "link"])])
             body_script = head +"\n" + str(soup.body.script)
