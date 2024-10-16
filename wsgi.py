@@ -1,4 +1,2 @@
 from madb import app
-
-if __name__ == "__main__":
-    app.run()
+madb_app = app.create_app()

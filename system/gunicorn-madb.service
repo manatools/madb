@@ -1,0 +1,16 @@
+[Unit]
+Description=Gunicorn instance to serve MADB application
+After=network.target
+
+[Service]
+User=madb
+Group=madb
+WorkingDirectory=/var/lib/madb
+ExecStart=/usr/bin/gunicorn --workers 4 --timeout=90  wsgi:madb_app --log-level=INFO
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
