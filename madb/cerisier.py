@@ -141,5 +141,7 @@ class RpmGraph():
         if nrn == 0:
             return None
         newgraph =  Network('800px', width="100%", cdn_resources="local")
+        # newgraph =  Network('800px', width="100%", cdn_resources="local", layout={"hierarchical": {"direction": "UD"}})
         newgraph.from_nx(self.G)
+        newgraph.repulsion(damping=0.06)
         return newgraph
