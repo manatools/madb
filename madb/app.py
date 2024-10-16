@@ -948,7 +948,7 @@ def create_app():
             soup = BeautifulSoup(f.read(), 'html.parser')
             head = "\n".join([str(a) for a in soup.head.find_all(["script", "style", "link"])])
             body_script = head +"\n" + str(soup.body.script)
-            ody_script = body_script.replace("lib/","static/lib/")
+            body_script = body_script.replace("lib/","static/lib/")
 
         # Return the components to the HTML template 
         return render_template( 
