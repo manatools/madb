@@ -26,7 +26,7 @@
             const slider = document.getElementById("graphLevel");
             if (slider !== null) {var level = slider.value;}
             const descend_field = document.getElementById("descending");
-            if (descend_field !== null) {var descending = descend_field.checked ? "1" : "0";}
+            if (descend_field !== null) {var descending = descend_field.checked ? "1" : "0";} else {var descending = "";}
     
             // Construit l'URL cible en combinant l'action du formulaire et la valeur sélectionnée
             targetUrl = `${arch_field.getAttribute("data-base-url")}?distribution=${dist}&architecture=${arch}`;
@@ -76,6 +76,7 @@
     <input type="text" id="package_name" name="rpm" value="{{ data.rpm_search if data.rpm_search is not none }}">
     <input type="hidden" id="repo" name="repo" value="{{ data.repo if data.repo is not none }}">
     <input type="hidden" id="group" name="group" value="{{ data.group if data.group is not none }}">
+    <input type="hidden" id="page" name="page" value="{{ data.group if data.group is not none }}">
     {% if data.graph %}
     <label>Depth: 1 </label>
     <input type="range" min="1" max="3" value="{{ data.level }}" class="searchfield" id="graphLevel">
