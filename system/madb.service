@@ -1,11 +1,11 @@
 [Unit]
-Description=Gunicorn instance to serve application
+Description=Gunicorn instance to serve MADB application
 After=network.target
 
 [Service]
 User=madb
 Group=madb
-WorkingDirectory=/data/www/html/madb
+WorkingDirectory=/var/lib/madb
 ExecStart=/usr/bin/gunicorn --workers 2 --timeout=90 --bind 0.0.0.0:5003 wsgi:madb_app --log-level=DEBUG
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
