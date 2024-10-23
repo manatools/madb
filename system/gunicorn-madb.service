@@ -6,7 +6,7 @@ After=network.target
 User=madb
 Group=madb
 WorkingDirectory=/var/lib/madb
-ExecStart=/usr/bin/gunicorn --workers 4 --timeout=90  wsgi:madb_app --log-level=INFO
+ExecStart=/usr/bin/gunicorn --workers 4 --timeout=90 --bind 0.0.0.0:5003 wsgi:madb_app --log-level=INFO
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
 TimeoutStopSec=5
