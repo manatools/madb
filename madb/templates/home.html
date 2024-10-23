@@ -21,7 +21,7 @@
   window.onload = function() {
       function updateColumns() {
           var columnList = document.querySelector('.column-list');
-          var numColumns = Math.floor(window.innerWidth / 150); // Adjust 200 as needed for minimum column width
+          var numColumns = Math.floor(columnList.clientWidth / 150); // Adjust 150 as needed for minimum column width
           columnList.style.columnCount = numColumns;
       }
 
