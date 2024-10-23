@@ -31,8 +31,6 @@ rpmlint-mageia-policy
 
 [2] these packages are availble on MLO repository.
 
-<<<<<<< HEAD
-=======
 # Configuration
 The package comes with a model of configuration file `madb/config.py.in`. This file has to be edited and installed as `madb/config.py`. Its content is:
 ```
