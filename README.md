@@ -8,24 +8,17 @@ Use `bugs.mageia.org` for special pages
 # Requirements
 The application needs this:
 ## Python modules
-beautifulsoup4
-
-flask
-
-gunicorn
-
-humanize
-
-libdnf5 [1]
-
-pandas
-
-pyvis [2]
-
-jsonpickle [2]
+- beautifulsoup4
+- flask
+- gunicorn
+- humanize
+- libdnf5 [1]
+- pandas
+- pyvis [2]
+- jsonpickle [2]
 
 ## Other packages
-rpmlint-mageia-policy 
+- rpmlint-mageia-policy 
 
 [1] For Mageia 9, this module is available from Copr: ngompa/dnf5-mga. For cauldron, it is already available in release.
 
