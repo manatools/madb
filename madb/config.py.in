@@ -1,7 +1,7 @@
 # the last release
 TOP_RELEASE = 9
 APP_NAME = "Mageia App DB"
-DATA_PATH = "/var/www/html/madb"
+DATA_PATH = "/var/lib/madb"
 MIRROR_URL = "https://fr2.rpmfind.net/linux/mageia/distrib/"
 # Complete list of used goups
 DEF_GROUPS_FILE = "/usr/share/rpmlint/config.d/distribution.exceptions.conf"
