@@ -24,7 +24,7 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 log_level = getattr(logging, config.LOG_LEVEL.upper())
-logging.basicConfig(filename=os.path.join(config.DATA_PATH,'madb.log'), encoding='utf-8', level=log_level)
+logging.basicConfig(filename=os.path.join(config.LOG_PATH,'madb.log'), encoding='utf-8', level=log_level)
 
 URL = config.BUGZILLA_URL + "/buglist.cgi"
 

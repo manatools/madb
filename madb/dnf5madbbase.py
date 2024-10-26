@@ -24,7 +24,7 @@ class Dnf5MadbBase():
         vars = self._base.get_vars().get()
         vars.set('releasever', release)
         vars.set('arch', arch)
-        self._base_config.logdir = os.path.join(root, "dnf","logs")
+        self._base_config.logdir = os.path.join(config.LOG_PATH)
         self._base_config.cachedir = os.path.join(root, "dnf", "cache")
         self._base_config.reposdir = os.path.join(root, "dnf", "etc","distro.repos.d")
         log_router = self._base.get_logger()
