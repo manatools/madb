@@ -881,7 +881,6 @@ def create_app():
 
     def list_bugs(params):
         a = requests.get(URL, params=params)
-        print(a.url)
         content = a.content.decode("utf-8")
         bugs = DictReader(StringIO(content))
         assignees = []

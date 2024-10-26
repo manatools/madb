@@ -78,7 +78,7 @@ Some files are cached in `cache/` or `cache/long/`. They are header files for th
 
 The application writes logs in `./madb.log`.
 
-The tool `python makecache.py` can be run regularly to allow the application to be more responsive.
+The tool `python makecache.py` has to be run regularly for the application to have up to date data.
 
 # Services
 The application can be run as services through `systemd`. 
