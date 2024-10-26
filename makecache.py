@@ -12,4 +12,4 @@ for distro in iter(config.DISTRIBUTION.keys()):
     for arch in iter(config.ARCHES.keys()):
         base = Dnf5MadbBase(distro, arch, config.DATA_PATH, refresh=True)
 elapsed =  datetime.datetime.now() - start
-print(f"Updated {config.APP_NAME} metadata in {humanize.naturaldelta(elapsed, minimum_unit='seconds')}")
+print(f"Updating {config.APP_NAME} metadata took {humanize.naturaldelta(elapsed, minimum_unit='seconds')}")
