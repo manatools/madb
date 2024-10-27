@@ -30,7 +30,8 @@ The package comes with a model of configuration file `madb/config.py.in`. This f
 # the last release
 TOP_RELEASE = 9
 APP_NAME = "Mageia App DB"
-DATA_PATH = "/var/www/html/madb"
+DATA_PATH = "/var/lib/madb"
+LOG_PATH = DATA_PATH
 MIRROR_URL = "https://fr2.rpmfind.net/linux/mageia/distrib/"
 # Complete list of used goups
 DEF_GROUPS_FILE = "/usr/share/rpmlint/config.d/distribution.exceptions.conf"
@@ -58,6 +59,8 @@ DISTRIBUTION = {
 `TOP_RELEASE` has to be changed at each release.
 
 `DATA_PATH` has to be adapted to where the application is located.
+
+`LOG_PATH` has to be adapted to where the application writes its logs, for example to `/var/log/madb`.
 
 `MIRROR_URL` has to be adapted to be preferably a mirror near the server.
 
