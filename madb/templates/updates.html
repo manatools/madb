@@ -44,7 +44,7 @@ There is no update with status {{ status }} for release {{ release }}<br />
   {% for entry in data.bugs[release] %}
   {% if status == entry['status'] %}
   <tr class='{{ entry["class"] }}'>
-    <td>{{ entry.component }}</td>
+    <td>{{ entry.severity_class }}</td>
     <td><a href='https://bugs.mageia.org/show_bug.cgi?id={{entry.bug_id}}'>{{entry.bug_id}}</a></td>
     <td style="text-align:left;" title='{{ entry["cf_rpmpkg"]}}'><a href='https://bugs.mageia.org/show_bug.cgi?id={{entry.bug_id}}'>{{ entry.short_desc }}</a></td>
     <td>{{ entry.OK_32 }}</td>
@@ -55,8 +55,9 @@ There is no update with status {{ status }} for release {{ release }}<br />
     <td><a href={{ "/rpmsforqa/" + entry.bug_id }}>RPMS</a></td>
     <td>
       {% for srpm in entry['srpms'] %}
-      <a href="https://bugs.mageia.org/buglist.cgi?columnlist=version%2Cassigned_to%2Cbug_status%2Cresolution%2Cshort_desc%2Ccf_rpmpkg%2Cstatus_whiteboard&email1=qa-bugs@ml.mageia.org&emailassigned_to1=1&emailcc1=1&emailtype1=substring&field0-0-0=cf_rpmpkg&field0-0-2=short_desc&order=bug_id%20DESC&product=Mageia&query_format=advanced&type0-0-0=substring&type0-0-1=substring&type0-0-2=substring&type0-0-3=matches&value0-0-0={{ srpm }}&value0-0-1=ffmpeg&value0-0-2={{ srpm }}&value0-0-3=%22{{ srpm }}%22">Bugzilla</a> ({{ srpm }})</td>
+      <a href="https://bugs.mageia.org/buglist.cgi?columnlist=version%2Cassigned_to%2Cbug_status%2Cresolution%2Cshort_desc%2Ccf_rpmpkg%2Cstatus_whiteboard&email1=qa-bugs@ml.mageia.org&emailassigned_to1=1&emailcc1=1&emailtype1=substring&field0-0-0=cf_rpmpkg&field0-0-2=short_desc&order=bug_id%20DESC&product=Mageia&query_format=advanced&type0-0-0=substring&type0-0-1=substring&type0-0-2=substring&type0-0-3=matches&value0-0-0={{ srpm }}&value0-0-1=ffmpeg&value0-0-2={{ srpm }}&value0-0-3=%22{{ srpm }}%22">Bugzilla</a> ({{ srpm }})
       {% endfor %}
+    </td>
   </tr>
   {% endif %}
   {% endfor %}

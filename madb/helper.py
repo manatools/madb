@@ -139,13 +139,15 @@ class BugsList():
            # if rel != "unspecified":
                 #print(rel)
                 #for x in self.bugs[rel]:
-                #    print(x.get_data_bugs(rel))
-            counts[rel] = collections.Counter([x.get_data_bugs(rel)["status"] for x in self.bugs[rel] if x.get_data_bugs(rel)["status"] != "unspecified"])
+                #    print(x.format_data(rel))
+            counts[rel] = collections.Counter([x.data[rel]["status"] for x in self.bugs[rel] if rel in x.data.keys()])
         bugs_list = {}
         for rel in releases:
             bugs_list[rel] = []
             for bug in self.bugs[rel]:
-                bugs_list[rel].append(bug.get_data_bugs(rel))
+                if rel in bug.data.keys():
+                    bugs_list[rel].append(bug.data[rel])
+        print(bugs_list)
         return bugs_list, releases, counts
 
 class BugReport():
@@ -175,11 +177,10 @@ class BugReport():
         r = requests.get(url, params = [("include_fields", _column)], headers=headers)
         myjson = r.json()
         if r.status_code == 200 and myjson["faults"] == []:
-            #releases = []
             entry =  myjson['bugs'][0]
-            #entry["srpms"] = self.get_srpms()
             for rel in self._releases(entry):
                 self.data[rel] = entry
+                # self.format_data(rel)
 
     def _releases(self, entry):
         result = {}
@@ -195,7 +196,7 @@ class BugReport():
                 if v not in versions_list:
                     versions_list += (v,)
             # union of the 2 lists, without duplication
-            return " ".join(wb + list(set(versions_list) - set(wb)))
+            versions_list = wb + list(set(versions_list) - set(wb))
         return versions_list
 
     def get_releases(self):
@@ -203,20 +204,22 @@ class BugReport():
 
     def from_data(self, entry):
         self.number = entry["bug_id"]
-        entry["OK_64"] = ""
-        entry["OK_32"] = ""
-        wbo = re.findall(r"\bMGA(\d+)-(\d+).OK", entry["status_whiteboard"])
-        for v, a in wbo:
-            if a == "64":
-                entry["OK_64"] += f" {v}"
-            if a == "32":
-                entry["OK_32"] += f" {v}"
         for rel in self._releases(entry):
             self.data[rel] = entry
+            self.format_data(rel)
         if self.data == {}:
             print(f"no release for {self.number}")
 
-    def get_data_bugs(self, rel):
+    def format_data(self, rel):
+        self.data[rel]["OK_64"] = ""
+        self.data[rel]["OK_32"] = ""
+        if "status_whiteboard" in self.data[rel].keys():
+            wbo = re.findall(r"\bMGA(\d+)-(\d+).OK", self.data[rel]["status_whiteboard"])
+            for v, a in wbo:
+                if a == "64":
+                    self.data[rel]["OK_64"] += f" {v}"
+                if a == "32":
+                    self.data[rel]["OK_32"] += f" {v}"
         if  rel not in self.data.keys():
             return {"status": "unspecified", "severity_weight": 0}
         if type(rel) == "int":
@@ -225,7 +228,7 @@ class BugReport():
         # Build field Versions
         releases = self._releases(self.data[rel])
         now = datetime.now()
-        for version in releases.split(" "):
+        for version in releases:
             OK_64 = version in self.data[rel]["OK_64"]
             OK_32 = version in self.data[rel]["OK_32"]
             full = OK_32 and OK_64
@@ -250,14 +253,15 @@ class BugReport():
                 ]
             )
         if rel in releases:
+            print(f'{rel} {self.data[rel]}')
             if self.data[rel]["component"] == "Security":
-                self.data[rel]["component"] = "security"
+                self.data[rel]["severity_class"] = "security"
             elif self.data[rel]["component"] == "Backports":
-                self.data[rel]["component"] = "backport"
+                self.data[rel]["severity_class"] = "backport"
             elif self.data[rel]["bug_severity"] == "enhancement":
-                self.data[rel]["component"] = "enhancement"
+                self.data[rel]["severity_class"] = "enhancement"
             else:
-                self.data[rel]["component"] = "bugfix"
+                self.data[rel]["severity_class"] = "bugfix"
             self.data[rel]["age"] = (
                 now - datetime.fromisoformat(self.data[rel]["changeddate"])
             ).days
@@ -274,7 +278,7 @@ class BugReport():
             self.data[rel]["severity_weight"] = self.severity_weight[self.data[rel]["bug_severity"]]
             if (
                 self.data[rel]["bug_severity"] == "enhancement"
-                or self.data[rel]["component"] == "backport"
+                or self.data[rel]["severity_class"] == "backport"
             ):
                 tr_class = "enhancement"
                 self.data[rel]["severity_weight"] = self.severity_weight["enhancement"]
@@ -282,15 +286,15 @@ class BugReport():
                 tr_class = "low"
             elif (
                 self.data[rel]["bug_severity"] in ("major", "critical")
-                and self.data[rel]["component"] != "security"
+                and self.data[rel]["severity_class"] != "security"
             ):
                 tr_class = "major"
             else:
                 tr_class = self.data[rel]["bug_severity"]
-            if self.data[rel]["component"] == "security":
+            if self.data[rel]["severity_class"] == "security":
                 self.data[rel]["severity_weight"] += 8
             if "advisory" in self.data[rel]["keywords"]:
-                self.data[rel]["component"] += "*"
+                self.data[rel]["severity_class"] += "*"
             if "feedback" in self.data[rel]["keywords"]:
                 tr_class = " ".join([tr_class, "feedback"])
             self.data[rel]["class"] = tr_class
