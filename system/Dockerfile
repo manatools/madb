@@ -10,6 +10,7 @@ RUN dnf copr disable -y ngompa/dnf5-mga
 RUN rm -f  /etc/yum.repos.d/mlo9-x86_64-core.repo   /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:ngompa:dnf5-mga.repo
 
 RUN sed -e "s|var/www/html|var/lib|" /var/lib/madb/madb/config.py.in >/var/lib/madb/madb/config.py
+RUN sed -ie "s|= DATA_PATH|= '/var/log/madb'|" /var/lib/madb/madb/config.py
 
 # Define init command
 WORKDIR "/var/lib/madb"
