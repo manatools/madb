@@ -1,0 +1,3 @@
+# release 0.4
+- fix ascending dependencies
+- change application name in config.py.in from Mageia App DB to Mageia App Db
