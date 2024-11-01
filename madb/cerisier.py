@@ -84,13 +84,15 @@ class RpmGraph():
                 ]
         for link_type, link_color in process:
             previous = ""
-            l = self.base.search(link_type, [ref.get_name(),])
-            if l is None:
+            l = self.base.search_name([ref.get_name(),])
+            for pkg in l:
+                last = pkg
+            if last is None:
                 print(f"{link_color} is void")
                 continue
             i = 1
             p_name = ""
-            for p in l:
+            for p in self.base.search(link_type, last.get_provides()):
                     if not p.get_name() in deps:
                         deps.append(p.get_name())
                     # p is a libdnf5.rpm.Package object
@@ -98,12 +100,7 @@ class RpmGraph():
                     if (p.get_name() == p_name) :
                         continue
                     p_name = p.get_name()
-                    if p_name in self.G.nodes() :
-                    #    attrs = get_node_attributes(self.G, 'req')
-                    #    attrs[p_name] = f"{attrs[p_name]} {str(req)}/{ref.get_name()}"
-                    #    set_node_attributes(self.G,attrs,'req')
-                        pass
-                    else:
+                    if p_name not in self.G.nodes() :
                         self.G.add_node(p_name,
                                 name=p_name,
                                 title=f"<a href='/graph?rpm={p_name}'>{p_name}</a><br>Version: {p.get_evr()}",
