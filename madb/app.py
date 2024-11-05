@@ -4,7 +4,7 @@ from madb.helper import BugReport, Pagination, BugsList
 from madb.helper import load_content_or_cache, clean_cache
 from madb.cerisier import RpmGraph
 from madb.screenshots import Screenshots
-from flask import Flask, render_template, request, Response, send_from_directory
+from flask import Flask, render_template, request, Response, send_from_directory, redirect
 import requests
 from bs4 import BeautifulSoup 
 from csv import DictReader
@@ -133,6 +133,9 @@ def create_app():
         }
         return render_template("packages_list.html", data=data)
 
+    @app.route("/tools/updates/")
+    def old_updates():
+        return redirect("/updates/")
     @app.route("/updates/")
     def updates():
         data_bugs, releases, counts = BugsList().qa_updates()
@@ -153,6 +156,9 @@ def create_app():
         }
         return render_template("updates.html", data=data)
 
+    @app.route("/tools/blockers/")
+    def old_blockers():
+        return redirect("/blockers/")
     @app.route("/blockers/")
     def blockers():
         urls = {}
@@ -217,6 +223,9 @@ def create_app():
         }
         return render_template("bugs.html", data=data)
 
+    @app.route("/tools/milestone/")
+    def old_milestone():
+        return redirect("/milestone/")
     @app.route("/milestone/")
     def milestone():
         urls = {}
@@ -332,6 +341,9 @@ def create_app():
         else:
             return render_template("rpms_for_qa.html", data=data)
 
+    @app.route("/tools/highpriority/")
+    def old_highpriority():
+        return redirect("/highpriority/")
     @app.route("/highpriority/")
     def highpriority():
         urls = {}
@@ -404,6 +416,9 @@ def create_app():
         return render_template("bugs.html", data=data)
 
 
+    @app.route("/tools/mageiatools/")
+    def old_mageiatools():
+        return redirect("/mageiatools/")
     @app.route("/mageiatools/")
     def mageiatools():
         urls = {}
@@ -687,6 +702,9 @@ def create_app():
         }
         return render_template("rpm_show.html", data=data)
 
+    @app.route("/tools/comparison")
+    def old_comparison():
+        return redirect("/comparison")
     @app.route("/comparison")
     def comparison():
         repo_classes = ('release', 'updates', 'updates_testing', 'backports', 'backports_testing')
