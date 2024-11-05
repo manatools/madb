@@ -69,10 +69,10 @@ def create_app():
             release = next(iter(config.DISTRIBUTION.keys()))
             arch = next(iter(config.ARCHES.keys()))
         distro = Dnf5MadbBase(release, arch, config.DATA_PATH)
-        last_updates = distro.search_updates(last=True)
+        last_updates = distro.search_updates(last=True, testing=False)
         if not last_updates:
             last_updates = {}
-        last_backports = distro.search_updates(backports=True, last=True)
+        last_backports = distro.search_updates(backports=True, last=True, testing=False)
         if not last_backports:
             last_backports = {}
         groups1 = sorted(set([x[0] for x in groups()]))
