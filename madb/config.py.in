@@ -7,6 +7,9 @@ LOG_PATH = DATA_PATH
 MIRROR_URL = "https://fr2.rpmfind.net/linux/mageia/distrib/"
 # Complete list of used goups
 DEF_GROUPS_FILE = "/usr/share/rpmlint/config.d/distribution.exceptions.conf"
+# Oldness of packages to display as recent updates in home page, starting from build time
+RECENT_UPDATES_DURATION = 21
+RECENT_BACKPORTS_DURATION = 28
 # Name of the development version
 DEV_NAME = "cauldron"
 # Level of logging

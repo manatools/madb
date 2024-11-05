@@ -84,15 +84,17 @@ class Dnf5MadbBase():
         query.filter_arch([self.arch, "noarch"])
         if backports:
             repo = "*backports"
+            days = config.RECENT_BACKPORTS_DURATION
         else:
             repo = "*updates"
+            days = config.RECENT_UPDATES_DURATION
         if testing:
             repo += "_testing"
         query.filter_repo_id([repo], GLOB)
         if graphical:
             query.filter_file(["/usr/share/applications/*.desktop"], GLOB)
         if last:
-            query.filter_recent(int((datetime.now() - timedelta(days=7)).timestamp()))
+            query.filter_recent(int((datetime.now() - timedelta(days=days)).timestamp()))
         return query
 
     def search_by_sources(self, values, repo=None):
