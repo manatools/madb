@@ -5,47 +5,44 @@
 </div>
 <p>
 {% include 'search.html' %}
+
 {% if data.length == 0 %}
-<h2>No packages are available in this category</h2>
+  <h2>No packages are available in this category</h2>
 {% else %}
-<div id="sfcontent">
+  <div id="sfcontent">
     <div class="pager">
     {{ data.links |safe}}
     </div>
 
+    <table class="packlist">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Summary</th>
+          <th>Version</th>
+          <th>Release</th>
+          <th>Build date</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for rpm in data.rpms %}
+        <tr class="{{ 'rpm-odd' if loop.index % 2 else 'rpm-even'}}">
+          <td><a href="/show{{ data.url_end }}&rpm={{ rpm.get_name()}}">{{ rpm }}</a></td>
+          <td class='summary'>{{ rpm.get_summary() }}</td>
+          <td><a href="/show{{ data.url_end }}&rpm={{ rpm.get_name()}}">{{ rpm.get_version() }}</a></td>
+          <td>{{ rpm.get_release() }}</td>
+          <td>{{ rpm.get_build_time()|format_date }} </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
 
-<table class="packlist">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Summary</th>
-      <th>Version</th>
-      <th>Release</th>
-      <th>Build date</th>
-    </tr>
-  </thead>
-  <tbody>
-  {% for rpm in data.rpms %}
-    <tr class="{{ 'rpm-odd' if loop.index % 2 else 'rpm-even'}}">
-      <td><a href="/show{{ data.url_end }}&rpm={{ rpm.get_name()}}">{{ rpm }}</a></td>
-      <td class='summary'>{{ rpm.get_summary() }}</td>
-      <td><a href="/show{{ data.url_end }}&rpm={{ rpm.get_name()}}">{{ rpm.get_version() }}</a></td>
-      <td>{{ rpm.get_release() }}</td>
-      <td>{{ rpm.get_build_time()|format_date }} </td>
-    </tr>
-  {% endfor %}
-  </tbody>
-</table>
-
-
-
-<div class="pager pager-bottom">
-    <div id="pagercount">
+    <div class="pager pager-bottom">
+      <div id="pagercount">
         {{ data.counts }}<br>
+      </div>
+      {{ data.links |safe}}
     </div>
-    {{ data.links |safe}}
-</div>
-</div>
-
+  </div>
 {% endif %}
 {% endblock %}
