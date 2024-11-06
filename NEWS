@@ -1,3 +1,7 @@
+# release 0.5
+- config: add delay in configuration for including updates on first page
+- routes: add routes with tools/ prefix for updates, highpriority, milestone, comparison, blockers, mageiatools
+
 # release 0.4
 - fix ascending dependencies
 - change application name in config.py.in from Mageia App DB to Mageia App Db
