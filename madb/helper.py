@@ -365,9 +365,15 @@ class Pagination():
                     self._weeks.append((now - bt) // (7* 24 * 3600))
                 i += 1
 
-            self._w_end.append(i - 1)
-            older = min([rpm.get_build_time() for rpm in data])
-            self.pages_max = len(self._w_start)
+            if i == 0:
+                self.pages_max = 1
+                self._w_end.append(0)
+                self._w_start.append(0)
+                self._weeks.append(1)
+            else:
+                self._w_end.append(i - 1)
+                older = min([rpm.get_build_time() for rpm in data])
+                self.pages_max = len(self._w_start)
         elif byfirstchar:
             self._char_list = ["0"] + list(string.ascii_uppercase)
 

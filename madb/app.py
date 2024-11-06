@@ -125,6 +125,7 @@ def create_app():
             "rpms": pager.data_page(page),
             "links": pager.links(f"/list?distribution={release}&architecture={arch}&graphical={graphical}&type={type_list}", page),
             "counts": pager.counts(page),
+            "length": len(rpms),
             "config": data_config,
             "base_url": "/list",
             "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}",     

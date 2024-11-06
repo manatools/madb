@@ -5,6 +5,9 @@
 </div>
 <p>
 {% include 'search.html' %}
+{% if data.length == 0 %}
+<h2>No packages are available in this category</h2>
+{% else %}
 <div id="sfcontent">
     <div class="pager">
     {{ data.links |safe}}
@@ -36,7 +39,6 @@
 
 
 
-
 <div class="pager pager-bottom">
     <div id="pagercount">
         {{ data.counts }}<br>
@@ -45,4 +47,5 @@
 </div>
 </div>
 
+{% endif %}
 {% endblock %}
