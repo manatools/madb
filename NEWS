@@ -1,6 +1,7 @@
 # release 0.5
 - config: add delay in configuration for including updates on first page
 - routes: add routes with tools/ prefix for updates, highpriority, milestone, comparison, blockers, mageiatools
+- fix: display message no packages instead of crash when updates list is void
 
 # release 0.4
 - fix ascending dependencies
