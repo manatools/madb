@@ -95,6 +95,9 @@ def create_app():
         }
         return render_template("home.html", data=data)
 
+    @app.route("/package/list")
+    def old_list():
+        return redirect("/list")
     @app.route("/list")
     def rpmlist():
         release = request.args.get("distribution", None)
