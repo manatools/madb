@@ -61,11 +61,11 @@ def create_app():
     @app.route("/")
     @app.route("/home")
     def home():        
-        release = request.args.get("distribution", None)
-        arch = request.args.get("architecture", None)
+        release = request.args.get("distribution", "unspecified")
+        arch = request.args.get("architecture", "indifferent")
         graphical = request.args.get("graphical", "1")
         rpm = request.args.get("rpm", "")
-        if not release:
+        if release == "unspecified" or arch == "indifferent":
             release = next(iter(config.DISTRIBUTION.keys()))
             arch = next(iter(config.ARCHES.keys()))
         distro = Dnf5MadbBase(release, arch, config.DATA_PATH)
@@ -545,26 +545,42 @@ def create_app():
 
     @app.route("/show")
     def show():
-        release = request.args.get("distribution", None)
-        arch = request.args.get("architecture", None)
+        release = request.args.get("distribution", "unspecified")
+        arch = request.args.get("architecture", "indifferent")
         package = request.args.get("rpm", "")
         graphical = request.args.get("graphical", "0")
-        distro = Dnf5MadbBase(release, arch, config.DATA_PATH)
-        dnf_pkgs = distro.search_name([package], graphical=(graphical == "1"))
+        nav_data = navbar(lang=request.accept_languages.best)
+        arch_list = []
+        if arch == "indifferent":
+            for tmp_arch in data_config["arches"].keys():
+                if tmp_arch != "indifferent":
+                    arch_list.append(tmp_arch)
+        else:
+            arch_list = [arch,]
+        releases_list = []
+        if release == "unspecified":
+            for tmp_rel in data_config["distribution"].keys():
+                if tmp_rel != "unspecified":
+                    releases_list.append(tmp_rel)
+        else:
+            releases_list = [release,]
         rpms = []
         last = None
-        nav_data = navbar(lang=request.accept_languages.best)
-        for dnf_pkg in dnf_pkgs:
-            rpms.append(
-                {
-                    "full_name": dnf_pkg.get_nevra(),
-                    "distro_release": release,
-                    "url": f"/rpmshow?rpm={dnf_pkg.get_name()}&repo={dnf_pkg.get_repo_id()}&distribution={release}&architecture={arch}&graphical={graphical}",
-                    "arch": dnf_pkg.get_arch(),
-                    "repo": dnf_pkg.get_repo_name(),
-                }
-            )
-            last = dnf_pkg
+        for rel in releases_list:
+            for iter_arch in arch_list:
+                distro = Dnf5MadbBase(rel, iter_arch, config.DATA_PATH)
+                dnf_pkgs = distro.search_name([package], graphical=(graphical == "1"))
+                for dnf_pkg in dnf_pkgs:
+                    rpms.append(
+                        {
+                            "full_name": dnf_pkg.get_nevra(),
+                            "distro_release": rel,
+                            "url": f"/rpmshow?rpm={dnf_pkg.get_name()}&repo={dnf_pkg.get_repo_id()}&distribution={rel}&architecture={iter_arch}&graphical={graphical}",
+                            "arch": dnf_pkg.get_arch(),
+                            "repo": dnf_pkg.get_repo_name(),
+                        }
+                    )
+                    last = dnf_pkg
         if last is not None:
             sc = Screenshots()
             links = sc.image_links(last.get_name())
@@ -607,13 +623,13 @@ def create_app():
 
     @app.route("/rpmshow")
     def rpmshow():
-        release = request.args.get("distribution", None)
-        arch = request.args.get("architecture", None)
+        release = request.args.get("distribution", "unspecified")
+        arch = request.args.get("architecture", "indiffrent")
         graphical = request.args.get("graphical", "1")
         package = request.args.get("rpm", "")
         repo = request.args.get("repo", "")
         nav_data = navbar(lang=request.accept_languages.best)
-        if package == "" or repo == "":
+        if package == "" or repo == "" or arch == "indifferent" or release == "unspecified":
             data = {
                 "title": "Not found",
                 "config": data_config,

@@ -147,7 +147,6 @@ class BugsList():
             for bug in self.bugs[rel]:
                 if rel in bug.data.keys():
                     bugs_list[rel].append(bug.data[rel])
-        print(bugs_list)
         return bugs_list, releases, counts
 
 class BugReport():
