@@ -75,12 +75,13 @@ _column = ",".join(
         [
             "bug_severity",
             "priority",
-            "op_sys",
             "assigned_to",
+            "assigned_to_realname",
             "bug_status",
             "resolution",
             "short_desc",
             "status_whiteboard",
+            "cf_statuscomment",
             "keywords",
             "version",
             "cf_rpmpkg",
@@ -91,26 +92,45 @@ _column = ",".join(
 
 
 class BugsList():
-    
-    params = [
-            ("bug_status", "REOPENED"),
-            ("bug_status", "NEW"),
-            ("bug_status", "ASSIGNED"),
-            ("bug_status", "UNCONFIRMED"),
-            ("columnlist", _column),
-            ("field0-0-0", "assigned_to"),
-            ("query_format", "advanced"),
-            ("type0-0-0", "substring"),
-            ("type1-0-0", "notsubstring"),
-            ("value0-0-0", "qa-bugs"),
-            ("ctype", "csv"),
-        ]
 
     def __init__(self):
         self.bugs = []
 
-    def qa_updates(self):
-        f = requests.get(config.BUGZILLA_URL + "/buglist.cgi", params=self.params)
+    def qa_updates(self):        
+        params = [
+                ("bug_status", "REOPENED"),
+                ("bug_status", "NEW"),
+                ("bug_status", "ASSIGNED"),
+                ("bug_status", "UNCONFIRMED"),
+                ("columnlist", _column),
+                ("field0-0-0", "assigned_to"),
+                ("query_format", "advanced"),
+                ("type0-0-0", "substring"),
+                ("type1-0-0", "notsubstring"),
+                ("value0-0-0", "qa-bugs"),
+                ("ctype", "csv"),
+            ]
+        return self._request(params)
+
+
+    def security(self): 
+        params = [
+                ("bug_status", "REOPENED"),
+                ("bug_status", "NEW"),
+                ("bug_status", "ASSIGNED"),
+                ("bug_status", "UNCONFIRMED"),
+                ("columnlist", _column),
+                ("component", "Security"),
+                ("email1", "qa-bugs"),
+                ("emailtype1", "notsubstring"),
+                ("query_format", "advanced"),
+                ("query_based_on", ""),
+                ("ctype", "csv"),
+            ]
+        return self._request(params)
+
+    def _request(self, params):
+        f = requests.get(config.BUGZILLA_URL + "/buglist.cgi", params=params)
         content = f.content.decode("utf-8")
         bugs = DictReader(StringIO(content))
 
@@ -124,7 +144,7 @@ class BugsList():
             wb = re.findall(r"\bMGA(\d+)TOO", entry["status_whiteboard"])
             for key in wb:
                 if key not in releases:
-                    self.releases.append(key)
+                    releases.append(key)
             temp_bugs.append(entry)
         
         self.bugs = {}
@@ -183,11 +203,7 @@ class BugReport():
 
     def _releases(self, entry):
         result = {}
-        if entry["version"] in ("Cauldron", ):
-            # we skip it
-            versions_list = ()
-        else:
-            versions_list = (entry["version"],)
+        versions_list = (entry["version"],)
         if "status_whiteboard" in entry.keys():
             wb = re.findall(r"\bMGA(\d+)TOO", entry["status_whiteboard"])
             wbo = re.findall(r"\bMGA(\d+)-(\d+).OK", entry["status_whiteboard"])
@@ -252,7 +268,6 @@ class BugReport():
                 ]
             )
         if rel in releases:
-            print(f'{rel} {self.data[rel]}')
             if self.data[rel]["component"] == "Security":
                 self.data[rel]["severity_class"] = "security"
             elif self.data[rel]["component"] == "Backports":

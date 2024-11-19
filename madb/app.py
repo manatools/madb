@@ -722,6 +722,33 @@ def create_app():
         }
         return render_template("rpm_show.html", data=data)
 
+
+    @app.route("/tools/security")
+    def old_security():
+        return redirect("/security")
+    @app.route("/security")
+    def security():
+        data_bugs, releases, counts = BugsList().security()
+        for version in releases:
+            data_bugs[version] = sorted(
+                data_bugs[version],
+                key=lambda item: item["severity_weight"],
+                reverse=True,
+            )
+        title = "Security issues"
+        nav_data = navbar(lang=request.accept_languages.best)
+        data = {
+            # "urls": urls,
+            "counts": counts,
+            "bugs": data_bugs,
+            "releases": releases,
+            "config": data_config,
+            "title": title,
+            "nav_html": nav_data["html"],
+            "nav_css": nav_data["css"],
+        }
+        return render_template("security.html", data=data)
+
     @app.route("/tools/comparison")
     def old_comparison():
         return redirect("/comparison")
