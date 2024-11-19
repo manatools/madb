@@ -1,3 +1,8 @@
+# release 0.6
+- content: add Security page
+- routes: add routes with tools/ prefix for list
+- search: Allow architecture and release to be unspecified
+
 # release 0.5
 - config: add delay in configuration for including updates on first page
 - routes: add routes with tools/ prefix for updates, highpriority, milestone, comparison, blockers, mageiatools
