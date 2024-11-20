@@ -327,16 +327,7 @@ class BugReport():
         """
         Return a set with the names of source packages
         """
-        results = []
-        for srpm in re.split(';|,| ', field):
-            pkg = srpm.strip()
-            if pkg == "":
-                continue
-            analyze = re.search(r"([\w\-\+_]+)-\d", pkg)
-            if analyze is not None:
-                pkg = analyze.group(1)
-            results += [pkg]
-        return results
+        return [srpm.strip() for srpm in re.split(';|,| ', field) if srpm.strip() != ""]
 
 class Pagination():
     def __init__(self, data, page_size=0, pages_number=0, byweek=False, byfirstchar=False):

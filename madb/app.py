@@ -9,7 +9,6 @@ import requests
 from bs4 import BeautifulSoup 
 from csv import DictReader
 from datetime import datetime, timedelta, date
-import re
 from io import StringIO
 import collections
 import madb.config as config
