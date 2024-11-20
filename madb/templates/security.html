@@ -1,0 +1,45 @@
+{% extends 'layout.html' %}
+
+{% block container %}
+<div class="pagename">
+    <p>{{ data.title }}</p>
+</div>
+<p>{{ data.comments|safe }}</p>
+<br />
+{% for release in data.releases %}
+<h2>{{ data.config.distribution[release.lower()] }}</h2>
+<table class='buglist'>
+    <thead>
+        <tr>
+            <th style="width:5%">Bug number</th>
+            <th style="width:30%">Summary</th>
+            <th style="width:5%">Affected releases</th>
+            <th style="width:10%">Assignee</th>
+            <th style="width:28%">Status comment</th>
+            <th style="width:10%">Source</th>
+            <th style="width:7%">Last action (days)</th>
+            <th style="width:7%">Quick search</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in data.bugs[release]|sort(attribute='bug_id')  %}
+        <tr>
+            <td><a href='https://bugs.mageia.org/show_bug.cgi?id={{ entry["bug_id"] }}'>{{ entry["bug_id"] }}</a>
+            </td>
+            <td  style="text-align:left;" title='{{ entry["cf_rpmpkg"]}}'><a href='https://bugs.mageia.org/show_bug.cgi?id={{entry.bug_id}}'>{{ entry.short_desc }}</a></td>
+            <td>{% for version in entry.versions %}{{ version }}<br />{% endfor %} </td>
+            <td style="text-align:left;">{{ entry.assigned_to_realname }}</td>
+            <td style="text-align:left;">{{ entry.cf_statuscomment }}</td>
+            <td style="text-align:left;">{% for srpm in entry['srpms'] %}{{ srpm }}<br />{% endfor %}</td>
+            <td>{{ entry["age"] }} days</td>
+            <td>
+            {% for srpm in entry['srpms'] %}
+            <a href="https://bugs.mageia.org/buglist.cgi?columnlist=version%2Cassigned_to%2Cbug_status%2Cresolution%2Cshort_desc%2Ccf_rpmpkg%2Cstatus_whiteboard&email1=qa-bugs@ml.mageia.org&emailassigned_to1=1&emailcc1=1&emailtype1=substring&field0-0-0=cf_rpmpkg&field0-0-2=short_desc&order=bug_id%20DESC&product=Mageia&query_format=advanced&type0-0-0=substring&type0-0-1=substring&type0-0-2=substring&type0-0-3=matches&value0-0-0={{ srpm }}&value0-0-1=ffmpeg&value0-0-2={{ srpm }}&value0-0-3=%22{{ srpm }}%22">Bugzilla</a> ({{ srpm }})<br>
+            {% endfor %}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<br />
+{% endfor %}
+{% endblock %}
