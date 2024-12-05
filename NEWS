@@ -1,3 +1,7 @@
+# release 0.6.2
+- cache: skip unspecified and unidentified
+- bugslist: use srpms as it, without removing evr, not sure enough
+
 # release 0.6.1
 - content: add template for Security page
 
