@@ -9,7 +9,9 @@ import humanize
 start = datetime.datetime.now()
 
 for distro in iter(config.DISTRIBUTION.keys()):
-    for arch in iter(config.ARCHES.keys()):
-        base = Dnf5MadbBase(distro, arch, config.DATA_PATH, refresh=True)
+    if distro != "unspecified":
+        for arch in iter(config.ARCHES.keys()):
+            if arch != "indifferent":
+                base = Dnf5MadbBase(distro, arch, config.DATA_PATH, refresh=True)
 elapsed =  datetime.datetime.now() - start
 print(f"Updating {config.APP_NAME} metadata took {humanize.naturaldelta(elapsed, minimum_unit='seconds')}")
