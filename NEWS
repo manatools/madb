@@ -1,3 +1,7 @@
+# release 0.6.4
+- rpmsforqa: fix release being only lower case
+- adding tests for rpmsforqa and security page
+
 # release 0.6.3
 - bugslist: restore removing evr from source rpm, using a request for the provided string, removing .src.rpm from the string, then getting the name
 
