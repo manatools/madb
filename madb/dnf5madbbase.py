@@ -65,6 +65,23 @@ class Dnf5MadbBase():
             query.filter_repo_id([repo], GLOB)
         return query
 
+    def search_nevra(self, values, graphical=False, repo=None):
+        """Search in a list of package attributes for a list of keys.
+
+        :param values: the values to match
+        :params graphical: boolean, filter on *.desktop files in /usr/share/applications
+        :param repo: name of the repository to search in. Accept wildcards.
+        :return: a list of package objects
+        """
+        query = libdnf5.rpm.PackageQuery(self._base)
+        #query.filter_arch([self.arch, "noarch"])
+        query.filter_nevra(values, GLOB)
+        if graphical:
+            query.filter_file(["/usr/share/applications/*.desktop"], GLOB)
+        if repo:
+            query.filter_repo_id([repo], GLOB)
+        return query
+
     def search_in_group(self, value, graphical=False, repo=None):
         """Search a list of package in a group.
 

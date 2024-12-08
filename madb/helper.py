@@ -1,5 +1,6 @@
 import re
 import madb.config as config
+from madb.dnf5madbbase import Dnf5MadbBase
 import yaml
 import requests
 import hashlib
@@ -312,7 +313,7 @@ class BugReport():
             if "feedback" in self.data[rel]["keywords"]:
                 tr_class = " ".join([tr_class, "feedback"])
             self.data[rel]["class"] = tr_class
-            self.data[rel]["srpms"] = self._srpms(self.data[rel]["cf_rpmpkg"])
+            self.data[rel]["srpms"] = self._srpms(self.data[rel]["cf_rpmpkg"], rel)
         return self.data[rel]
 
     def get_srpms(self, release):
@@ -320,14 +321,21 @@ class BugReport():
         Return a set with the names of source packages
         """
         if "cf_rpmpkg" in self.data[release].keys():
-            return self._srpms(self.data[release]['cf_rpmpkg'])
+            return self._srpms(self.data[release]['cf_rpmpkg'], release)
         return []
 
-    def _srpms(self, field):
+    def _srpms(self, field, release):
         """
-        Return a set with the names of source packages
+        Return a set with the names of source packages in said release
         """
-        return [srpm.strip() for srpm in re.split(';|,| ', field) if srpm.strip() != ""]
+        results = []
+        distro =  Dnf5MadbBase(release, "x86_64", config.DATA_PATH)
+        # extract list from bug report field, removing extra src.rpm
+        srpms = [srpm.strip().removesuffix(".rpm").removesuffix(".src") + "*" for srpm in re.split(';|,| ', field) if srpm.strip() != ""]
+        # get only the source package names
+        srpms_names = [x.get_name() for x in distro.search_nevra(srpms, repo=f"{release}-SRPMS-*")]
+        results += srpms_names
+        return results
 
 class Pagination():
     def __init__(self, data, page_size=0, pages_number=0, byweek=False, byfirstchar=False):
