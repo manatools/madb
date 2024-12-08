@@ -204,7 +204,7 @@ class BugReport():
 
     def _releases(self, entry):
         result = {}
-        versions_list = (entry["version"],)
+        versions_list = (entry["version"].lower(),)
         if "status_whiteboard" in entry.keys():
             wb = re.findall(r"\bMGA(\d+)TOO", entry["status_whiteboard"])
             wbo = re.findall(r"\bMGA(\d+)-(\d+).OK", entry["status_whiteboard"])
