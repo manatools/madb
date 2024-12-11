@@ -335,7 +335,7 @@ class BugReport():
         # get only the source package names
         srpms_names = [x.get_name() for x in distro.search_nevra(srpms, repo=f"{release}-SRPMS-*")]
         results += srpms_names
-        return results
+        return list(set(results))
 
 class Pagination():
     def __init__(self, data, page_size=0, pages_number=0, byweek=False, byfirstchar=False):
