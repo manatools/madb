@@ -88,3 +88,15 @@ def test_graph(client):
     resp = client.get("/graph")
     assert resp.status_code == 200
     assert b"Network of packages" in resp.data
+
+def test_rpmsforqa(client):
+    """Check that rpms for QA page is accessible."""
+    resp = client.get("/rpmsforqa/33576")
+    assert resp.status_code == 200
+    assert b"Packages for bug report" in resp.data
+
+def test_security(client):
+    """Check that Security page is accessible."""
+    resp = client.get("/security")
+    assert resp.status_code == 200
+    assert b"Security issues" in resp.data
