@@ -1,3 +1,7 @@
+# release 0.6.5
+- updates: remove duplicates of sources
+- tests: new for security and rpmsforqa
+
 # release 0.6.4
 - rpmsforqa: fix release being only lower case
 - adding tests for rpmsforqa and security page
