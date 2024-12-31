@@ -1,3 +1,6 @@
+# release 0.6.6
+- updates: init dnf5 only one time, improve speed (for security page too) 
+
 # release 0.6.5
 - updates: remove duplicates of sources
 - tests: new for security and rpmsforqa
