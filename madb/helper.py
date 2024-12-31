@@ -180,12 +180,12 @@ class BugReport():
             "major": 3,
             "critical": 4,
         }
-
+    distro = {}
     def __init__(self):
         """
         data: Dict
-        - releases: string, cited in the bug report in version field or in white board like MGA9TOO
-        - srpms: set of strings, with the name of source packages
+        - get_releases: string, cited in the bug report in version field or in white board like MGA9TOO
+        - get_srpms: set of strings, with the name of source packages
 
         """
         self.data = {}
@@ -329,13 +329,19 @@ class BugReport():
         Return a set with the names of source packages in said release
         """
         results = []
-        distro =  Dnf5MadbBase(release, "x86_64", config.DATA_PATH)
+        self._madbBase(release)
+        distro = self.distro[release]
         # extract list from bug report field, removing extra src.rpm
         srpms = [srpm.strip().removesuffix(".rpm").removesuffix(".src") + "*" for srpm in re.split(';|,| ', field) if srpm.strip() != ""]
         # get only the source package names
         srpms_names = [x.get_name() for x in distro.search_nevra(srpms, repo=f"{release}-SRPMS-*")]
         results += srpms_names
         return list(set(results))
+    
+    def _madbBase(self, release):
+        # init Dnf5MadbBase only one time
+        if not release in self.distro.keys():
+            self.distro[release] = Dnf5MadbBase(release, "x86_64", config.DATA_PATH)
 
 class Pagination():
     def __init__(self, data, page_size=0, pages_number=0, byweek=False, byfirstchar=False):
