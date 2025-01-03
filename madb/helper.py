@@ -136,32 +136,30 @@ class BugsList():
         bugs = DictReader(StringIO(content))
 
         releases = []
+        self.bugs = {}
         temp_bugs = []
         for bug in bugs:
-            # Error if cauldron, not conform to our policy
             entry = bug
-            if entry["version"] not in releases:
-                releases.append(entry["version"])
+            key = entry["version"].lower()
+            if key not in releases:
+                releases.append(key)
+                self.bugs[key] = []
             wb = re.findall(r"\bMGA(\d+)TOO", entry["status_whiteboard"])
             for key in wb:
                 if key not in releases:
                     releases.append(key)
+                    self.bugs[key] = []
             temp_bugs.append(entry)
         
-        self.bugs = {}
         counts = {}
         for rel in releases:
             self.bugs[rel] = []
-            counts[rel] = []
             for entry in temp_bugs:
                 bug = BugReport()
                 bug.from_data(entry)
-                self.bugs[rel].append(bug)
-           # if rel != "unspecified":
-                #print(rel)
-                #for x in self.bugs[rel]:
-                #    print(x.format_data(rel))
-            counts[rel] = collections.Counter([x.data[rel]["status"] for x in self.bugs[rel] if rel in x.data.keys()])
+                if rel in bug.data.keys():
+                    self.bugs[rel].append(bug)
+            counts[rel] = collections.Counter([x.data[rel]["status"] for x in self.bugs[rel]])
         bugs_list = {}
         for rel in releases:
             bugs_list[rel] = []
@@ -200,7 +198,6 @@ class BugReport():
             entry =  myjson['bugs'][0]
             for rel in self._releases(entry):
                 self.data[rel] = entry
-                # self.format_data(rel)
 
     def _releases(self, entry):
         result = {}
@@ -314,7 +311,6 @@ class BugReport():
                 tr_class = " ".join([tr_class, "feedback"])
             self.data[rel]["class"] = tr_class
             self.data[rel]["srpms"] = self._srpms(self.data[rel]["cf_rpmpkg"], rel)
-        return self.data[rel]
 
     def get_srpms(self, release):
         """
