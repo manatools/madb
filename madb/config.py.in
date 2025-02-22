@@ -29,3 +29,6 @@ DISTRIBUTION = {
     str(TOP_RELEASE): "Mageia " + str(TOP_RELEASE),
     str(TOP_RELEASE - 1): "Mageia " + str(TOP_RELEASE -1),
 }
+
+# frequency of cache update in minutes
+MAKE_CACHE_FREQUENCY = 10
