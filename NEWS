@@ -1,3 +1,7 @@
+# release 0.6.7
+- change Dockerfile for managing cache
+- Fix: security page displays cauldron bugs too, Cauldron is not cauldron
+
 # release 0.6.6
 - updates: init dnf5 only one time, improve speed (for security page too) 
 
