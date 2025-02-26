@@ -14,7 +14,7 @@ RUN sed -ie "s|= DATA_PATH|= '/var/log/madb'|" /var/lib/madb/madb/config.py
 
 # Define init command
 WORKDIR "/var/lib/madb"
-CMD ["/usr/bin/bash", "start_madb.sh"]
+CMD ["/usr/bin/bash", "/usr/bin/start_madb.sh"]
  
 # Expose ports
 EXPOSE 5003
