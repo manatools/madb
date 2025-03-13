@@ -28,7 +28,7 @@ class Dnf5MadbBase():
         self._base_config.cachedir = os.path.join(root, "dnf", "cache")
         self._base_config.reposdir = os.path.join(root, "dnf", "etc","distro.repos.d")
         log_router = self._base.get_logger()
-        logger = libdnf5.logger.create_file_logger(self._base)
+        logger = libdnf5.logger.create_file_logger(self._base, "dnf5.log")
         log_router.add_logger(logger)
         self._base_config.module_platform_id = f"Mageia:{release}"
         self._base_config.metadata_expire = 20 if refresh else -1
