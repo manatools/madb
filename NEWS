@@ -1,3 +1,6 @@
+# release 0.6.8
+- fix deprecated function libdnf5.logger.create_file_logger, now needs filename
+
 # release 0.6.7
 - change Dockerfile for managing cache
 - Fix: security page displays cauldron bugs too, Cauldron is not cauldron
