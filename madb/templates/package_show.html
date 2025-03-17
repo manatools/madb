@@ -19,7 +19,7 @@
         {{ data.pkg.description }}
         <br />
         {% if data.pkg.url  %}
-        <strong>URL</strong>: <a href="{{ data.pkg.url }}">{{ data.pkg.url }}</a>
+        <strong>URL</strong>: <a href="{{ data.pkg.url }}" target="_blank" rel="noopener noreferrer">{{ data.pkg.url }}</a>
         <br/>
         {% endif %}
         {% if data.pkg.license  %}

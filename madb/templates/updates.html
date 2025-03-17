@@ -5,7 +5,7 @@
   <p>Current Update candidates</p>
 </div>
 <p>
-  See <a href="https://wiki.mageia.org/en/QA_process_for_validating_updates">QA process for validating updates</a> for
+  See <a href="https://wiki.mageia.org/en/QA_process_for_validating_updates" target="_blank" rel="noopener noreferrer">QA process for validating updates</a> for
   instructions (and join <a href="ircs://irc.libera.chat:6697/#mageia-qa">our QA IRC channel</a>).</p>
 <p>A <span class="feedback">gray background</span> means "QA team waiting for packager feedback". A star* next to the
   update type means that an advisory has been uploaded to SVN already.
@@ -45,8 +45,8 @@ There is no update with status {{ status }} for release {{ release }}<br />
   {% if status == entry['status'] %}
   <tr class='{{ entry["class"] }}'>
     <td>{{ entry.severity_class }}</td>
-    <td><a href='https://bugs.mageia.org/show_bug.cgi?id={{entry.bug_id}}'>{{entry.bug_id}}</a></td>
-    <td style="text-align:left;" title='{{ entry["cf_rpmpkg"]}}'><a href='https://bugs.mageia.org/show_bug.cgi?id={{entry.bug_id}}'>{{ entry.short_desc }}</a></td>
+    <td><a href='https://bugs.mageia.org/show_bug.cgi?id={{entry.bug_id}}' target="_blank" rel="noopener noreferrer">{{entry.bug_id}}</a></td>
+    <td style="text-align:left;" title='{{ entry["cf_rpmpkg"]}}'><a href='https://bugs.mageia.org/show_bug.cgi?id={{entry.bug_id}}' target="_blank" rel="noopener noreferrer">{{ entry.short_desc }}</a></td>
     <td>{{ entry.OK_32 }}</td>
     <td>{{ entry.OK_64 }}</td>
     <td>{{ "Yes" if 'has_procedure' in entry.keywords else "&nbsp;" |safe}}</td>
@@ -55,7 +55,7 @@ There is no update with status {{ status }} for release {{ release }}<br />
     <td><a href={{ "/rpmsforqa/" + entry.bug_id }}>RPMS</a></td>
     <td>
       {% for srpm in entry['srpms'] %}
-      <a href="https://bugs.mageia.org/buglist.cgi?columnlist=version%2Cassigned_to%2Cbug_status%2Cresolution%2Cshort_desc%2Ccf_rpmpkg%2Cstatus_whiteboard&email1=qa-bugs@ml.mageia.org&emailassigned_to1=1&emailcc1=1&emailtype1=substring&field0-0-0=cf_rpmpkg&field0-0-2=short_desc&order=bug_id%20DESC&product=Mageia&query_format=advanced&type0-0-0=substring&type0-0-1=substring&type0-0-2=substring&type0-0-3=matches&value0-0-0={{ srpm }}&value0-0-1=ffmpeg&value0-0-2={{ srpm }}&value0-0-3=%22{{ srpm }}%22">Bugzilla</a> ({{ srpm }})
+      <a href="https://bugs.mageia.org/buglist.cgi?columnlist=version%2Cassigned_to%2Cbug_status%2Cresolution%2Cshort_desc%2Ccf_rpmpkg%2Cstatus_whiteboard&email1=qa-bugs@ml.mageia.org&emailassigned_to1=1&emailcc1=1&emailtype1=substring&field0-0-0=cf_rpmpkg&field0-0-2=short_desc&order=bug_id%20DESC&product=Mageia&query_format=advanced&type0-0-0=substring&type0-0-1=substring&type0-0-2=substring&type0-0-3=matches&value0-0-0={{ srpm }}&value0-0-1=ffmpeg&value0-0-2={{ srpm }}&value0-0-3=%22{{ srpm }}%22" target="_blank" rel="noopener noreferrer">Bugzilla</a> ({{ srpm }})
       {% endfor %}
     </td>
   </tr>

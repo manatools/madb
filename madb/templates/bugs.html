@@ -41,9 +41,9 @@
     <tbody>
         {% for bug in assignee.bugs |sort() %}
         <tr>
-            <td><a href='https://bugs.mageia.org/show_bug.cgi?id={{ data.bugs[bug]["Bug ID"] }}'>{{ bug }}</a>
+            <td><a href='https://bugs.mageia.org/show_bug.cgi?id={{ data.bugs[bug]["Bug ID"] }}' target="_blank" rel='noopener noreferrer'>{{ bug }}</a>
             </td>
-            <td style="text-align:left;">{{ data.bugs[bug]['Summary'] }}</td>
+            <td style="text-align:left;"><a href='https://bugs.mageia.org/show_bug.cgi?id={{ data.bugs[bug]["Bug ID"] }}' target="_blank" rel='noopener noreferrer'>{{ data.bugs[bug]['Summary'] }}</a></td>
             <td>{{ data.bugs[bug]["QA Contact Real Name"] }}</td>
             <td style="text-align:left;">{{ data.bugs[bug]["Status comment"] }}</td>
             <td style="text-align:left;">{{ data.bugs[bug]["Source RPM"] }}</td>

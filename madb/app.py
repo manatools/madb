@@ -113,7 +113,7 @@ def create_app():
             title = "Updates"
         if testing:
             title += " candidates"
-        if not release:
+        if not release or release == "unspecified":
             release = str(config.TOP_RELEASE)
         if not arch or arch == "indifferent":
             # default to the first arch listed
@@ -502,8 +502,10 @@ def create_app():
         req_group = request.args.get("group", None)
         graphical = request.args.get("graphical", "0")
         nav_data = navbar(lang=request.accept_languages.best)
-        if not release:
-            release = next(iter(config.DISTRIBUTION.keys()))
+        if not release or release == "unspecified":
+            release = str(config.TOP_RELEASE)
+        if not arch or arch == "indifferent":
+            # default to the first arch listed
             arch = next(iter(config.ARCHES.keys()))
         if req_group is not None:
             level = len(req_group.split("/"))
@@ -981,8 +983,10 @@ def create_app():
         pkg = request.args.get("rpm", "dnf")
         level = request.args.get("level", 2, type=int)
         descending = request.args.get("descending", 1, type=int)
-        if not release:
-            release = next(iter(config.DISTRIBUTION.keys()))
+        if not release or release == "unspecified":
+            release = str(config.TOP_RELEASE)
+        if not arch or arch == "indifferent":
+            # default to the first arch listed
             arch = next(iter(config.ARCHES.keys()))
         nav_data = navbar(lang=request.accept_languages.best)
         data = {
