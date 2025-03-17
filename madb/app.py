@@ -115,6 +115,8 @@ def create_app():
             title += " candidates"
         if not release:
             release = str(config.TOP_RELEASE)
+        if not arch or arch == "indifferent":
+            # default to the first arch listed
             arch = next(iter(config.ARCHES.keys()))
         distro = Dnf5MadbBase(release, arch, config.DATA_PATH)
         rpms = distro.search_updates(backports=backports, testing=testing, graphical=(graphical == "1"))
