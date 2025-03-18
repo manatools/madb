@@ -1,3 +1,7 @@
+# release 0.6.9
+- fix external links open in a new window/tab
+- default to the first listed architecture when none or indifferent is specified in several pages
+
 # release 0.6.8
 - fix deprecated function libdnf5.logger.create_file_logger, now needs filename
 
