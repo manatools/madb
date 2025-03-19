@@ -1,3 +1,6 @@
+# release 0.6.10
+- reverse work on screenshots
+
 # release 0.6.9
 - fix external links open in a new window/tab
 - default to the first listed architecture when none or indifferent is specified in several pages
