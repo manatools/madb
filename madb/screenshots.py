@@ -19,8 +19,9 @@ class Screenshots():
         if package in self.keys:
             links = [ {"small": x["small_image_url"], "large": x["large_image_url"]} for x in self.scdb if x["name"] == package  ]
             return links
-        with open("static/screen-replace.csv", "r") as f:
-            replace = DictReader(f)
-            for replace_pkg.name in replace:
-                if package.name == package:
-                    links = [{"small": replace_pkg["small_image_url"], "large": replace_pkg["large_image_url"]}]
+        return []
+        # with open("static/screen-replace.csv", "r") as f:
+        #     replace = DictReader(f)
+        #     for replace_pkg.name in replace:
+        #         if package.name == package:
+        #             links = [{"small": replace_pkg["small_image_url"], "large": replace_pkg["large_image_url"]}]
