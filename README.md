@@ -20,7 +20,7 @@ The application needs this:
 ## Other packages
 - rpmlint-mageia-policy 
 
-[1] For Mageia 9, this module is available from Copr: ngompa/dnf5-mga. For cauldron, it is already available in release.
+[1] For Mageia 9, this module is available from Copr: papoteur/dnf5-mga. For cauldron, it is already available in release.
 
 [2] these packages are availble on MLO repository.
 
@@ -29,12 +29,16 @@ The package comes with a model of configuration file `madb/config.py.in`. This f
 ```
 # the last release
 TOP_RELEASE = 9
-APP_NAME = "Mageia App DB"
+APP_NAME = "Mageia App Db"
+# be sure that these directories are writable for the user running the application
 DATA_PATH = "/var/lib/madb"
 LOG_PATH = DATA_PATH
 MIRROR_URL = "https://fr2.rpmfind.net/linux/mageia/distrib/"
 # Complete list of used goups
 DEF_GROUPS_FILE = "/usr/share/rpmlint/config.d/distribution.exceptions.conf"
+# Oldness of packages to display as recent updates in home page, starting from build time
+RECENT_UPDATES_DURATION = 21
+RECENT_BACKPORTS_DURATION = 28
 # Name of the development version
 DEV_NAME = "cauldron"
 # Level of logging
@@ -47,13 +51,20 @@ ARCHES = {
     "i586": "x86 32bits",
     "aarch64": "Arm 64bits",
     "armv7hl": "Arm 32bits v7hl",
+    "indifferent": "Indifferent",
 }
 # Used as filter in search bar
 DISTRIBUTION = {
     DEV_NAME: "Mageia cauldron",
     str(TOP_RELEASE): "Mageia " + str(TOP_RELEASE),
     str(TOP_RELEASE - 1): "Mageia " + str(TOP_RELEASE -1),
+    "unspecified": "Unspecified",
 }
+
+CLASSES = ("backports", "backports_testing", "release", "updates", "updates_testing")
+
+# frequency of cache update in minutes
+MAKE_CACHE_FREQUENCY = 10
 ```
 
 `TOP_RELEASE` has to be changed at each release.
@@ -65,7 +76,7 @@ DISTRIBUTION = {
 `MIRROR_URL` has to be adapted to be preferably a mirror near the server.
 
 # Running
-For testing purposes, the application can be run from the madb subdirectory, in debug mode to allow the application being reloaded when files are changed:
+For testing purposes, the application can be run from the madb subdirectory, in debug mode to allow the application being reloaded when files are changed, and to report errors in the browser page:
 
 `flask run -d`
 
@@ -95,6 +106,6 @@ The file `system/madb-cache.service` has to be installed in `/usr/lib/systemd/sy
 The file `system/madb-cache.timer` has to be installed in `/usr/lib/systemd/system`.
 
 # Testing
-in the root directory, run:
+In the root directory, run:
 
 `python -m pytest`
