@@ -323,7 +323,7 @@ def create_app():
                 data[release][src_arch]["srpms"] = distro[src_arch].search_name(srpms, repo=f"{release}-SRPMS-*testing*")
                 # Get all binaries rpms having the source in the provided list
                 binaries = distro[src_arch].search_by_sources(
-                    [f"{x.get_name()}-{x.get_evr()}*" for x in data[release][src_arch]["srpms"]],
+                    [f"{x.get_name()}-{x.get_version()}*" for x in data[release][src_arch]["srpms"]],
                     repo=f"{release}-*testing*"
                     )
                 # order binaries by repo
