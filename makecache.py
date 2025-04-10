@@ -7,10 +7,17 @@ import datetime
 import humanize
 import time
 import os
+import traceback
+import argparse
 
 logger = logging.getLogger(__name__)
 log_level = getattr(logging, config.LOG_LEVEL.upper())
 logging.basicConfig(filename=os.path.join(config.LOG_PATH,'madb.log'), encoding='utf-8', level=log_level)
+
+
+parser = argparse.ArgumentParser(description = help)
+parser.add_argument("-f","--follow", help="do not exit and use internal timerbetween runs", action="store_true")
+args = parser.parse_args()
 
 def makecache():
     start = datetime.datetime.now()
@@ -20,11 +27,16 @@ def makecache():
                 if arch != "indifferent":
                     try:
                         base = Dnf5MadbBase(distro, arch, config.DATA_PATH, refresh=True)
+                        logging.debug(f"Repository {distro} {arch} OK")
                     except Exception as e:
-                        logging.info(f"Updating {config.APP_NAME} metadata for {distro} {arch} failed with:\n{e.with_traceback()}")
+                        logging.warning(f"Updating {config.APP_NAME} metadata for {distro} {arch} failed with:\n{traceback.format_exc()}")
         elapsed =  datetime.datetime.now() - start
         logging.info(f"Updating {config.APP_NAME} metadata took {humanize.naturaldelta(elapsed, minimum_unit='seconds')}")
 
 while True:
     makecache()
+    print("Update done")
+    logging.info("Update done")
+    if not args.follow:
+        break
     time.sleep(config.MAKE_CACHE_FREQUENCY * 60)

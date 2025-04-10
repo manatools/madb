@@ -32,5 +32,7 @@ DISTRIBUTION = {
     "unspecified": "Unspecified",
 }
 
+CLASSES = ("backports", "backports_testing", "release", "updates", "updates_testing")
+
 # frequency of cache update in minutes
 MAKE_CACHE_FREQUENCY = 10
