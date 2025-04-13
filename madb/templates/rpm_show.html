@@ -65,7 +65,16 @@ document.addEventListener("DOMContentLoaded", function () {
   </tbody>
 </table>
 
-
+{% if data.advisories %}
+<h2>Update advisory</h2>
+<table class="infos">
+  <tbody>
+    {% for item in data.advisories %}
+      <a href="https://advisories.mageia.org/{{ item}}.html">{{ item }}</a><br />
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
 
 <h2>Advanced items</h2>
 <table class="infos">

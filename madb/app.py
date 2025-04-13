@@ -4,6 +4,7 @@ from madb.helper import BugReport, Pagination, BugsList
 from madb.helper import load_content_or_cache, clean_cache
 from madb.cerisier import RpmGraph
 from madb.screenshots import Screenshots
+from madb.advisories import Advisories
 from flask import Flask, render_template, request, Response, send_from_directory, redirect
 import requests
 from bs4 import BeautifulSoup 
@@ -40,7 +41,7 @@ def create_app():
     data_config["arches"] = config.ARCHES
     data_config["distribution"] = config.DISTRIBUTION
 
-    # filter dor usage in templates
+    # filter for usage in templates
     @app.template_filter('bugs_sum')
     def bugs_sum(list_to_sum):
         return collections.Counter.total(list_to_sum)
@@ -627,7 +628,7 @@ def create_app():
     @app.route("/rpmshow")
     def rpmshow():
         release = request.args.get("distribution", "unspecified")
-        arch = request.args.get("architecture", "indiffrent")
+        arch = request.args.get("architecture", "indifferent")
         graphical = request.args.get("graphical", "1")
         package = request.args.get("rpm", "")
         repo = request.args.get("repo", "")
@@ -656,6 +657,9 @@ def create_app():
                 }
             )
             last = dnf_pkg
+        
+        adv = Advisories()
+        
         if last is not None:
             basic = {
                 "Name": last.get_name(),
@@ -673,6 +677,11 @@ def create_app():
                     last.get_install_size(), binary=True
                 ),
             }
+            section = "core"
+            for special in ("tainted", "nonfree"):
+                if special in last.get_release():
+                    section = special
+            advisories = adv.adv_from_src_name(last.get_sourcerpm() or last.get_name(), release , "core")
             description = last.get_description()
             rpm = last.get_nevra()
             media = [
@@ -690,7 +699,7 @@ def create_app():
                     f"{date.fromtimestamp(item.timestamp)}:<br /> {item.text} <br />({item.author})"
                 )
             advanced = [
-                ["Source RPM", last.get_sourcerpm() or "NOT IN DATABASE ?!", ""],
+                ["Source RPM", last.get_sourcerpm() or "Already a source package", ""],
                 ["Build time", datetime.fromtimestamp(last.get_build_time()), ""],
                 ["Dependencies graph", f"<a href='/graph?distribution={release}&architecture={arch}&rpm={last.get_name()}'>Open</a>", ""],
                 ["Changelog", "<br />\n".join(logs), ""],
@@ -714,6 +723,7 @@ def create_app():
             "basic": basic,
             "config": data_config,
             "advanced": advanced,
+            "advisories": advisories,
             "repo": repo,
             "media": media,
             "description": description,
