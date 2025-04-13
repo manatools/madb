@@ -58,6 +58,10 @@ def create_app():
         data = {"html": nav_html, "css": nav_css}
         return data
 
+    @app.route('/favicon.ico')
+    def index():
+        return send_from_directory('static', 'favicon.ico')
+
     @app.route("/")
     @app.route("/home")
     def home():        
