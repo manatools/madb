@@ -1,3 +1,7 @@
+# release 0.7.1
+- provide /favicon.ico
+- don't save credits from advisories
+
 # release 0.7.0
 - add advisories link in rpm_show page
 
