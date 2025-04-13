@@ -16,7 +16,7 @@ class Advisories:
         )
         self.advisories_ids = [x["id"] for x in advisories_from_file]
 
-        # Chemin du fichier global
+        # Path for the local file where advisories are stored
         local_file = os.path.join(config.DATA_PATH, "cache", "advisories.json")
 
         # Read local file storing all advosories
@@ -29,12 +29,16 @@ class Advisories:
         # etablish the list of not yet present advisories
         self.registerd_ids = [x["id"] for x in self.advisories]
         self.new_ids = list(set(self.advisories_ids) - set(self.registerd_ids))
+        # Load and read missing advisories from local file
+        # this presume that published advosories are never changed nor removed
         for fichier in self.new_ids:
-            # Load and read missing advisory from local file
-            donnees_individuelles = json.loads(
+            individual_data = json.loads(
                 load_content_or_cache(os.path.join(ADV_URL_BASE, fichier + ".json"))
             )
-            self.advisories.append(donnees_individuelles)
+            # remove fixed data
+            del individual_data["credits"]
+            del individual_data["schema_version"]
+            self.advisories.append(individual_data)
 
         # write the local file if needed
         if len(self.new_ids) != 0:
@@ -42,6 +46,10 @@ class Advisories:
                 json.dump(self.advisories, f)
 
     def adv_from_src_name(self, name: str, release: str, repo: str) -> List[str]:
+        """
+        Return a list of advisories ids where the package identified by its name, release and section is cited
+        The name can be the complete nevra or only name
+        """
         founds = []
         for adv in self.advisories:
             """Example
@@ -54,8 +62,10 @@ class Advisories:
                         section = pkg["ecosystem_specific"]["section"]
                         if section == repo:
                             if name == pkg["package"]["name"]:
+                                # when the provided name is the name of the source, without vr
                                 founds.append(adv["id"])
                             else:
+                                # when the provided name is the name of the binary including vr
                                 for range in pkg["ranges"]:
                                     for event in range["events"]:
                                         if "fixed" in event.keys() and section == repo:
