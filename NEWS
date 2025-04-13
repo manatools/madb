@@ -1,3 +1,6 @@
+# release 0.7.0
+- add advisories link in rpm_show page
+
 # release 0.6.11
 - fix binaries search in rpmsforqa
 - add option -f to follow update by intervals in makecache
