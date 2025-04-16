@@ -148,22 +148,30 @@ def create_app():
         return redirect("/updates/")
     @app.route("/updates/")
     def updates():
-        data_bugs, releases, counts = BugsList().qa_updates()
+        nav_data = navbar(lang=request.accept_languages.best)
+        data = {
+            "config": data_config,
+            "nav_html": nav_data["html"],
+            "nav_css": nav_data["css"],
+        }
+        try:
+            data_bugs, releases, counts = BugsList().qa_updates()
+        except requests.exceptions.Timeout as err:
+            data["timeout"] = True
+            return render_template("notfound.html", data=data)
+        except requests.exceptions.HTTPError as err:
+            return render_template("notfound.html", data=data)
         for version in releases:
             data_bugs[version] = sorted(
                 data_bugs[version],
                 key=lambda item: item["severity_weight"],
                 reverse=True,
             )
-        nav_data = navbar(lang=request.accept_languages.best)
-        data = {
+        data.update( {
             "bugs": data_bugs,
             "releases": releases,
             "counts": counts,
-            "config": data_config,
-            "nav_html": nav_data["html"],
-            "nav_css": nav_data["css"],
-        }
+        })
         return render_template("updates.html", data=data)
 
     @app.route("/tools/blockers/")
@@ -172,6 +180,12 @@ def create_app():
     @app.route("/blockers/")
     def blockers():
         urls = {}
+        nav_data = navbar(lang=request.accept_languages.best)
+        data = {
+            "config": data_config,
+            "nav_html": nav_data["html"],
+            "nav_css": nav_data["css"],
+        }
         created, status_open, closed, column, param_csv = format_bugs()
         column_full = [("columnlist", column)]
         column_short = [("columnlist", "bug_id")]
@@ -206,31 +220,37 @@ def create_app():
         ]
         counts = {}
         params["created"] = params_base + created
-        for status in ("closed", "created", "promoted", "demoted"):
-            a = requests.get(URL, params=params[status] + param_csv + column_short)
-            urls[status] = URL + "?" + parse.urlencode(params[status] + column_full)
-            counts[status] = len(a.content.split(b"\n")) - 1
-        data_bugs, counts["base"], assignees = list_bugs(
-            params_base + param_csv + column_full
-        )
+        try:
+            for status in ("closed", "created", "promoted", "demoted"):
+                a = requests.get(
+                    URL, 
+                    params=params[status] + param_csv + column_short,
+                    timeout=config.BUGZILLA_TIMEOUT
+                )
+                urls[status] = URL + "?" + parse.urlencode(params[status] + column_full)
+                counts[status] = len(a.content.split(b"\n")) - 1
+            data_bugs, counts["base"], assignees = list_bugs(
+                params_base + param_csv + column_full
+            )
+        except requests.exceptions.Timeout as err:
+            data["timeout"] = True
+            return render_template("notfound.html", data=data)
+        except requests.exceptions.HTTPError as err:
+            return render_template("notfound.html", data=data)
         title = "Current Blockers"
         comments = """This page lists all bug reports that have been marked as release blockers, which means that
         they must be fixed before the next release of Mageia. The <strong>bug watcher</strong>
         (QA contact field in bugzilla) is someone who commits to update the <strong>bug status comment</strong>
         regularly and tries to get a status from the packagers involved and remind them about the bug if needed.
         <strong>Anyone</strong> can be bug watcher."""
-        nav_data = navbar(lang=request.accept_languages.best)
-        data = {
+        data.update({
             "urls": urls,
             "counts": counts,
             "bugs": data_bugs,
             "assignees": assignees,
-            "config": data_config,
             "title": title,
             "comments": comments,
-            "nav_html": nav_data["html"],
-            "nav_css": nav_data["css"],
-        }
+        })
         return render_template("bugs.html", data=data)
 
     @app.route("/tools/milestone/")
@@ -241,6 +261,12 @@ def create_app():
         urls = {}
         counts = {}
         params = {}
+        nav_data = navbar(lang=request.accept_languages.best)
+        data = {
+            "config": data_config,
+            "nav_html": nav_data["html"],
+            "nav_css": nav_data["css"],
+        }
         nav_data = navbar(lang=request.accept_languages.best)
         created, status_open, closed, column, param_csv = format_bugs()
         column_full = [("columnlist", column)]
@@ -283,29 +309,37 @@ def create_app():
             ]
         )
         for status in ("closed", "created", "promoted", "demoted"):
-            a = requests.get(URL, params=params[status] + param_csv + column_short)
+            try:
+                a = requests.get(URL, params=params[status] + param_csv + column_short, timeout=config.BUGZILLA_TIMEOUT)
+            except requests.exceptions.Timeout as err:
+                data["timeout"] = True
+                return render_template("notfound.html", data=data)
+            except requests.exceptions.HTTPError as err:
+                return render_template("notfound.html", data=data)
             urls[status] = URL + "?" + parse.urlencode(params[status] + column_full)
             counts[status] = len(a.content.split(b"\n")) - 1
-        data_bugs, counts["base"], assignees = list_bugs(
-            params_base + status_open + param_csv + column_full
-        )
+        try:
+            data_bugs, counts["base"], assignees = list_bugs(
+                params_base + status_open + param_csv + column_full
+            )
+        except requests.exceptions.Timeout as err:
+            data["timeout"] = True
+            return render_template("notfound.html", data=data)
+        except requests.exceptions.HTTPError as err:
+            return render_template("notfound.html", data=data)
         title = "Intended for next release, except blockers"
         comments = """This page lists all bug reports that have been marked as intented for next release, except release blockers.
         The <strong>bug watcher</strong> (QA contact field in bugzilla) is someone who commits to update the <strong>bug status comment</strong>
         regularly and tries to get a status from the packagers involved and remind them about the bug if needed.
         <strong>Anyone</strong> can be bug watcher."""
-        nav_data = navbar(lang=request.accept_languages.best)
-        data = {
+        data.update({
             "urls": urls,
             "counts": counts,
             "bugs": data_bugs,
             "assignees": assignees,
-            "config": data_config,
             "title": title,
             "comments": comments,
-            "nav_html": nav_data["html"],
-            "nav_css": nav_data["css"],
-        }
+        })
         return render_template("bugs.html", data=data)
 
     @app.route("/rpmsforqa/<bug_number>")
@@ -359,6 +393,12 @@ def create_app():
         urls = {}
         counts = {}
         params = {}
+        nav_data = navbar(lang=request.accept_languages.best)
+        data = {
+            "config": data_config,
+            "nav_html": nav_data["html"],
+            "nav_css": nav_data["css"],
+        }
         created, status_open, closed, column, param_csv = format_bugs()
         column_full = [("columnlist", column)]
         column_short = [("columnlist", "bug_id")]
@@ -399,12 +439,24 @@ def create_app():
             ("v2", "High"),
         ]
         for status in ("closed", "created", "promoted", "demoted"):
-            a = requests.get(URL, params=params[status] + param_csv + column_short)
+            try:
+                a = requests.get(URL, params=params[status] + param_csv + column_short, timeout=config.BUGZILLA_TIMEOUT)
+            except requests.exceptions.Timeout as err:
+                data["timeout"] = True
+                return render_template("notfound.html", data=data)
+            except requests.exceptions.HTTPError as err:
+                return render_template("notfound.html", data=data)
             urls[status] = URL + "?" + parse.urlencode(params[status] + column_full)
             counts[status] = len(a.content.split(b"\n")) - 1
-        data_bugs, counts["base"], assignees = list_bugs(
-            params_base + status_open + param_csv + column_full
-        )
+        try:
+            data_bugs, counts["base"], assignees = list_bugs(
+                params_base + status_open + param_csv + column_full
+            )
+        except requests.exceptions.Timeout as err:
+            data["timeout"] = True
+            return render_template("notfound.html", data=data)
+        except requests.exceptions.HTTPError as err:
+            return render_template("notfound.html", data=data)
         title = "High Priority Bugs for next release, except those already having a milestone set."
         comments = """This page lists all bug reports that have been marked with a high priority (except bugs with a milestone, which are already present in the "Intended for..." page).
     The <strong>bug watcher</strong>
@@ -412,17 +464,14 @@ def create_app():
     regularly and tries to get a status from the packagers involved and remind them about the bug if needed.
     <strong>Anyone</strong> can be bug watcher."""
         nav_data = navbar(lang=request.accept_languages.best)
-        data = {
+        data.update( {
             "urls": urls,
             "counts": counts,
             "bugs": data_bugs,
             "assignees": assignees,
-            "config": data_config,
             "title": title,
             "comments": comments,
-            "nav_html": nav_data["html"],
-            "nav_css": nav_data["css"],
-        }
+        })
         return render_template("bugs.html", data=data)
 
 
@@ -434,6 +483,12 @@ def create_app():
         urls = {}
         counts = {}
         params = {}
+        nav_data = navbar(lang=request.accept_languages.best)
+        data = {
+            "config": data_config,
+            "nav_html": nav_data["html"],
+            "nav_css": nav_data["css"],
+        }
         created, status_open, closed, column, param_csv = format_bugs()
         column_full = [("columnlist", column)]
         column_short = [("columnlist", "bug_id")]
@@ -476,28 +531,31 @@ def create_app():
                 ("v2", "2w"),
             ]
         )
-        for status in ("closed", "created", "promoted", "demoted"):
-            a = requests.get(URL, params=params[status] + param_csv + column_short)
-            urls[status] = URL + "?" + parse.urlencode(params[status] + column_full)
-            counts[status] = len(a.content.split(b"\n")) - 1
-        data_bugs, counts["base"], assignees = list_bugs(
-            params_base + status_open + param_csv + column_full
-        )
+        try:
+            for status in ("closed", "created", "promoted", "demoted"):
+                a = requests.get(URL, params=params[status] + param_csv + column_short,
+                                 timeout=config.BUGZILLA_TIMEOUT)
+                urls[status] = URL + "?" + parse.urlencode(params[status] + column_full)
+                counts[status] = len(a.content.split(b"\n")) - 1
+            data_bugs, counts["base"], assignees = list_bugs(
+                params_base + status_open + param_csv + column_full
+            )
+        except requests.exceptions.Timeout as err:
+            data["timeout"] = True
+            return render_template("notfound.html", data=data)
+        except requests.exceptions.HTTPError as err:
+            return render_template("notfound.html", data=data)
         title = "About Mageia tools"
         comments = """This page lists all bug reports that have been assigned to Mageia tools maintainers.
         """
-        nav_data = navbar(lang=request.accept_languages.best)
-        data = {
+        data.update( {
             "urls": urls,
             "counts": counts,
             "bugs": data_bugs,
             "assignees": assignees,
-            "config": data_config,
             "title": title,
             "comments": comments,
-            "nav_html": nav_data["html"],
-            "nav_css": nav_data["css"],
-        }
+        })
         return render_template("bugs.html", data=data)
 
     @app.route("/group")
@@ -745,7 +803,19 @@ def create_app():
         return redirect("/security")
     @app.route("/security")
     def security():
-        data_bugs, releases, counts = BugsList().security()
+        nav_data = navbar(lang=request.accept_languages.best)
+        data = {
+            "config": data_config,
+            "nav_html": nav_data["html"],
+            "nav_css": nav_data["css"],
+        }
+        try:
+            data_bugs, releases, counts = BugsList().security()
+        except requests.exceptions.Timeout as err:
+            data["timeout"] = True
+            return render_template("notfound.html", data=data)
+        except requests.exceptions.HTTPError as err:
+            return render_template("notfound.html", data=data)
         for version in releases:
             data_bugs[version] = sorted(
                 data_bugs[version],
@@ -753,17 +823,12 @@ def create_app():
                 reverse=True,
             )
         title = "Security issues"
-        nav_data = navbar(lang=request.accept_languages.best)
-        data = {
-            # "urls": urls,
+        data.update( {
             "counts": counts,
             "bugs": data_bugs,
             "releases": releases,
-            "config": data_config,
             "title": title,
-            "nav_html": nav_data["html"],
-            "nav_css": nav_data["css"],
-        }
+        })
         return render_template("security.html", data=data)
 
     @app.route("/tools/comparison")
@@ -962,7 +1027,7 @@ def create_app():
         return created, status_open, closed, column, param_csv
 
     def list_bugs(params):
-        a = requests.get(URL, params=params)
+        a = requests.get(URL, params=params, timeout=config.BUGZILLA_TIMEOUT)
         content = a.content.decode("utf-8")
         bugs = DictReader(StringIO(content))
         assignees = []

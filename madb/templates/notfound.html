@@ -4,7 +4,11 @@
 
 {% include 'search.html' %}
 <div class="pagename">
+{% if data.timeout %}
+<p>Distant server is not responding.</p>
+{% else %}
 <p>The request is incomplete or gives no results.</p>
+{% endif %}
 </div>
 <br>
 {% endblock %}

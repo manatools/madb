@@ -16,6 +16,7 @@ DEV_NAME = "cauldron"
 LOG_LEVEL = "DEBUG"
 PAGE_SIZE = 30
 BUGZILLA_URL = "http://bugs.mageia.org"
+BUGZILLA_TIMEOUT = 85
 # List of architectures managed
 ARCHES = {
     "x86_64": "x86 64bits",

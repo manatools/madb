@@ -51,11 +51,11 @@ def _get_cache_filepath(url, long=True):
     return filepath
 
 # Load cache content or from URL after expiration
-def load_content_or_cache(url, long=True):
+def load_content_or_cache(url, long=True, timeout=10):
     filepath = _get_cache_filepath(url, long=long)
     ttl = LONG_CACHE_TTL if long else CACHE_TTL
     if not os.path.exists(filepath) or time.time() - os.path.getctime(filepath) > ttl:
-        response = requests.get(url)
+        response = requests.get(url, timeout=timeout)
         with open(filepath, "w") as f:
             f.write(response.content.decode())
             print(f"Cache {filepath} wrotten")
@@ -131,7 +131,9 @@ class BugsList():
         return self._request(params)
 
     def _request(self, params):
-        f = requests.get(config.BUGZILLA_URL + "/buglist.cgi", params=params)
+        f = requests.get(config.BUGZILLA_URL + "/buglist.cgi", params=params,  timeout=config.BUGZILLA_TIMEOUT)
+        if f.status_code != requests.codes.ok:
+            f.raise_for_status() 
         content = f.content.decode("utf-8")
         bugs = DictReader(StringIO(content))
 
@@ -192,7 +194,7 @@ class BugReport():
         self.number = number
         url = os.path.join(config.BUGZILLA_URL, "rest/bug", self.number)
         headers = {'Accept': 'application/json'}
-        r = requests.get(url, params = [("include_fields", _column)], headers=headers)
+        r = requests.get(url, params = [("include_fields", _column)], headers=headers, timeout=config.BUGZILLA_TIMEOUT)
         myjson = r.json()
         if r.status_code == 200 and myjson["faults"] == []:
             entry =  myjson['bugs'][0]
