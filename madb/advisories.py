@@ -11,11 +11,14 @@ ADV_URL_BASE = "https://advisories.mageia.org/"
 class Advisories:
     def __init__(self):
         # Read the list of advisories
-        advisories_from_file = json.loads(
+        advisories_bugs_from_file = json.loads(
             load_content_or_cache(os.path.join(ADV_URL_BASE, "bugs.json"), long=False)
         )
-        self.advisories_ids = [x["id"] for x in advisories_from_file]
-
+        advisories_vulns_from_file = json.loads(
+            load_content_or_cache(os.path.join(ADV_URL_BASE, "vulns.json"), long=False)
+        )
+        self.advisories_ids = [x["id"] for x in advisories_bugs_from_file]
+        self.advisories_ids.extend([x["id"] for x in advisories_vulns_from_file])
         # Path for the local file where advisories are stored
         local_file = os.path.join(config.DATA_PATH, "cache", "advisories.json")
 
