@@ -641,7 +641,7 @@ def create_app():
                         {
                             "full_name": dnf_pkg.get_nevra(),
                             "distro_release": rel,
-                            "url": f"/rpmshow?rpm={dnf_pkg.get_name()}&repo={dnf_pkg.get_repo_id()}&distribution={rel}&architecture={iter_arch}&graphical={graphical}",
+                            "url": f"/rpmshow?rpm={dnf_pkg.get_name()}&repo={dnf_pkg.get_repo_id()}&distribution={rel}&architecture={iter_arch}&graphical={graphical}&version={dnf_pkg.get_evr()}",
                             "arch": dnf_pkg.get_arch(),
                             "repo": dnf_pkg.get_repo_name(),
                         }
@@ -694,6 +694,7 @@ def create_app():
         graphical = request.args.get("graphical", "1")
         package = request.args.get("rpm", "")
         repo = request.args.get("repo", "")
+        evr = request.args.get("version", "")
         nav_data = navbar(lang=request.accept_languages.best)
         if package == "" or repo == "" or arch == "indifferent" or release == "unspecified":
             data = {
@@ -702,11 +703,14 @@ def create_app():
                 "url_end": f"/{release}/{arch}/{graphical}",
                 "base_url": "/home",
                 "rpm_search": "",
-                "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}",
+                "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}&release={evr}",
             }
             return render_template("notfound.html", data=data)
         distro = Dnf5MadbBase(release, arch, config.DATA_PATH)
-        dnf_pkgs = distro.search_name([package], repo=repo)
+        if evr == "":
+            dnf_pkgs = distro.search_name([package], repo=repo)
+        else:
+            dnf_pkgs = distro.search_nevra([f"{package}-{evr}*"], repo=repo)
         rpms = []
         last = None
         for dnf_pkg in dnf_pkgs:
