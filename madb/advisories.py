@@ -10,6 +10,15 @@ ADV_URL_BASE = "https://advisories.mageia.org/"
 
 class Advisories:
     def __init__(self):
+        """
+        Advisories are bulletins which contains information about updates
+        See https://advisories.mageia.org/infos.html
+        The initiation of this class loads and updates the data
+        It provides a function to list advisories ids for a package
+        The list of ids is read from bugs.json and vulns.json
+        A list of advisories is stored in JSON format in cache/advisories.json
+        Any new publication is added in it.
+        """
         # Read the list of advisories
         advisories_bugs_from_file = json.loads(
             load_content_or_cache(os.path.join(ADV_URL_BASE, "bugs.json"), long=False)
@@ -22,7 +31,7 @@ class Advisories:
         # Path for the local file where advisories are stored
         local_file = os.path.join(config.DATA_PATH, "cache", "advisories.json")
 
-        # Read local file storing all advosories
+        # Read local file storing all advisories
         try:
             with open(local_file, "r") as f:
                 self.advisories = json.load(f)
