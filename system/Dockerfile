@@ -14,6 +14,7 @@ RUN rm -f /etc/yum.repos.d/mlo9-x86_64-core.repo /etc/yum.repos.d/_copr:copr.fed
 
 
 RUN sed -e "s|var/www/html|var/lib|" /var/lib/madb/madb/config.py.in >/var/lib/madb/madb/config.py
+RUN /usr/bin/makeadvisories.py
 
 # Define init command
 WORKDIR "/var/lib/madb"
