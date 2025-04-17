@@ -1,3 +1,9 @@
+# release 0.7.2
+- add makeadvisories.py for updating advisories list
+- add version-release in request for rpmshow
+- add management of timeout when sending requests to bugzilla
+- read also security advisories from vulns.json
+
 # release 0.7.1
 - provide /favicon.ico
 - don't save credits from advisories
