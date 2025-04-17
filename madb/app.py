@@ -743,7 +743,7 @@ def create_app():
             for special in ("tainted", "nonfree"):
                 if special in last.get_release():
                     section = special
-            advisories = adv.adv_from_src_name(last.get_sourcerpm() or last.get_name(), release , "core")
+            advisories = adv.adv_from_src_name(last.get_sourcerpm() or last.get_name(), release , section)
             description = last.get_description()
             rpm = last.get_nevra()
             media = [
