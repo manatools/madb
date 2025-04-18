@@ -1,3 +1,6 @@
+# release 0.7.3
+- fix: path to makecache in start_madb.sh
+
 # release 0.7.2
 - add makeadvisories.py for updating advisories list
 - add version-release in request for rpmshow
