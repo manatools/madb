@@ -27,16 +27,18 @@ def makecache():
                 if arch != "indifferent":
                     try:
                         base = Dnf5MadbBase(distro, arch, config.DATA_PATH, refresh=True)
-                        logging.debug(f"Repository {distro} {arch} OK")
+                        message = f"Repository {distro} {arch} up to date"
+                        logging.debug(message)
+                        print(message)
                     except Exception as e:
                         logging.warning(f"Updating {config.APP_NAME} metadata for {distro} {arch} failed with:\n{traceback.format_exc()}")
-        elapsed =  datetime.datetime.now() - start
-        logging.info(f"Updating {config.APP_NAME} metadata took {humanize.naturaldelta(elapsed, minimum_unit='seconds')}")
+    elapsed =  datetime.datetime.now() - start
+    message = f"Updating {config.APP_NAME} metadata took {humanize.naturaldelta(elapsed, minimum_unit='seconds')} at { datetime.datetime.now()}"
+    logging.info(message)
+    print(message)
 
 while True:
     makecache()
-    print("Update done")
-    logging.info("Update done")
     if not args.follow:
         break
     time.sleep(config.MAKE_CACHE_FREQUENCY * 60)
