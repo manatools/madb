@@ -1,3 +1,7 @@
+# release 0.7.4
+- improve feedback in makecache 
+- add "What requires" in package page
+
 # release 0.7.3
 - fix: path to makecache in start_madb.sh
 
