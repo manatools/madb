@@ -136,14 +136,13 @@ class Dnf5MadbBase():
         query.filter_provides(rpm_list)
         return query
 
-    def search(self, search_type, search_list, graphical=False, repo=""):
+    def search(self, search_type, search_list, graphical=False, repo="", source=False):
         query = libdnf5.rpm.PackageQuery(self._base)
-        query.filter_arch([self.arch, "noarch"])
+        query.filter_arch([self.arch, "noarch"] + (["src"] if source else []))
         if repo == "":
             query.filter_repo_id([self.release + "*"], GLOB)
         else:
             query.filter_repo_id([repo], GLOB)
-        #search_list = self.search_name(rpm_list)
         if search_type == "requires":
             query.filter_requires(search_list)
         elif search_type == "recommends":
@@ -165,3 +164,30 @@ class Dnf5MadbBase():
         query = libdnf5.repo.RepoQuery(self._base)
         query.filter_enabled(True)
         return query
+    
+    def search_whatrequires(self, pkg):
+        """
+        Search for ascendant dependencies
+        :param source: boolean, if True, search in source packages
+        """
+        deps = {}
+        process = ["requires",
+                   "recommends",
+                   "suggests",
+                   "supplements",
+                ]
+        for repo in ("arched", "source"):
+            deps[repo] = []
+            for link_type in process:
+                previous = ""
+                i = 1
+                p_name = ""
+                for p in self.search(link_type, pkg.get_provides(), source=(repo == "source")):
+                    # p is a libdnf5.rpm.Package object
+                    if not p.get_name() in deps:
+                        deps[repo].append(p.get_name())
+                    i += 1
+                    if (p.get_name() == p_name) :
+                        continue
+                    p_name = p.get_name()
+        return [f"{x} (src)" if x not in deps["arched"] else x for x in set(deps["source"])]

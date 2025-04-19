@@ -754,8 +754,9 @@ def create_app():
                 ["Repository name", last.get_repo_name()],
                 ["Media arch", arch],
             ]
-            deps = []
             reqs = last.get_requires()
+            what_reqs = distro.search_whatrequires(last)
+            deps = []
             for item in distro.provides_requires(reqs):
                 if not item.get_name() in deps:
                     deps.append(item.get_name())
@@ -772,6 +773,7 @@ def create_app():
                 ["Files", "<br />\n".join(last.get_files()), ""],
                 ["Dependencies", "<br />\n".join(deps), ""],
                 ["Provides", "<br />\n".join([x.get_name() for x in last.get_provides()]), ""],
+                ["What requires", "<br />\n".join(what_reqs), ""],
             ]
         else:
             data = {
