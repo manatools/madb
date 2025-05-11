@@ -190,4 +190,4 @@ class Dnf5MadbBase():
                     if (p.get_name() == p_name) :
                         continue
                     p_name = p.get_name()
-        return [f"{x} (src)" if x not in deps["arched"] else x for x in set(deps["source"])]
+        return sorted([f"{x} (src)" if x not in deps["arched"] else x for x in set(deps["source"])])
