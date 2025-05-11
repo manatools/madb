@@ -58,7 +58,6 @@ def load_content_or_cache(url, long=True, timeout=10):
         response = requests.get(url, timeout=timeout)
         with open(filepath, "w") as f:
             f.write(response.content.decode())
-            print(f"Cache {filepath} wrotten")
     with open(filepath, "r") as f:
         content = f.read()
     return content
