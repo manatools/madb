@@ -1,3 +1,7 @@
+# release 0.7.5
+- sort packages of "what requires"
+- fix message about backports, no advisories are provided for them
+
 # release 0.7.4
 - improve feedback in makecache 
 - add "What requires" in package page
