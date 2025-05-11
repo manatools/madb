@@ -17,8 +17,7 @@
 without a star* need an advisory to be uploaded, first.<br /><br />
 {% endif %}
 {% if status == 'validated_backport' %}
-<br /><br /><br />Below is a list of validated <strong>backports</strong> waiting to be pushed to the backports media.
-Those without a star* need an advisory to be uploaded, first.<br /><br />
+<br /><br /><br />Below is a list of validated <strong>backports</strong> waiting to be pushed to the backports media.<br /><br />
 {% endif %}
 {% for release in data.releases %}
 {% if (data.counts[release]|bugs_sum) != 0 %}
