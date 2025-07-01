@@ -62,12 +62,23 @@ def create_app():
     def index():
         return send_from_directory('static', 'favicon.ico')
 
+    @app.route('/tablefilter.js')
+    def filter():
+        return send_from_directory('static/tablefilter', 'tablefilter.js')
+
+    @app.route('/tablefilter/<path:path>')
+    def send_tablefilter(path):
+        """ For serving files used by pyvis
+        """
+        return send_from_directory('static/tablefilter', path)
+
     @app.route("/")
     @app.route("/home")
     def home():        
         release = request.args.get("distribution", "unspecified")
         arch = request.args.get("architecture", "indifferent")
         graphical = request.args.get("graphical", "1")
+        exact = request.args.get("exact", "0")
         rpm = request.args.get("rpm", "")
         if release == "unspecified" or arch == "indifferent":
             release = next(iter(config.DISTRIBUTION.keys()))
@@ -90,9 +101,11 @@ def create_app():
             "title": "Home",
             "updates": last_updates,
             "backports": last_backports,
+            "graphical": graphical,
+            "exact": exact,
             "links": links,
             "rpm_search": rpm,
-            "url_end": f"?distribution={release}&architecture={arch}&graphical=0",
+            "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}&exact={exact}",
             "base_url": "/home",
             "nav_html": nav_data["html"],
             "nav_css": nav_data["css"],
@@ -615,6 +628,9 @@ def create_app():
         arch = request.args.get("architecture", "indifferent")
         package = request.args.get("rpm", "")
         graphical = request.args.get("graphical", "0")
+        exact = request.args.get("exact", "0")
+        print(f"Exact {exact} Graphical {graphical}")
+        
         nav_data = navbar(lang=request.accept_languages.best)
         arch_list = []
         if arch == "indifferent":
@@ -635,13 +651,13 @@ def create_app():
         for rel in releases_list:
             for iter_arch in arch_list:
                 distro = Dnf5MadbBase(rel, iter_arch, config.DATA_PATH)
-                dnf_pkgs = distro.search_name([package], graphical=(graphical == "1"))
+                dnf_pkgs = distro.search_name([package], graphical=(graphical == "1"), exact=(exact == "1"))
                 for dnf_pkg in dnf_pkgs:
                     rpms.append(
                         {
                             "full_name": dnf_pkg.get_nevra(),
                             "distro_release": rel,
-                            "url": f"/rpmshow?rpm={dnf_pkg.get_name()}&repo={dnf_pkg.get_repo_id()}&distribution={rel}&architecture={iter_arch}&graphical={graphical}&version={dnf_pkg.get_evr()}",
+                            "url": f"/rpmshow?rpm={dnf_pkg.get_name()}&repo={dnf_pkg.get_repo_id()}&distribution={rel}&architecture={iter_arch}&graphical={graphical}&version={dnf_pkg.get_evr()}&exact=1",
                             "arch": dnf_pkg.get_arch(),
                             "repo": dnf_pkg.get_repo_name(),
                         }
@@ -668,10 +684,9 @@ def create_app():
             data = {
                 "title": "Not found",
                 "config": data_config,
-                "url_end": f"/{release}/{arch}/{graphical}",
-                "base_url": "/home",
-                "rpm_search": "",
-                "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}",
+                "base_url": "/show",
+                "rpm_search": package,
+                "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}&exact={exact}",
                 "nav_html": nav_data["html"],
                 "nav_css": nav_data["css"],
             }
@@ -679,8 +694,10 @@ def create_app():
         data = {
             "pkg": pkg,
             "config": data_config,
-            "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}",
+            "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}&exact={exact}",
             "rpm_search": package,
+            "graphical": graphical,
+            "exact": exact,
             "base_url": "/show",
             "nav_html": nav_data["html"],
             "nav_css": nav_data["css"],
@@ -692,6 +709,7 @@ def create_app():
         release = request.args.get("distribution", "unspecified")
         arch = request.args.get("architecture", "indifferent")
         graphical = request.args.get("graphical", "1")
+        exact = request.args.get("exact", "1")
         package = request.args.get("rpm", "")
         repo = request.args.get("repo", "")
         evr = request.args.get("version", "")
@@ -796,8 +814,10 @@ def create_app():
             "media": media,
             "description": description,
             "rpm_search": package,
+            "graphical": graphical,
+            "exact": exact,
             "base_url": "/rpmshow",
-            "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}&rpm={package}",
+            "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}&rpm={package}&exact=1",
             "nav_html": nav_data["html"],
             "nav_css": nav_data["css"],
         }
@@ -990,7 +1010,7 @@ def create_app():
             "config": data_config,
         }
         return render_template("comparison.html", data=data)
-
+        
     def format_bugs():
         column = ",".join(
             [

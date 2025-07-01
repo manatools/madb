@@ -10,6 +10,8 @@
             const dist = dist_field.value;
             const graphical_field = document.getElementById("graphical");
             if (graphical_field !== null){ var graphical = graphical_field.checked ? "1" : "0"};
+            const exact_field = document.getElementById("exact");
+            if (exact_field !== null){ var exact = exact_field.checked ? "1" : "0"};
             const pkg_field = document.getElementById("package_name");
             const pkg = pkg_field.value;
             // in hidden field
@@ -27,7 +29,6 @@
             if (slider !== null) {var level = slider.value;}
             const descend_field = document.getElementById("descending");
             if (descend_field !== null) {var descending = descend_field.checked ? "1" : "0";} else {var descending = "";}
-    
             // Construit l'URL cible en combinant l'action du formulaire et la valeur sélectionnée
             targetUrl = `${arch_field.getAttribute("data-base-url")}?distribution=${dist}&architecture=${arch}`;
             targetUrl = targetUrl + ( graphical_field !== null ? `&graphical=${graphical}` : "");
@@ -35,6 +36,7 @@
             targetUrl = targetUrl + ( group !== "" ? `&group=${group}` : "");
             targetUrl = targetUrl + ( slider !== null ? `&level=${level}` : "");
             targetUrl = targetUrl + ( descending !== "" ? `&descending=${descending}` : "");
+            targetUrl = targetUrl + ( exact_field !== "" ? `&exact=${exact}` : "");
 
             // Reload the page with the new query string
             window.location.href = targetUrl;
@@ -67,13 +69,17 @@
         {% endfor %}
     </select>
     {% if not data.graph %}
-    <label>Graphical applications only</label>
+        <label>Graphical applications only:</label>
         <input type="checkbox" id="graphical" value="1" {% if 'graphical=1' in data.url_end %} checked{% endif %} class="searchfield">
     {% endif%}
 
     <label for="package_name">Package: </label>
 
     <input type="text" id="package_name" name="rpm" value="{{ data.rpm_search if data.rpm_search is not none }}">
+    {% if not data.graph %}
+        <label> Exact match: </label>
+        <input type="checkbox" id="exact" value="1" {% if 'exact=1' in data.url_end %} checked{% endif %} class="searchfield">
+    {% endif%}
     <input type="hidden" id="repo" name="repo" value="{{ data.repo if data.repo is not none }}">
     <input type="hidden" id="group" name="group" value="{{ data.group if data.group is not none }}">
     <input type="hidden" id="page" name="page" value="{{ data.group if data.group is not none }}">

@@ -48,7 +48,7 @@ class Dnf5MadbBase():
         self._repo_sack.update_and_load_enabled_repos(False)
 
 
-    def search_name(self, values, graphical=False, repo=None):
+    def search_name(self, values, graphical=False, repo=None, exact=True):
         """Search in a list of package attributes for a list of keys.
 
         :param values: the values to match
@@ -58,6 +58,9 @@ class Dnf5MadbBase():
         """
         query = libdnf5.rpm.PackageQuery(self._base)
         #query.filter_arch([self.arch, "noarch"])
+        if not exact:
+            # adding wildcards
+            values = [x + "*" for x in values]
         query.filter_name(values, GLOB)
         if graphical:
             query.filter_file(["/usr/share/applications/*.desktop"], GLOB)
