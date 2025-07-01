@@ -9,6 +9,7 @@ import sys
 import json
 import time
 from madb.dnf5madbbase import Dnf5MadbBase
+import madb.config as config
 
 from sqlalchemy import Column, Integer, String, DateTime, create_engine, update, select, delete
 from sqlalchemy.ext.declarative import declarative_base
@@ -17,7 +18,7 @@ from datetime import datetime
 import time
 
 
-distro = Dnf5MadbBase("cauldron", "x86_64", "/home/yves/dev/anitya/dnf")
+distro = Dnf5MadbBase("cauldron", "x86_64", config.DATA_PATH)
 
 Base = declarative_base()
 
