@@ -21,6 +21,10 @@ import os
 import threading
 from packaging import version as pvers
 import pandas as pd
+from sqlalchemy import Column, Integer, String, DateTime, create_engine, select
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+import time
 
 logger = logging.getLogger(__name__)
 log_level = getattr(logging, config.LOG_LEVEL.upper())
@@ -31,6 +35,20 @@ URL = config.BUGZILLA_URL + "/buglist.cgi"
 # start thread for cleaning cache
 clean_thread = threading.Thread(target=clean_cache)
 # clean_thread.start()
+
+Base = declarative_base()
+
+# table Package for release-monitoring
+class Package(Base):
+    __tablename__ = 'packages'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(80), unique=True)
+    our_version = Column(String(20))
+    upstream_version = Column(String(20))
+    updated_on = Column(DateTime)
+    msg_id = Column(String(40))
+    pkg_id = Column(Integer)
+    maintainer = Column(String(40))
 
 def create_app():
     app = Flask(__name__)
@@ -1010,6 +1028,22 @@ def create_app():
             "config": data_config,
         }
         return render_template("comparison.html", data=data)
+
+    @app.route("/check_anitya.html")
+    def comparison_anitya():
+        last_time = os.path.getmtime('static/packages.db')
+        engine = create_engine('sqlite:///static/packages.db')
+        Session = sessionmaker(bind=engine)
+        session = Session()
+        stmt = select(Package).where(Package.upstream_version != "").\
+            where(Package.our_version != Package.upstream_version)
+        # stmt = select(Package).where(Package.upstream_version == "") 
+        data = {}
+        data["title"] = "Check release-monitoring.org for Mageia packages"
+        data["date_field"] = "Last update: " + time.ctime(last_time) + ' (' + str(datetime.now().astimezone().tzinfo) + ")"
+        data['packages'] = session.execute(stmt).scalars().all()
+        data["config"] = data_config
+        return render_template("check_anitya.html", data=data)
         
     def format_bugs():
         column = ",".join(
