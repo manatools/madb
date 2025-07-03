@@ -5,6 +5,8 @@ from madb.helper import load_content_or_cache, clean_cache
 from madb.cerisier import RpmGraph
 from madb.screenshots import Screenshots
 from madb.advisories import Advisories
+from madb.dnf5madbbase import Dnf5MadbBase
+import madb.config as config
 from flask import Flask, render_template, request, Response, send_from_directory, redirect
 import requests
 from bs4 import BeautifulSoup 
@@ -12,9 +14,7 @@ from csv import DictReader
 from datetime import datetime, timedelta, date
 from io import StringIO
 import collections
-import madb.config as config
 from urllib import parse
-from madb.dnf5madbbase import Dnf5MadbBase
 import humanize
 import logging
 import os
@@ -1031,8 +1031,9 @@ def create_app():
 
     @app.route("/check_anitya.html")
     def comparison_anitya():
-        last_time = os.path.getmtime('static/packages.db')
-        engine = create_engine('sqlite:///static/packages.db')
+        database_path = os.path.join(config.EXTERNAL_PATH, 'packages.db')
+        last_time = os.path.getmtime(database_path)
+        engine = create_engine('sqlite:///' + database_path)
         Session = sessionmaker(bind=engine)
         session = Session()
         stmt = select(Package).where(Package.upstream_version != "").\
