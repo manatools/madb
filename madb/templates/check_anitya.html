@@ -1,0 +1,50 @@
+{% extends 'layout.html' %}
+{% block script_column %}
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+    .column-list {
+        padding: 20px;
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+    }
+    .column-list li {
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+{% block container %}
+<div class="pagename">
+    <p>{{ data.title }}</p>
+</div>
+<div id="intro" class="links">
+  <h2></h2>
+  <p>Display source packages in Mageia Cauldron when the version differs from the one published by release-monitoring.</p>
+  <h3>{{ data.date_field }}</h3>
+</div>
+
+<div class="homepage">
+  <table id="anitya"><thead><tr> <th>Name</th> <th>Mageia</th> <th>Anitya</th> <th>Maintainer</th> <th>release-monitoring.org id</th> </tr></thead>
+<tbody>
+{% for package in data.packages %}
+    <tr>
+      <td>{{ package.name }}</td>
+      <td>{{ package.our_version }}</td>
+      <td>{{ package.upstream_version }}</td>
+      <td>{{ package.maintainer }}</td>
+      <td><a href="https://release-monitoring.org/project/{{ package.pkg_id }}">{{ package.pkg_id }}</a></td>
+    </tr>
+{% endfor %}
+</tbody></table>
+</div>
+<script src="tablefilter.js"></script>
+<script data-config>
+var filtersConfig = {base_path: 'tablefilter/',alternate_rows: true, col_1: 'none', col_2: 'none', col_4: 'none', popup_filters: true, };
+var tf = new TableFilter(document.getElementById('anitya', filtersConfig));
+tf.init(); </script>
+{% endblock %}
+  
