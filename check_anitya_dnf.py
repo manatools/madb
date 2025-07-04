@@ -9,13 +9,19 @@ import sys
 import json
 import time
 import os
+import logging
 from madb.dnf5madbbase import Dnf5MadbBase
 import madb.config as config
 
-from sqlalchemy import Column, Integer, String, DateTime, create_engine, update, select, delete
+from sqlalchemy import Column, Integer, String, DateTime, create_engine, update, select, delete, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
+
+
+logger = logging.getLogger(__name__)
+log_level = getattr(logging, config.LOG_LEVEL.upper())
+logging.basicConfig(filename=os.path.join(config.LOG_PATH,'anitya.log'), encoding='utf-8', level=log_level)
 
 
 distro = Dnf5MadbBase("cauldron", "x86_64", config.DATA_PATH)
@@ -53,11 +59,13 @@ def add_package(session, name, our_version, upstream_version, updated_on, msg_id
                       pkg_id=pkg_id,
                       maintainer=maintainer)
     session.add(package)
+    session.commit()
 
 # Fonction de retrait d'un package
 def remove_package(session, id):
     package = session.get(Package, id)
     session.delete(package)
+    session.commit()
 
 # Fonction de mise à jour d'un package
 def update_package(session, id, our_version, upstream_version, updated_on, msg_id, pkg_id, maintainer):
@@ -66,17 +74,19 @@ def update_package(session, id, our_version, upstream_version, updated_on, msg_i
         package.our_version = our_version
     if upstream_version != "":
         package.upstream_version = upstream_version
-    package.updated_on = datetime.fromtimestamp(updated_on)
+    package.updated_on = updated_on
     package.msg_id = msg_id
     package.pkg_id = pkg_id
     if maintainer != "":
         package.maintainer = maintainer
+    session.commit()
 
 def cleaning(session, packages_list):
     stmt = delete(Package).where(Package.name.notin_(packages_list))
     session.execute(stmt)
+    session.commit()
     
-def update_content(with_remote=False):
+def update_packages_db():
     """
     Start with a void database
     """
@@ -86,7 +96,7 @@ def update_content(with_remote=False):
     # add each package to the database and get upstream version
     with Session() as session:
         for package in packages:
-            print(package.get_name())
+            logging.debug(package.get_name())
             upstream_version = ""
             updated_on = 0
             pkg_id = 0
@@ -100,42 +110,52 @@ def update_content(with_remote=False):
                 present = True
                 if  package.get_version() != result.our_version:
                     # update the version
-                    print("Updating")
+                    logging.debug("Updating")
                     stmt = update(Package).\
                         where(Package.id == result.id).\
                         values(our_version=package.get_version(), maintainer=maintdb[package.get_name()])
                     session.execute(stmt)
-                    print("Updated")
-            if with_remote or not present:
-                # get upstream info
-                print("Remote")
-                anityainfo = anitya_response(package)
-                if ((anityainfo[3] != 'none') and (anityainfo[2] != 'None')):
-                    upstream_version = anityainfo[2]
-                    pkg_id = anityainfo[3]
-                    updated_on = datetime.fromtimestamp(anityainfo[4])
-                    # insert in database or update
-                    if present:
-                        print("Remote: updating")
-                        stmt = update(Package).\
-                                where(Package.id == result.id).\
-                                values(upstream_version=upstream_version, pkg_id=pkg_id, updated_on=updated_on)
-                        session.execute(stmt)
-                        session.commit()
-                        print("Remote: updated")
-                    else: 
-                        print("Remote: adding")
-                        add_package(session, package.get_name(), package.get_version(), upstream_version, updated_on, "", pkg_id, maintdb[package.get_name()])
-                        print("Remote: added")
-                        added = True
-            if not present and not added:
-                print("Adding")
-                add_package(session, package.get_name(), package.get_version(), "", None, "", 0, maintdb[package.get_name()])
-                print("Added")
+                    logging.debug("Updated")
+            else:
+                logging.debug("Adding")
+                add_package(session, package.get_name(), package.get_version(), "", None, "", None, maintdb[package.get_name()])
+                logging.debug("Added")
 
         # delete srpms no more listed
         cleaning(session, [pkg.get_name() for pkg in packages])
         session.commit()
+
+    
+def update_anitya_content(with_remote=False):
+    """
+    Complete anitya information on the whole database
+    """
+
+    # add each package to the database and get upstream version
+    with Session() as session:
+        packages = session.query(Package).all()
+        for package in packages:
+            logging.debug(package.name)
+            upstream_version = ""
+            updated_on = 0
+            pkg_id = 0
+            present = False
+            added = False
+            # get upstream info
+            logging.debug("Remote")
+            anityainfo = anitya_response(package)
+            if ((anityainfo[3] != 'none') and (anityainfo[2] != 'None')):
+                upstream_version = anityainfo[2]
+                pkg_id = anityainfo[3]
+                updated_on = datetime.fromtimestamp(anityainfo[4])
+                #  update in database
+                logging.debug("Remote: updating")
+                stmt = update(Package).\
+                        where(Package.id == package.id).\
+                        values(upstream_version=upstream_version, pkg_id=pkg_id, updated_on=updated_on)
+                session.execute(stmt)
+                session.commit()
+                logging.debug("Remote: updated")
 
     
 UPDATE_URL = (
@@ -165,7 +185,7 @@ def anitya_response(package):
     anitya_id = 'none'
     anitya_version = 'none'
     anitya_url = 'https://release-monitoring.org'
-    name = package.get_name()
+    name = package.name
     updated_on = ""
 
     url = '%s/api/project/Mageia/%s' % (anitya_url, name)
@@ -192,11 +212,13 @@ def anitya_response(package):
             anitya_version = data['version']
             updated_on = data['updated_on']
 
-    return (name ,package.get_version(), anitya_version, anitya_id, updated_on)
+    return (name, package.our_version, anitya_version, anitya_id, updated_on)
 
 def check_messages():
+    logging.debug("Check messages")
     response = requests.get(UPDATE_URL, timeout=30)
     updates = response.json()
+    logging.debug(f"Got {len(updates['raw_messages'])} messages")
 
     for message in updates["raw_messages"]:
         session = Session()
@@ -204,8 +226,10 @@ def check_messages():
         stmt = select(Package).where(Package.name == name_to_find)
         result = session.execute(stmt).scalar_one_or_none()
         if result and message["msg_id"] != result.msg_id:
-            update_package( 
-                name_to_find,
+            logging.debug(f"Updating {name_to_find}")
+            update_package(
+                session,
+                result.id,
                 "",
                 message["msg"]["project"]["version"],
                 datetime.fromtimestamp( message["msg"]["project"]["updated_on"]),
@@ -215,12 +239,13 @@ def check_messages():
                 )
 
 if __name__ == '__main__':
-    update_content(with_remote=True)
+    update_packages_db()
+    update_anitya_content()
     while True:
-        time.sleep(3600)
+        # time.sleep(3600)
+        # Read metadata and update
+        update_packages_db()
         # Read monitor messages and update
         check_messages()
-        # Read metadata and update
-        update_content()
         
 
