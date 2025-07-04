@@ -36,7 +36,11 @@
       <td>{{ package.our_version }}</td>
       <td>{{ package.upstream_version }}</td>
       <td>{{ package.maintainer }}</td>
-      <td><a href="https://release-monitoring.org/project/{{ package.pkg_id }}">{{ package.pkg_id }}</a></td>
+      <td>
+      {% if package.pkg_id != 0 %}
+      <a href="https://release-monitoring.org/project/{{ package.pkg_id }}">{{ package.pkg_id }}</a>
+      {% endif %}
+      </td>
     </tr>
 {% endfor %}
 </tbody></table>
