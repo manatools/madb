@@ -242,7 +242,7 @@ if __name__ == '__main__':
     update_packages_db()
     update_anitya_content()
     while True:
-        # time.sleep(3600)
+        time.sleep(600)
         # Read metadata and update
         update_packages_db()
         # Read monitor messages and update
