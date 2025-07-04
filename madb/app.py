@@ -1031,16 +1031,20 @@ def create_app():
 
     @app.route("/check_anitya.html")
     def comparison_anitya():
+        data = {}
+        notfollowed = request.args.get("notfollowed", "0")
         database_path = os.path.join(config.EXTERNAL_PATH, 'packages.db')
         last_time = os.path.getmtime(database_path)
         engine = create_engine('sqlite:///' + database_path)
         Session = sessionmaker(bind=engine)
         session = Session()
-        stmt = select(Package).where(Package.upstream_version != "").\
-            where(Package.our_version != Package.upstream_version)
-        # stmt = select(Package).where(Package.upstream_version == "") 
-        data = {}
-        data["title"] = "Check release-monitoring.org for Mageia packages"
+        if notfollowed == "0":
+            stmt = select(Package).where(Package.upstream_version != "").\
+                where(Package.our_version != Package.upstream_version)
+            data["title"] = "Check release-monitoring.org for Mageia packages"
+        else:
+            stmt = select(Package).where(Package.upstream_version == "") 
+            data["title"] = "Packages not found in release-monitoring.org"
         data["date_field"] = "Last update: " + time.ctime(last_time) + ' (' + str(datetime.now().astimezone().tzinfo) + ")"
         data['packages'] = session.execute(stmt).scalars().all()
         data["config"] = data_config
