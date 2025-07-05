@@ -36,8 +36,8 @@ def advisories():
     #with open(, "r") as f:
 
 
-CACHE_DIR = os.path.join(config.DATA_PATH, "cache")
-LONG_CACHE_DIR = os.path.join(config.DATA_PATH, "cache/long")
+CACHE_DIR = os.path.join(config.EXTERNAL_PATH, "cache")
+LONG_CACHE_DIR = os.path.join(config.EXTERNAL_PATH, "cache/long")
 CACHE_TTL = 60 * 60 * 24  # Cache expiration time: 1 day
 LONG_CACHE_TTL = 60 * 60 * 24 * 100 # Cache expiration time: 100 days
 CACHE_SIZE = 5
