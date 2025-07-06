@@ -1,7 +1,12 @@
+# release 0.8.1
+- keep only stables versions for anitya
+- Save advisories list in external place
+
 # release 0.8.0
-- add check Anitya page. This uses a sqlite database to store the list of source packages and access it with sqlalchemy module. The database static/packages.db is populated with a separate process check_anitya_dnf.py and the page is rendered on demand. The separate process access sources through dnf data and asks Anitya server for each package at initialization. This could take 3 to 4 hours. Then the process reads Fedoara messaging to update the database.
+- add check Anitya page. This uses a sqlite database to store the list of source packages and access it with sqlalchemy module. The database packages.db is populated with a separate process check_anitya_dnf.py and the page is rendered on demand. The separate process access sources through dnf data and asks Anitya server for each package at initialization. This could take 3 to 4 hours. Then the process reads Fedoara messaging to update the database.
 - log in specific files for makecache and makeadvisories
 - add option in search for exact match
+- add EXTERNAL_PATH in config to use as /persist-madb to have data stored in them which persist over podman images rebuild. Storing packages.db and files cache in it.
 
 # release 0.7.5
 - sort packages of "what requires"
