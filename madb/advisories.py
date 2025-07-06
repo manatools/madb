@@ -29,7 +29,7 @@ class Advisories:
         self.advisories_ids = [x["id"] for x in advisories_bugs_from_file]
         self.advisories_ids.extend([x["id"] for x in advisories_vulns_from_file])
         # Path for the local file where advisories are stored
-        local_file = os.path.join(config.DATA_PATH, "cache", "advisories.json")
+        local_file = os.path.join(config.EXTERNAL_PATH, "advisories.json")
 
         # Read local file storing all advisories
         try:
