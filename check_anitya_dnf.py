@@ -197,7 +197,7 @@ def anitya_response(package):
 
     if not 'error' in data:
         anitya_id = data['id']
-        anitya_version = data['version']
+        anitya_version = data['stable_versions'][0]
         updated_on = data['updated_on']
     else:
         url = '%s/api/project/Fedora/%s' % (anitya_url, name)
@@ -209,7 +209,7 @@ def anitya_response(package):
 
         if not 'error' in data:
             anitya_id = data['id']
-            anitya_version = data['version']
+            anitya_version = data['stable_versions'][0]
             updated_on = data['updated_on']
 
     return (name, package.our_version, anitya_version, anitya_id, updated_on)
@@ -231,7 +231,7 @@ def check_messages():
                 session,
                 result.id,
                 "",
-                message["msg"]["project"]["version"],
+                message["msg"]["project"]['stable_versions'][0],
                 datetime.fromtimestamp( message["msg"]["project"]["updated_on"]),
                 message["msg_id"],
                 message["msg"]["project"]["id"],
