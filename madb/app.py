@@ -675,7 +675,15 @@ def create_app():
                         {
                             "full_name": dnf_pkg.get_nevra(),
                             "distro_release": rel,
-                            "url": f"/rpmshow?rpm={dnf_pkg.get_name()}&repo={dnf_pkg.get_repo_id()}&distribution={rel}&architecture={iter_arch}&graphical={graphical}&version={dnf_pkg.get_evr()}&exact=1",
+                            "url": "/rpmshow?" +parse.urlencode(
+                                                   {"rpm": dnf_pkg.get_name(),
+                                                    "repo": dnf_pkg.get_repo_id(),
+                                                    "distribution": rel,
+                                                    "architecture": iter_arch,
+                                                    "graphical": graphical,
+                                                    "version": dnf_pkg.get_evr(),
+                                                    "exact": "1"}
+                                                   ),
                             "arch": dnf_pkg.get_arch(),
                             "repo": dnf_pkg.get_repo_name(),
                         }
@@ -1040,14 +1048,20 @@ def create_app():
         session = Session()
         if notfollowed == "0":
             stmt = select(Package).where(Package.upstream_version != "").\
-                where(Package.our_version != Package.upstream_version)
+                where(Package.our_version != Package.upstream_version).\
+                order_by(Package.name)
             data["title"] = "Check release-monitoring.org for Mageia packages"
         else:
-            stmt = select(Package).where(Package.upstream_version == "") 
+            stmt = select(Package).where(Package.upstream_version == "").\
+                order_by(Package.name)
             data["title"] = "Packages not found in release-monitoring.org"
         data["date_field"] = "Last update: " + time.ctime(last_time) + ' (' + str(datetime.now().astimezone().tzinfo) + ")"
         data['packages'] = session.execute(stmt).scalars().all()
         data["config"] = data_config
+        nav_data = navbar(lang=request.accept_languages.best)
+        data["nav_html"] = nav_data["html"]
+        data["nav_css"] = nav_data["css"]
+        data["count"] = len(data['packages'])
         return render_template("check_anitya.html", data=data)
         
     def format_bugs():
