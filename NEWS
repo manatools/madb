@@ -1,3 +1,11 @@
+# release 0.8.2
+- Use stable version by default in check_anitya
+- Add packages count
+- Fix links to packages including + in the name
+- Order packages by name in check_anitya
+- Transmit data for the navbar
+- Fix retrieving info from screenshots list
+
 # release 0.8.1
 - keep only stables versions for anitya
 - Save advisories list in external place
