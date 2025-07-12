@@ -41,7 +41,7 @@ class Package(Base):
     maintainer = Column(String(40))
 
 database_path = os.path.join(config.EXTERNAL_PATH, 'packages.db')
-engine = create_engine('sqlite:///' + database_path, echo=True)
+engine = create_engine('sqlite:///' + database_path, echo=False)
 
 # Création de la table si elle n'existe pas
 Base.metadata.create_all(engine)
@@ -142,20 +142,17 @@ def update_anitya_content(with_remote=False):
             present = False
             added = False
             # get upstream info
-            logging.debug("Remote")
             anityainfo = anitya_response(package)
             if ((anityainfo[3] != 'none') and (anityainfo[2] != 'None')):
                 upstream_version = anityainfo[2]
                 pkg_id = anityainfo[3]
                 updated_on = datetime.fromtimestamp(anityainfo[4])
                 #  update in database
-                logging.debug("Remote: updating")
                 stmt = update(Package).\
                         where(Package.id == package.id).\
                         values(upstream_version=upstream_version, pkg_id=pkg_id, updated_on=updated_on)
                 session.execute(stmt)
                 session.commit()
-                logging.debug("Remote: updated")
 
     
 UPDATE_URL = (
@@ -188,19 +185,8 @@ def anitya_response(package):
     name = package.name
     updated_on = ""
 
-    url = '%s/api/project/Mageia/%s' % (anitya_url, name)
-    try:
-        response = requests.get(url)
-        data = response.json()
-    except:
-        data = 'error'
-
-    if not 'error' in data:
-        anitya_id = data['id']
-        anitya_version = data['stable_versions'][0]
-        updated_on = data['updated_on']
-    else:
-        url = '%s/api/project/Fedora/%s' % (anitya_url, name)
+    for distro in ("Mageia", "Fedora"):
+        url = f'{anitya_url}/api/project/{distro}/{name}'
         try:
             response = requests.get(url)
             data = response.json()
@@ -209,13 +195,17 @@ def anitya_response(package):
 
         if not 'error' in data:
             anitya_id = data['id']
-            anitya_version = data['stable_versions'][0]
+            if len(data['stable_versions']) > 0 :
+                anitya_version = data['stable_versions'][0]
+            else:
+                anitya_version = data['version']
             updated_on = data['updated_on']
+            break
 
     return (name, package.our_version, anitya_version, anitya_id, updated_on)
 
 def check_messages():
-    logging.debug("Check messages")
+    logging.info("Check messages")
     response = requests.get(UPDATE_URL, timeout=30)
     updates = response.json()
     logging.debug(f"Got {len(updates['raw_messages'])} messages")
