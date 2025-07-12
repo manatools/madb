@@ -27,7 +27,10 @@
   <h3>{{ data.date_field }}</h3>
   <p>
   <a href="/check_anitya.html">Upstream comparison</a>
-  <a href="/check_anitya.html?notfollowed=1">Not followed in release-monitoring</a>
+  <a href="/check_anitya.html?notfollowed=1">  Not followed in release-monitoring</a>
+  </p>
+  <p>
+  This report lists {{ data.count }} packages.
   </p>
 </div>
 
@@ -41,8 +44,10 @@
       <td>{{ package.upstream_version }}</td>
       <td>{{ package.maintainer }}</td>
       <td>
-      {% if package.pkg_id != 0 %}
+      {% if (package.pkg_id is not none) and (package.pkg_id != "None") %}
       <a href="https://release-monitoring.org/project/{{ package.pkg_id }}">{{ package.pkg_id }}</a>
+      {% else %}
+      ---
       {% endif %}
       </td>
     </tr>
