@@ -17,7 +17,7 @@ class Screenshots():
         if self.scdb is None:
             return []
         if package in self.keys:
-            links = [ {"small": x["small_image_url"], "large": x["large_image_url"]} for x in self.scdb if x["name"] == package  ]
+            links = [ {"small": x.get("small_image_url", ""), "large": x.get("large_image_url", x.get("screenshot_image_url", ""))} for x in self.scdb if x["name"] == package  ]
             return links
         return []
         # with open("static/screen-replace.csv", "r") as f:
