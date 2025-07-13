@@ -4,7 +4,7 @@ from csv import DictReader
 
 class Screenshots():
     def __init__(self):
-        URL = "http://screenshots.debian.net/json/screenshots"
+        URL = "https://screenshots.debian.net/json/screenshots"
         content = load_content_or_cache(URL)
         try:
             self.scdb = json.loads(content)["screenshots"]
