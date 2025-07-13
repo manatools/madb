@@ -1,5 +1,7 @@
-# release 0.8.2
+# release 0.8.3
 - Use stable version by default in check_anitya
+
+# release 0.8.2
 - Add packages count
 - Fix links to packages including + in the name
 - Order packages by name in check_anitya
