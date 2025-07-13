@@ -1,14 +1,16 @@
 from madb.helper import load_content_or_cache
 import json
 from csv import DictReader
+import logging
 
 class Screenshots():
     def __init__(self):
         URL = "https://screenshots.debian.net/json/screenshots"
-        content = load_content_or_cache(URL)
         try:
+            content = load_content_or_cache(URL)
             self.scdb = json.loads(content)["screenshots"]
         except JSONDecodeError:
+            logging.warning(f"Not able to get screenshots list from {URL}")
             self.scdb = None
             return
         self.keys = [x["name"] for x in self.scdb]
