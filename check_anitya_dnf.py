@@ -18,11 +18,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
-
-logger = logging.getLogger(__name__)
-log_level = getattr(logging, config.LOG_LEVEL.upper())
-logging.basicConfig(filename=os.path.join(config.LOG_PATH,'anitya.log'), encoding='utf-8', level=log_level)
-
+import argparse
 
 distro = Dnf5MadbBase("cauldron", "x86_64", config.DATA_PATH)
 
@@ -229,12 +225,35 @@ def check_messages():
                 )
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description="Update a database of Mageia source packages versions and compare them to upstream versions through Anitya."
+    )
+    parser.add_argument("-l", "--log", help="specify the log level ", dest="loglevel")
+    parser.add_argument("-f", "--first", help="check all packages for upstream version", action='store_true')
+    parser.add_argument("-u", "--update", help="update upstream version through messaging", action='store_true')
+    args = parser.parse_args()
+    if args.loglevel is not None:
+        numeric_level = getattr(logging, args.loglevel.upper(), None)
+    else:
+        numeric_level = logging.INFO
+    if not isinstance(numeric_level, int):
+        raise ValueError("Invalid log level: %s" % args.loglevel)
+
+    logger = logging.getLogger(__name__)
+    log_level = getattr(logging, args.loglevel.upper())
+    logging.basicConfig(filename=os.path.join(config.LOG_PATH,'anitya.log'),
+                    encoding='utf-8',
+                    level=log_level,
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
+    # Read metadata and update
     update_packages_db()
-    update_anitya_content()
-    while True:
-        time.sleep(600)
-        # Read metadata and update
-        update_packages_db()
+    
+    if args.first:
+        # Check for all packages
+        update_anitya_content()
+
+    if args.update:
         # Read monitor messages and update
         check_messages()
         
