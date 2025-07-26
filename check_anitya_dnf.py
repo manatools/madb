@@ -228,7 +228,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Update a database of Mageia source packages versions and compare them to upstream versions through Anitya."
     )
-    parser.add_argument("-l", "--log", help="specify the log level ", dest="loglevel")
+    parser.add_argument("-l", "--log", help="specify the log level ", dest="loglevel", default="INFO")
     parser.add_argument("-f", "--first", help="check all packages for upstream version", action='store_true')
     parser.add_argument("-u", "--update", help="update upstream version through messaging", action='store_true')
     args = parser.parse_args()
