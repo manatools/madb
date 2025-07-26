@@ -1,3 +1,7 @@
+# release 0.8.4
+- Separating anitya updates in processes to avoid updates stopping to work.
+- use https for bugzilla address
+
 # release 0.8.3
 - Use stable version by default in check_anitya
 

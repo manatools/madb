@@ -11,7 +11,7 @@
 # PARTICULAR PURPOSE.
 
 
-VERSION = 0.8.3
+VERSION = 0.8.4
 
 PACKAGE = madb
 GITPATH = git@github.com:manatools/madb.git
