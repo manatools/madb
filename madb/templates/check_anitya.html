@@ -23,14 +23,21 @@
 </div>
 <div id="intro" class="links">
   <h2></h2>
-  <p>Display source packages in Mageia Cauldron when the version differs from the one published by release-monitoring.</p>
+  <p>{{ data.title2}}</p>
   <h3>{{ data.date_field }}</h3>
   <p>
   <a href="/check_anitya.html">Upstream comparison</a>
   <a href="/check_anitya.html?notfollowed=1">  Not followed in release-monitoring</a>
   </p>
   <p>
+  <a href="/check_anitya_csv">Upstream comparison in CSV</a>
+  <a href="/check_anitya_csv?notfollowed=1">  Not followed in release-monitoring, in CSV</a>
+  </p>
+  <p>
   This report lists {{ data.count }} packages.
+  </p>
+  <p>
+  Help for <a href="https://github.com/koalyptus/TableFilter/wiki/4.-Filter-operators" target="_blank" rel="noopener noreferrer"> specifying filters</a>
   </p>
 </div>
 

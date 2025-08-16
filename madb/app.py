@@ -10,7 +10,7 @@ import madb.config as config
 from flask import Flask, render_template, request, Response, send_from_directory, redirect
 import requests
 from bs4 import BeautifulSoup 
-from csv import DictReader
+from csv import DictReader, DictWriter
 from datetime import datetime, timedelta, date
 from io import StringIO
 import collections
@@ -1042,6 +1042,44 @@ def create_app():
         data = {}
         notfollowed = request.args.get("notfollowed", "0")
         database_path = os.path.join(config.EXTERNAL_PATH, 'packages.db')
+        if notfollowed == "0":
+            data["title"] = "Check release-monitoring.org for Mageia packages"
+            data["title2"] = "Display source packages in Mageia Cauldron when the version differs from the one published by release-monitoring."
+        else:
+            data["title"] = "Packages not found in release-monitoring.org"
+            data["title2"] = "Display source packages in Mageia Cauldron when there is no match found in release-monitoring."
+        data['packages'], last_time = anitya_data(notfollowed)
+        data["date_field"] = "Last update: " + time.ctime(last_time) + ' (' + str(datetime.now().astimezone().tzinfo) + ")"
+        data["config"] = data_config
+        nav_data = navbar(lang=request.accept_languages.best)
+        data["nav_html"] = nav_data["html"]
+        data["nav_css"] = nav_data["css"]
+        data["count"] = len(data['packages'])
+        return render_template("check_anitya.html", data=data)
+        
+    @app.route('/check_anitya_csv')
+    def download_csv():
+        notfollowed = request.args.get("notfollowed", "0")
+        data, _ = anitya_data(notfollowed)
+        csv_data = 'Name,Our version,Upstream version,Maintainer,Id\n'
+        for pkg in data:
+            csv_data += ",".join([
+                    pkg.name,
+                    pkg.our_version,
+                    pkg.upstream_version,
+                    pkg.maintainer,
+                    str(pkg.pkg_id)]
+                    ) + "\n"
+
+        response = Response(csv_data, mimetype='text/csv')
+        
+        # Définir l'en-tête pour forcer le téléchargement du fichier
+        response.headers['Content-Disposition'] = 'attachment; filename=anitya.csv'
+        
+        return response
+
+    def anitya_data(notfollowed):
+        database_path = os.path.join(config.EXTERNAL_PATH, 'packages.db')
         last_time = os.path.getmtime(database_path)
         engine = create_engine('sqlite:///' + database_path)
         Session = sessionmaker(bind=engine)
@@ -1050,20 +1088,11 @@ def create_app():
             stmt = select(Package).where(Package.upstream_version != "").\
                 where(Package.our_version != Package.upstream_version).\
                 order_by(Package.name)
-            data["title"] = "Check release-monitoring.org for Mageia packages"
         else:
             stmt = select(Package).where(Package.upstream_version == "").\
                 order_by(Package.name)
-            data["title"] = "Packages not found in release-monitoring.org"
-        data["date_field"] = "Last update: " + time.ctime(last_time) + ' (' + str(datetime.now().astimezone().tzinfo) + ")"
-        data['packages'] = session.execute(stmt).scalars().all()
-        data["config"] = data_config
-        nav_data = navbar(lang=request.accept_languages.best)
-        data["nav_html"] = nav_data["html"]
-        data["nav_css"] = nav_data["css"]
-        data["count"] = len(data['packages'])
-        return render_template("check_anitya.html", data=data)
-        
+        return session.execute(stmt).scalars().all(), last_time
+
     def format_bugs():
         column = ",".join(
             [
