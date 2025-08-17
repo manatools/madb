@@ -30,7 +30,7 @@
   <a href="/check_anitya.html?notfollowed=1">  Not followed in release-monitoring</a>
   </p>
   <p>
-  <a href="/check_anitya_csv">Upstream comparison in CSV</a>
+  <a href="/check_anitya_csv">Upstream comparison, in CSV</a>
   <a href="/check_anitya_csv?notfollowed=1">  Not followed in release-monitoring, in CSV</a>
   </p>
   <p>
@@ -46,7 +46,7 @@
 <tbody>
 {% for package in data.packages %}
     <tr>
-      <td>{{ package.name }}</td>
+      <td><a href="https://svnweb.mageia.org/packages/cauldron/{{ package.name }}/current/SPECS/{{ package.name }}.spec?view=markup" target="_blank" rel="noopener noreferrer">{{ package.name }}</a></td>
       <td>{{ package.our_version }}</td>
       <td>{{ package.upstream_version }}</td>
       <td>{{ package.maintainer }}</td>
