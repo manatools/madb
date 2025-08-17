@@ -10,7 +10,7 @@ import madb.config as config
 from flask import Flask, render_template, request, Response, send_from_directory, redirect
 import requests
 from bs4 import BeautifulSoup 
-from csv import DictReader, DictWriter
+from csv import DictReader
 from datetime import datetime, timedelta, date
 from io import StringIO
 import collections
