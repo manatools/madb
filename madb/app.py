@@ -1048,7 +1048,7 @@ def create_app():
         else:
             data["title"] = "Packages not found in release-monitoring.org"
             data["title2"] = "Display source packages in Mageia Cauldron when there is no match found in release-monitoring."
-        data['packages'], last_time = anitya_data(notfollowed)
+        data['packages'], data['compare'], last_time = anitya_data(notfollowed)
         data["date_field"] = "Last update: " + time.ctime(last_time) + ' (' + str(datetime.now().astimezone().tzinfo) + ")"
         data["config"] = data_config
         nav_data = navbar(lang=request.accept_languages.best)
@@ -1060,16 +1060,17 @@ def create_app():
     @app.route('/check_anitya_csv')
     def download_csv():
         notfollowed = request.args.get("notfollowed", "0")
-        data, _ = anitya_data(notfollowed)
-        csv_data = 'Name,Our version,Upstream version,Maintainer,Id\n'
+        data, data_compare, _ = anitya_data(notfollowed)
+        csv_data = 'Name,Our version,Upstream version,Maintainer,Id,Comparison\n'
         for pkg in data:
             csv_data += ",".join([
                     pkg.name,
                     pkg.our_version,
                     pkg.upstream_version,
                     pkg.maintainer,
-                    str(pkg.pkg_id)]
-                    ) + "\n"
+                    str(pkg.pkg_id),
+                    data_compare[pkg.name]
+                    ]) + "\n"
 
         response = Response(csv_data, mimetype='text/csv')
         
@@ -1091,7 +1092,21 @@ def create_app():
         else:
             stmt = select(Package).where(Package.upstream_version == "").\
                 order_by(Package.name)
-        return session.execute(stmt).scalars().all(), last_time
+        data = session.execute(stmt).scalars().all()
+        data_compare = {}
+        for pkg in data:
+            try:
+                vm = pvers.parse(pkg.our_version)
+                vu = pvers.parse(pkg.upstream_version)
+                if vm == vu:
+                    data_compare[pkg.name] = 0
+                elif vm > vu:
+                    data_compare[pkg.name] = 1
+                else:
+                    data_compare[pkg.name] = -1
+            except:
+                data_compare[pkg.name] = 0
+        return data, data_compare, last_time
 
     def format_bugs():
         column = ",".join(

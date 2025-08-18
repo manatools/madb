@@ -47,8 +47,22 @@
 {% for package in data.packages %}
     <tr>
       <td><a href="https://svnweb.mageia.org/packages/cauldron/{{ package.name }}/current/SPECS/{{ package.name }}.spec?view=markup" target="_blank" rel="noopener noreferrer">{{ package.name }}</a></td>
-      <td>{{ package.our_version }}</td>
-      <td>{{ package.upstream_version }}</td>
+      {% if data.compare[package.name] == -1 %}
+      <td class="updated">
+      {% elif  data.compare[package.name] == 1 %}
+      <td class="newpackage">
+      {% else %}
+      <td>
+      {% endif %}
+      {{ package.our_version }}</td>
+      {% if data.compare[package.name] == 1 %}
+      <td class="updated">
+      {% elif  data.compare[package.name] == -1 %}
+      <td class="newpackage">
+      {% else %}
+      <td>
+      {% endif %}
+      {{ package.upstream_version }}</td>
       <td>{{ package.maintainer }}</td>
       <td>
       {% if (package.pkg_id is not none) and (package.pkg_id != "None") %}
