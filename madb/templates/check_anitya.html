@@ -34,9 +34,6 @@
   <a href="/check_anitya_csv?notfollowed=1">  Not followed in release-monitoring, in CSV</a>
   </p>
   <p>
-  This report lists {{ data.count }} packages.
-  </p>
-  <p>
   Help for <a href="https://github.com/koalyptus/TableFilter/wiki/4.-Filter-operators" target="_blank" rel="noopener noreferrer"> specifying filters</a>
   </p>
 </div>
@@ -77,8 +74,22 @@
 </div>
 <script src="tablefilter.js"></script>
 <script data-config>
-var filtersConfig = {base_path: 'tablefilter/',alternate_rows: true, col_1: 'none', col_2: 'none', col_4: 'none', popup_filters: true, };
-var tf = new TableFilter(document.getElementById('anitya', filtersConfig));
+var filtersConfig = {base_path: 'tablefilter/',
+            alternate_rows: true,
+            col_1: 'none',
+            col_2: 'none',
+            col_3: 'checklist',
+            col_4: 'none',
+            popup_filters: true, 
+            rows_counter: {
+                text: 'Packages: '
+                },
+            btn_reset: {
+                tooltip: 'Reset filter',  
+                toolbar_position: 'right',  
+                }, 
+            };
+var tf = new TableFilter(document.getElementById('anitya'), filtersConfig);
 tf.init(); </script>
 {% endblock %}
   
