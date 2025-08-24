@@ -1125,7 +1125,6 @@ def create_app():
             y = y[len(x):]
 
         # suppression des « D » en fin de chaîne
-        print(x)
         x = re.sub(r"D*$", "", x)
         
         template = "000"
