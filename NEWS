@@ -1,5 +1,12 @@
+# release 0.8.6
+- Use configuration for tablefilter    
+    Add count from tablefilter
+    Use list to check for maintainer column.
+- Add special treatment for perl packages in check_anitya
+
 # release 0.8.5
 - Provides anitya pages as CSV files too
+- Add comparison versions and colorizing in anitya pages
 
 # release 0.8.4
 - Separating anitya updates in processes to avoid updates stopping to work.
