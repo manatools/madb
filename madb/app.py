@@ -18,6 +18,7 @@ from urllib import parse
 import humanize
 import logging
 import os
+import re
 import threading
 from packaging import version as pvers
 import pandas as pd
@@ -1096,8 +1097,13 @@ def create_app():
         data_compare = {}
         for pkg in data:
             try:
-                vm = pvers.parse(pkg.our_version)
-                vu = pvers.parse(pkg.upstream_version)
+                if pkg.name.startswith("perl"):
+                    vu = perl_version(pkg.upstream_version)
+                    vm = pvers.parse(pkg.our_version)
+                    vu = pvers.parse(vu)
+                else:
+                    vu = pvers.parse(pkg.upstream_version)
+                    vm = pvers.parse(pkg.our_version)
                 if vm == vu:
                     data_compare[pkg.name] = 0
                 elif vm > vu:
@@ -1105,8 +1111,35 @@ def create_app():
                 else:
                     data_compare[pkg.name] = -1
             except:
-                data_compare[pkg.name] = 0
+                data_compare[pkg.name] = -2
         return data, data_compare, last_time
+
+    def perl_version(x):
+        y = x                       # copie de x
+        # suppression des caractères alphabétiques en fin de chaîne
+        x = re.sub(r"[A-Za-z]*$", "", x)
+
+        #suppression du préfixe $x dans $y
+        # On construit dynamiquement le motif à partir de la valeur actuelle de x.
+        if y.startswith(x):
+            y = y[len(x):]
+
+        # suppression des « D » en fin de chaîne
+        print(x)
+        x = re.sub(r"D*$", "", x)
+        
+        template = "000"
+        parts = x.split('.')
+        micro = ".0"
+        minor = ".0"
+        if len(parts) > 1:
+            micro = parts[2] if len(parts) > 2 else parts[1][3:]
+            micro = ".0" if micro == "" else "." + micro + template[len(micro):]
+            minor = parts[1][:3]
+            l_minor = len(minor)
+            minor = (minor + template[l_minor:]).lstrip("0")
+            minor = ".0" if minor == "" else "." + minor
+        return f"{parts[0].lstrip('v')}{minor}{micro}{y}"
 
     def format_bugs():
         column = ",".join(
