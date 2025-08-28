@@ -35,6 +35,7 @@ class Package(Base):
     msg_id = Column(String(40))
     pkg_id = Column(Integer)
     maintainer = Column(String(40))
+    summary = Column(String(80))
 
 database_path = os.path.join(config.EXTERNAL_PATH, 'packages.db')
 engine = create_engine('sqlite:///' + database_path, echo=False)
@@ -45,15 +46,23 @@ Base.metadata.create_all(engine)
 # Session pour insérer ou interagir avec la base
 Session = sessionmaker(bind=engine)
 
+# update database by adding Summary column
+def update_db_summary():
+    with Session() as session:
+        session.execute(f"ALTER TABLE packages ADD summary STRING(80)")
+        session.commit()
+    
+
 # Fonction d'ajout d'un package
-def add_package(session, name, our_version, upstream_version, updated_on, msg_id, pkg_id, maintainer):
+def add_package(session, name, our_version, upstream_version, updated_on, msg_id, pkg_id, maintainer, summary):
     package = Package(name=name,
                       our_version=our_version, 
                       upstream_version=upstream_version, 
                       updated_on=updated_on, 
                       msg_id=msg_id,
                       pkg_id=pkg_id,
-                      maintainer=maintainer)
+                      maintainer=maintainer,
+                      summary=summary)
     session.add(package)
     session.commit()
 
@@ -82,7 +91,7 @@ def cleaning(session, packages_list):
     session.execute(stmt)
     session.commit()
     
-def update_packages_db():
+def update_packages_db(force=False):
     """
     Start with a void database
     """
@@ -104,17 +113,26 @@ def update_packages_db():
             result = session.execute(stmt).scalar_one_or_none()
             if result:
                 present = True
-                if  package.get_version() != result.our_version:
+                if  (package.get_version() != result.our_version) or force:
                     # update the version
                     logging.debug("Updating")
                     stmt = update(Package).\
                         where(Package.id == result.id).\
-                        values(our_version=package.get_version(), maintainer=maintdb[package.get_name()])
+                        values(our_version=package.get_version(), maintainer=maintdb[package.get_name()], summary=package.get_summary())
                     session.execute(stmt)
                     logging.debug("Updated")
             else:
                 logging.debug("Adding")
-                add_package(session, package.get_name(), package.get_version(), "", None, "", None, maintdb[package.get_name()])
+                add_package(session, 
+                            package.get_name(), 
+                            package.get_version(), 
+                            "", 
+                            None, 
+                            "", 
+                            None, 
+                            maintdb[package.get_name()], 
+                            package.get_summary()
+                        )
                 logging.debug("Added")
 
         # delete srpms no more listed
@@ -230,6 +248,7 @@ if __name__ == '__main__':
     )
     parser.add_argument("-l", "--log", help="specify the log level ", dest="loglevel", default="INFO")
     parser.add_argument("-f", "--first", help="check all packages for upstream version", action='store_true')
+    parser.add_argument("-s", "--second", help="update database with summary field", action='store_true')
     parser.add_argument("-u", "--update", help="update upstream version through messaging", action='store_true')
     args = parser.parse_args()
     if args.loglevel is not None:
@@ -246,6 +265,12 @@ if __name__ == '__main__':
                     level=log_level,
                     format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
+
+    if args.second:
+        # Check for all packages
+        # update_db_summary()
+        update_packages_db(force=True)
+        exit()
     # Read metadata and update
     update_packages_db()
     

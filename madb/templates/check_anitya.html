@@ -43,7 +43,7 @@
 <tbody>
 {% for package in data.packages %}
   {% if data.compare[package.name] != 0 %}
-    <tr>
+    <tr title="{{ package.summary }}">
       <td><a href="https://svnweb.mageia.org/packages/cauldron/{{ package.name }}/current/SPECS/{{ package.name }}.spec?view=markup" target="_blank" rel="noopener noreferrer">{{ package.name }}</a></td>
       {% if data.compare[package.name] == -1 %}
       <td class="updated">

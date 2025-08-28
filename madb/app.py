@@ -50,6 +50,7 @@ class Package(Base):
     msg_id = Column(String(40))
     pkg_id = Column(Integer)
     maintainer = Column(String(40))
+    summary = Column(String(80))
 
 def create_app():
     app = Flask(__name__)
