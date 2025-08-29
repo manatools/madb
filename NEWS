@@ -1,4 +1,9 @@
 # release 0.8.6
+- Add check_anitya in menu
+- Add summary in database and display it as tooltip in check_anitya page
+- Tune columns width
+
+# release 0.8.6
 - Use configuration for tablefilter    
     Add count from tablefilter
     Use list to check for maintainer column.
