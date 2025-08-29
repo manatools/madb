@@ -39,7 +39,7 @@
 </div>
 
 <div class="homepage">
-  <table id="anitya"><thead><tr> <th>Name</th> <th>Mageia</th> <th>Anitya</th> <th>Maintainer</th> <th>release-monitoring.org id</th> </tr></thead>
+  <table id="anitya"><thead><tr> <th style="width: 35%">Name</th> <th style="width: 15%">Mageia</th> <th style="width: 15%">Anitya</th> <th style="width: 20%">Maintainer</th> <th style="width: 10%">release-monitoring.org id</th> </tr></thead>
 <tbody>
 {% for package in data.packages %}
   {% if data.compare[package.name] != 0 %}
@@ -78,8 +78,6 @@
 <script data-config>
 var filtersConfig = {base_path: 'tablefilter/',
             alternate_rows: true,
-            col_1: 'none',
-            col_2: 'none',
             col_3: 'checklist',
             col_4: 'none',
             popup_filters: true, 
@@ -89,7 +87,7 @@ var filtersConfig = {base_path: 'tablefilter/',
             btn_reset: {
                 tooltip: 'Reset filter',  
                 toolbar_position: 'right',  
-                }, 
+                },
             };
 var tf = new TableFilter(document.getElementById('anitya'), filtersConfig);
 tf.init(); </script>
