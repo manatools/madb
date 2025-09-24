@@ -88,6 +88,10 @@ var filtersConfig = {base_path: 'tablefilter/',
                 tooltip: 'Reset filter',  
                 toolbar_position: 'right',  
                 },
+                state: {							// Enable state persistence   
+                  types: ['cookie'],				// Possible values: 'local_storage' 'hash' or 'cookie'  
+                  filters: true,						// Persist filters values, enabled by default 
+                },  
             };
 var tf = new TableFilter(document.getElementById('anitya'), filtersConfig);
 tf.init(); </script>
