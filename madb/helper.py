@@ -12,6 +12,7 @@ from csv import DictReader
 from io import StringIO
 import collections
 from datetime import datetime, timedelta, date
+import logging
 
 def groups():
     """
@@ -55,9 +56,15 @@ def load_content_or_cache(url, long=True, timeout=10):
     filepath = _get_cache_filepath(url, long=long)
     ttl = LONG_CACHE_TTL if long else CACHE_TTL
     if not os.path.exists(filepath) or time.time() - os.path.getctime(filepath) > ttl:
-        response = requests.get(url, timeout=timeout)
-        with open(filepath, "w") as f:
-            f.write(response.content.decode())
+        try:
+            response = requests.get(url, timeout=timeout)
+            with open(filepath, "w") as f:
+                f.write(response.content.decode())
+        except Exception as e:
+            logging.error(f"Error while downloading {url}. The exception was:")
+            logging.error(repr(e))
+            if not os.path.exists(filepath):
+                raise ConnectionError("Error while downloading {url}.").with_traceback(e)
     with open(filepath, "r") as f:
         content = f.read()
     return content

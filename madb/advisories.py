@@ -20,12 +20,19 @@ class Advisories:
         Any new publication is added in it.
         """
         # Read the list of advisories
-        advisories_bugs_from_file = json.loads(
-            load_content_or_cache(os.path.join(ADV_URL_BASE, "bugs.json"), long=False)
-        )
-        advisories_vulns_from_file = json.loads(
-            load_content_or_cache(os.path.join(ADV_URL_BASE, "vulns.json"), long=False)
-        )
+        try:
+            advisories_bugs_from_file = json.loads(
+                load_content_or_cache(os.path.join(ADV_URL_BASE, "bugs.json"), long=False)
+            )
+        except ConnectionError as e:
+            # unable to load remote file and no cache already present
+            advisories_bugs_from_file = []
+        try:
+            advisories_vulns_from_file = json.loads(
+                load_content_or_cache(os.path.join(ADV_URL_BASE, "vulns.json"), long=False)
+            )
+        except:
+            advisories_vulns_from_file = []
         self.advisories_ids = [x["id"] for x in advisories_bugs_from_file]
         self.advisories_ids.extend([x["id"] for x in advisories_vulns_from_file])
         # Path for the local file where advisories are stored
