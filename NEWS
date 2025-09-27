@@ -1,4 +1,5 @@
 # release 0.8.8
+- Manage connection problem in loading external resource, in particular for advisories list
 - write logs in EXTERNAL_PATH
 
 # release 0.8.7

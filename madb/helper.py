@@ -64,7 +64,7 @@ def load_content_or_cache(url, long=True, timeout=10):
             logging.error(f"Error while downloading {url}. The exception was:")
             logging.error(repr(e))
             if not os.path.exists(filepath):
-                raise ConnectionError("Error while downloading {url}.").with_traceback(e)
+                raise ConnectionError("Error while downloading {url}.") from e
     with open(filepath, "r") as f:
         content = f.read()
     return content
