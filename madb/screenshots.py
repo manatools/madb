@@ -13,6 +13,10 @@ class Screenshots():
             logging.warning(f"Not able to get screenshots list from {URL}")
             self.scdb = None
             return
+        except ConnectionError:
+            logging.warning(f"Not able to join {URL}")
+            self.scdb = None
+            return
         self.keys = [x["name"] for x in self.scdb]
 
     def image_links(self, package):
