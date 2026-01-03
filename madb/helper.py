@@ -94,6 +94,7 @@ _column = ",".join(
             "cf_rpmpkg",
             "component",
             "changeddate",
+            "flagtypes.name",
         ]
     )
 
@@ -152,7 +153,8 @@ class BugsList():
             if key not in releases:
                 releases.append(key)
                 self.bugs[key] = []
-            wb = re.findall(r"\bMGA(\d+)TOO", entry["status_whiteboard"])
+            # wb = re.findall(r"\bMGA(\d+)TOO", entry["status_whiteboard"])
+            wb = [a[11:-1] for a in entry["flagtypes.name"].split(",") if a.startswith("affects_mga")]
             for key in wb:
                 if key not in releases:
                     releases.append(key)
