@@ -649,7 +649,6 @@ def create_app():
         package = request.args.get("rpm", "")
         graphical = request.args.get("graphical", "0")
         exact = request.args.get("exact", "0")
-        print(f"Exact {exact} Graphical {graphical}")
         
         nav_data = navbar(lang=request.accept_languages.best)
         arch_list = []
