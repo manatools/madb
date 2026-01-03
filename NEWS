@@ -1,3 +1,11 @@
+# release 0.9.0
+-  [QA Updates] Give links directly with the srpm name, with "In Bugzilla" as title (mga#34775)
+-  [QA Updates] Manage release numbers from flag "affects_mga" instead of MGAnTOO in whiteboard
+-  [QA Updates] Add a "Wiki" link (mga#33792)
+-  [QA Updates] Give more space for the column "Quick links"
+-  [QA Updates] Remove summary from search fields in Bugzilla links for QA Updates (mga#22699)
+-  Manage a ConnectionError when retrieving screenshots
+
 # release 0.8.8
 - Manage connection problem in loading external resource, in particular for advisories list
 - write logs in EXTERNAL_PATH
