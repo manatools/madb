@@ -213,9 +213,12 @@ class BugReport():
         result = {}
         versions_list = (entry["version"].lower(),)
         if "status_whiteboard" in entry.keys():
-            wb = re.findall(r"\bMGA(\d+)TOO", entry["status_whiteboard"])
+            # wb = re.findall(r"\bMGA(\d+)TOO", entry["status_whiteboard"])
+            wb = [a[11:-1] for a in entry["flagtypes.name"].split(",") if a.startswith("affects_mga")]
             wbo = re.findall(r"\bMGA(\d+)-(\d+).OK", entry["status_whiteboard"])
             for v, a in wbo:
+                if v != config.DEV_NAME and int(v) == config.TOP_RELEASE + 1:
+                    v = config.DEV_NAME
                 if v not in versions_list:
                     versions_list += (v,)
             # union of the 2 lists, without duplication
