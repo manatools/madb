@@ -342,6 +342,8 @@ class BugReport():
         distro = self.distro[release]
         # extract list from bug report field, removing extra src.rpm
         srpms = [srpm.strip().removesuffix(".rpm").removesuffix(".src") + "*" for srpm in re.split(';|,| ', field) if srpm.strip() != ""]
+        # remove bad entries
+        srpms = [x for x in srpms if x != "*"]
         # get only the source package names
         srpms_names = [x.get_name() for x in distro.search_nevra(srpms, repo=f"{release}-SRPMS-*")]
         results += srpms_names
