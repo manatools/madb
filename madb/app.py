@@ -649,8 +649,18 @@ def create_app():
         package = request.args.get("rpm", "")
         graphical = request.args.get("graphical", "0")
         exact = request.args.get("exact", "0")
-        
         nav_data = navbar(lang=request.accept_languages.best)
+        if package == "":
+            data = {
+                "title": "Not found",
+                "config": data_config,
+                "base_url": "/show",
+                "rpm_search": "",
+                "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}&exact={exact}",
+                "nav_html": nav_data["html"],
+                "nav_css": nav_data["css"],
+            }
+            return render_template("notfound.html", data=data)
         arch_list = []
         if arch == "indifferent":
             for tmp_arch in data_config["arches"].keys():
@@ -745,7 +755,6 @@ def create_app():
             data = {
                 "title": "Not found",
                 "config": data_config,
-                "url_end": f"/{release}/{arch}/{graphical}",
                 "base_url": "/home",
                 "rpm_search": "",
                 "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}&release={evr}",
@@ -768,9 +777,9 @@ def create_app():
                 }
             )
             last = dnf_pkg
-        
+
         adv = Advisories()
-        
+
         if last is not None:
             basic = {
                 "Name": last.get_name(),
@@ -824,7 +833,6 @@ def create_app():
             data = {
                 "title": "Not found",
                 "config": data_config,
-                "url_end": f"/{release}/{arch}/{graphical}",
                 "base_url": "/home",
                 "rpm_search": "",
                 "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}",
@@ -864,10 +872,10 @@ def create_app():
         }
         try:
             data_bugs, releases, counts = BugsList().security()
-        except requests.exceptions.Timeout as err:
+        except requests.exceptions.Timeout:
             data["timeout"] = True
             return render_template("notfound.html", data=data)
-        except requests.exceptions.HTTPError as err:
+        except requests.exceptions.HTTPError:
             return render_template("notfound.html", data=data)
         for version in releases:
             data_bugs[version] = sorted(
