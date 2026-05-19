@@ -1,3 +1,10 @@
+# release 0.9.1
+-  [Adivisories] Manage JSON error
+-  [Anitya]      Populate maintainer with nobody when package not found in maintdb
+-  [show]        Raise notfound when search without package, avoid timeout
+-  [helper]      remove bad entries read from field Source RPM in bugzilla
+-  [Updates]     use flags "affects_mga" instead of whiteboard "MGAnnTOO" for extracting release
+
 # release 0.9.0
 -  [QA Updates] Give links directly with the srpm name, with "In Bugzilla" as title (mga#34775)
 -  [QA Updates] Manage release numbers from flag "affects_mga" instead of MGAnTOO in whiteboard
