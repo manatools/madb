@@ -98,7 +98,7 @@ def update_packages_db(force=False):
     packages = get_srpms()
     maintdb = get_maintdb()
 
-    # add each package to the database and get upstream version
+    # add each package to the database and get our version
     with Session() as session:
         for package in packages:
             logging.debug(package.get_name())
@@ -114,7 +114,7 @@ def update_packages_db(force=False):
             if result:
                 present = True
                 if  (package.get_version() != result.our_version) or force:
-                    # update the version
+                    # update our version
                     logging.debug("Updating")
                     stmt = update(Package).\
                         where(Package.id == result.id).\
@@ -123,6 +123,10 @@ def update_packages_db(force=False):
                     logging.debug("Updated")
             else:
                 logging.debug("Adding")
+                if package.get_name() in maintdb.keys():
+                    maintainer = maintdb[package.get_name()]
+                else:
+                    maintainer = "nobody"
                 add_package(session, 
                             package.get_name(), 
                             package.get_version(), 
@@ -130,7 +134,7 @@ def update_packages_db(force=False):
                             None, 
                             "", 
                             None, 
-                            maintdb[package.get_name()], 
+                            maintainer, 
                             package.get_summary()
                         )
                 logging.debug("Added")
