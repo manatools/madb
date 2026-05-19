@@ -1,9 +1,9 @@
-import yaml
 import json
 import os
 from madb.helper import load_content_or_cache
 import madb.config as config
-from typing import List, Dict, Any, Optional
+from typing import List
+import logging
 
 ADV_URL_BASE = "https://advisories.mageia.org/"
 
@@ -24,14 +24,14 @@ class Advisories:
             advisories_bugs_from_file = json.loads(
                 load_content_or_cache(os.path.join(ADV_URL_BASE, "bugs.json"), long=False)
             )
-        except ConnectionError as e:
+        except ConnectionError:
             # unable to load remote file and no cache already present
             advisories_bugs_from_file = []
         try:
             advisories_vulns_from_file = json.loads(
                 load_content_or_cache(os.path.join(ADV_URL_BASE, "vulns.json"), long=False)
             )
-        except:
+        except ConnectionError:
             advisories_vulns_from_file = []
         self.advisories_ids = [x["id"] for x in advisories_bugs_from_file]
         self.advisories_ids.extend([x["id"] for x in advisories_vulns_from_file])
@@ -51,9 +51,13 @@ class Advisories:
         # Load and read missing advisories from local file
         # this presume that published advosories are never changed nor removed
         for fichier in self.new_ids:
-            individual_data = json.loads(
-                load_content_or_cache(os.path.join(ADV_URL_BASE, fichier + ".json"))
-            )
+            try:
+                individual_data = json.loads(
+                    load_content_or_cache(os.path.join(ADV_URL_BASE, fichier + ".json"))
+                )
+            except json.decoder.JSONDecodeError:
+                logging.warning(f"Error while loading {fichier} advisory")
+                continue
             # remove fixed data
             del individual_data["credits"]
             del individual_data["schema_version"]
