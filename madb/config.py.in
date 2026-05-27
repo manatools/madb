@@ -39,3 +39,6 @@ CLASSES = ("backports", "backports_testing", "release", "updates", "updates_test
 
 # frequency of cache update in minutes
 MAKE_CACHE_FREQUENCY = 10
+
+# User agent for calls to Mageia infra (bugzilla, advisories)
+USER_AGENT = {'User-Agent': 'madb'}

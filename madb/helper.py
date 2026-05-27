@@ -57,7 +57,11 @@ def load_content_or_cache(url, long=True, timeout=10):
     ttl = LONG_CACHE_TTL if long else CACHE_TTL
     if not os.path.exists(filepath) or time.time() - os.path.getctime(filepath) > ttl:
         try:
-            response = requests.get(url, timeout=timeout)
+            response = requests.get(
+                url,
+                timeout=timeout,
+                headers=config.USER_AGENT,
+                )
             with open(filepath, "w") as f:
                 f.write(response.content.decode())
         except Exception as e:
@@ -138,10 +142,16 @@ class BugsList():
         return self._request(params)
 
     def _request(self, params):
-        f = requests.get(config.BUGZILLA_URL + "/buglist.cgi", params=params,  timeout=config.BUGZILLA_TIMEOUT)
+        f = requests.get(
+            config.BUGZILLA_URL + "/buglist.cgi",
+            params=params,
+            timeout=config.BUGZILLA_TIMEOUT,
+            headers=config.USER_AGENT,
+            )
         if f.status_code != requests.codes.ok:
             f.raise_for_status() 
         content = f.content.decode("utf-8")
+        print(content)
         bugs = DictReader(StringIO(content))
 
         releases = []
@@ -149,6 +159,7 @@ class BugsList():
         temp_bugs = []
         for bug in bugs:
             entry = bug
+            print(entry)
             key = entry["version"].lower()
             if key not in releases:
                 releases.append(key)
@@ -201,8 +212,13 @@ class BugReport():
     def from_number(self, number):
         self.number = number
         url = os.path.join(config.BUGZILLA_URL, "rest/bug", self.number)
-        headers = {'Accept': 'application/json'}
-        r = requests.get(url, params = [("include_fields", _column)], headers=headers, timeout=config.BUGZILLA_TIMEOUT)
+        headers = {'Accept': 'application/json'} + config.USER_AGENT
+        r = requests.get(
+            url,
+            params=[("include_fields", _column)],
+            headers=headers,
+            timeout=config.BUGZILLA_TIMEOUT
+            )
         myjson = r.json()
         if r.status_code == 200 and myjson["faults"] == []:
             entry =  myjson['bugs'][0]

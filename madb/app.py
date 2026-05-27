@@ -258,7 +258,8 @@ def create_app():
                 a = requests.get(
                     URL, 
                     params=params[status] + param_csv + column_short,
-                    timeout=config.BUGZILLA_TIMEOUT
+                    timeout=config.BUGZILLA_TIMEOUT,
+                    headers=config.USER_AGENT,
                 )
                 urls[status] = URL + "?" + parse.urlencode(params[status] + column_full)
                 counts[status] = len(a.content.split(b"\n")) - 1
@@ -343,7 +344,12 @@ def create_app():
         )
         for status in ("closed", "created", "promoted", "demoted"):
             try:
-                a = requests.get(URL, params=params[status] + param_csv + column_short, timeout=config.BUGZILLA_TIMEOUT)
+                a = requests.get(
+                    URL,
+                    params=params[status] + param_csv + column_short,
+                    timeout=config.BUGZILLA_TIMEOUT,
+                    headers=config.USER_AGENT,
+                    )
             except requests.exceptions.Timeout as err:
                 data["timeout"] = True
                 return render_template("notfound.html", data=data)
@@ -473,7 +479,12 @@ def create_app():
         ]
         for status in ("closed", "created", "promoted", "demoted"):
             try:
-                a = requests.get(URL, params=params[status] + param_csv + column_short, timeout=config.BUGZILLA_TIMEOUT)
+                a = requests.get(
+                    URL,
+                    params=params[status] + param_csv + column_short,
+                    timeout=config.BUGZILLA_TIMEOUT,
+                    headers=config.USER_AGENT,
+                    )
             except requests.exceptions.Timeout as err:
                 data["timeout"] = True
                 return render_template("notfound.html", data=data)
@@ -566,8 +577,12 @@ def create_app():
         )
         try:
             for status in ("closed", "created", "promoted", "demoted"):
-                a = requests.get(URL, params=params[status] + param_csv + column_short,
-                                 timeout=config.BUGZILLA_TIMEOUT)
+                a = requests.get(
+                    URL,
+                    params=params[status] + param_csv + column_short,
+                    timeout=config.BUGZILLA_TIMEOUT,
+                    headers=config.USER_AGENT,
+                    )
                 urls[status] = URL + "?" + parse.urlencode(params[status] + column_full)
                 counts[status] = len(a.content.split(b"\n")) - 1
             data_bugs, counts["base"], assignees = list_bugs(
@@ -1190,7 +1205,12 @@ def create_app():
         return created, status_open, closed, column, param_csv
 
     def list_bugs(params):
-        a = requests.get(URL, params=params, timeout=config.BUGZILLA_TIMEOUT)
+        a = requests.get(
+            URL,
+            params=params,
+            timeout=config.BUGZILLA_TIMEOUT,
+            headers=config.USER_AGENT,
+            )
         content = a.content.decode("utf-8")
         bugs = DictReader(StringIO(content))
         assignees = []
