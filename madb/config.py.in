@@ -1,5 +1,5 @@
 # the last release
-TOP_RELEASE = 9
+TOP_RELEASE = 10
 APP_NAME = "Mageia App Db"
 # be sure that these directories are writable for the user running the application
 DATA_PATH = "/var/lib/madb"
