@@ -1,3 +1,8 @@
+# release 0.10.0
+-  Top release is now 10
+-  Provide a user agent with http requests
+-  Config the user agent in config.py, default to "madb"
+
 # release 0.9.1
 -  [Adivisories] Manage JSON error
 -  [Anitya]      Populate maintainer with nobody when package not found in maintdb
