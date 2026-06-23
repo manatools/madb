@@ -6,6 +6,16 @@ from madb.cerisier import RpmGraph
 from madb.screenshots import Screenshots
 from madb.advisories import Advisories
 from madb.dnf5madbbase import Dnf5MadbBase
+from madb.validators import (
+    validate_release,
+    validate_arch,
+    validate_rpm_name,
+    validate_bug_number,
+    validate_page_char,
+    validate_level,
+    validate_boolean_flag,
+    ValidationError,
+)
 import madb.config as config
 from flask import Flask, render_template, request, Response, send_from_directory, redirect
 import requests
@@ -61,6 +71,20 @@ def create_app():
     data_config["arches"] = config.ARCHES
     data_config["distribution"] = config.DISTRIBUTION
 
+    def bad_request(message: str, nav_data: dict, release="", arch=""):
+        """Return a 400 response rendered with the notfound template."""
+        data = {
+            "title": "Requête invalide",
+            "error": message,
+            "config": data_config,
+            "base_url": "/home",
+            "rpm_search": "",
+            "url_end": f"?distribution={release}&architecture={arch}",
+            "nav_html": nav_data["html"],
+            "nav_css": nav_data["css"],
+        }
+        return render_template("notfound.html", data=data), 400
+
     # filter for usage in templates
     @app.template_filter('bugs_sum')
     def bugs_sum(list_to_sum):
@@ -94,11 +118,15 @@ def create_app():
 
     @app.route("/")
     @app.route("/home")
-    def home():        
-        release = request.args.get("distribution", "unspecified")
-        arch = request.args.get("architecture", "indifferent")
-        graphical = request.args.get("graphical", "1")
-        exact = request.args.get("exact", "0")
+    def home():
+        nav_data = navbar(lang=request.accept_languages.best)
+        try:
+            release   = validate_release(request.args.get("distribution", "unspecified"))
+            arch      = validate_arch(request.args.get("architecture", "indifferent"))
+            graphical = validate_boolean_flag(request.args.get("graphical"), default="1")
+            exact     = validate_boolean_flag(request.args.get("exact"),     default="0")
+        except ValidationError as exc:
+            return bad_request(str(exc), nav_data)
         rpm = request.args.get("rpm", "")
         if release == "unspecified" or arch == "indifferent":
             release = next(iter(config.DISTRIBUTION.keys()))
@@ -111,7 +139,6 @@ def create_app():
         if not last_backports:
             last_backports = {}
         groups1 = sorted(set([x[0] for x in groups()]))
-        nav_data = navbar(lang=request.accept_languages.best)
         links = {}
         links["updates"] = "/list?type=updates"
         links["backports"] = "/list?type=backports"
@@ -137,12 +164,20 @@ def create_app():
         return redirect("/list")
     @app.route("/list")
     def rpmlist():
-        release = request.args.get("distribution", None)
-        page = request.args.get("page", 1, type = int)
-        arch = request.args.get("architecture", None)
-        graphical = request.args.get("graphical", "0")
+        nav_data = navbar(lang=request.accept_languages.best)
+        try:
+            release   = validate_release(request.args.get("distribution"))
+            arch      = validate_arch(request.args.get("architecture"))
+            graphical = validate_boolean_flag(request.args.get("graphical"), default="0")
+            page = request.args.get("page", 1, type=int)
+            if page < 1:
+                raise ValidationError(f"Le numéro de page doit être ≥ 1, reçu : {page}.")
+        except ValidationError as exc:
+            return bad_request(str(exc), nav_data)
         rpm = request.args.get("rpm", "")
         type_list = request.args.get("type", "updates")
+        if len(type_list) > 64:
+            return bad_request("Paramètre 'type' trop long.", nav_data)
         testing = "testing" in type_list
         backports = "backports" in type_list
         if backports:
@@ -161,7 +196,6 @@ def create_app():
         rpms = sorted(rpms, key=lambda rpm: rpm.get_build_time(), reverse=True)
 
         pager = Pagination(list(rpms), byweek=True)
-        nav_data = navbar(lang=request.accept_languages.best)
         data = {
             "title": title,
             "rpms": pager.data_page(page),
@@ -383,6 +417,11 @@ def create_app():
 
     @app.route("/rpmsforqa/<bug_number>")
     def rpmsforqa(bug_number):
+        nav_data = navbar(lang=request.accept_languages.best)
+        try:
+            bug_number = validate_bug_number(bug_number)
+        except ValidationError as exc:
+            return bad_request(str(exc), nav_data)
         raw = request.args.get("raw", 0)
         report = BugReport()
         # load data
@@ -659,12 +698,15 @@ def create_app():
 
     @app.route("/show")
     def show():
-        release = request.args.get("distribution", "unspecified")
-        arch = request.args.get("architecture", "indifferent")
-        package = request.args.get("rpm", "")
-        graphical = request.args.get("graphical", "0")
-        exact = request.args.get("exact", "0")
         nav_data = navbar(lang=request.accept_languages.best)
+        try:
+            release   = validate_release(request.args.get("distribution", "unspecified"))
+            arch      = validate_arch(request.args.get("architecture", "indifferent"))
+            graphical = validate_boolean_flag(request.args.get("graphical"), default="0")
+            exact     = validate_boolean_flag(request.args.get("exact"),     default="0")
+            package   = validate_rpm_name(request.args.get("rpm", ""), allow_empty=True)
+        except ValidationError as exc:
+            return bad_request(str(exc), nav_data)
         if package == "":
             data = {
                 "title": "Not found",
@@ -758,14 +800,21 @@ def create_app():
 
     @app.route("/rpmshow")
     def rpmshow():
-        release = request.args.get("distribution", "unspecified")
-        arch = request.args.get("architecture", "indifferent")
-        graphical = request.args.get("graphical", "1")
-        exact = request.args.get("exact", "1")
-        package = request.args.get("rpm", "")
-        repo = request.args.get("repo", "")
-        evr = request.args.get("version", "")
         nav_data = navbar(lang=request.accept_languages.best)
+        try:
+            release   = validate_release(request.args.get("distribution", "unspecified"))
+            arch      = validate_arch(request.args.get("architecture", "indifferent"))
+            graphical = validate_boolean_flag(request.args.get("graphical"), default="1")
+            exact     = validate_boolean_flag(request.args.get("exact"),     default="1")
+            package   = validate_rpm_name(request.args.get("rpm", ""), allow_empty=True)
+            repo = request.args.get("repo", "")
+            if len(repo) > 256:
+                raise ValidationError("Paramètre 'repo' trop long.")
+            evr = request.args.get("version", "")
+            if evr and len(evr) > 128:
+                raise ValidationError("Paramètre 'version' trop long.")
+        except ValidationError as exc:
+            return bad_request(str(exc), nav_data)
         if package == "" or repo == "" or arch == "indifferent" or release == "unspecified":
             data = {
                 "title": "Not found",
@@ -993,10 +1042,16 @@ def create_app():
             else:
                 return rpm["classes"]
 
-        release = request.args.get("distribution", str(config.TOP_RELEASE))
-        arch = request.args.get("architecture", "x86_64")
-        graphical = request.args.get("graphical", "1")
-        page = request.args.get("page", "A", type = str)
+        nav_data = navbar(lang=request.accept_languages.best)
+        try:
+            release   = validate_release(request.args.get("distribution", str(config.TOP_RELEASE)),
+                                         allow_unspecified=False)
+            arch      = validate_arch(request.args.get("architecture", "x86_64"),
+                                      allow_indifferent=False)
+            graphical = validate_boolean_flag(request.args.get("graphical"), default="1")
+            page      = validate_page_char(request.args.get("page", "A"))
+        except ValidationError as exc:
+            return bad_request(str(exc), nav_data)
         distro1 = Dnf5MadbBase(release, arch, config.DATA_PATH)
         distro2 = Dnf5MadbBase(config.DEV_NAME, arch, config.DATA_PATH)
         rpms_temp = {}
@@ -1049,7 +1104,6 @@ def create_app():
         # sort by package names
         rpms.sort_index(axis=1, inplace=True)
         pager = Pagination(list(rpms.index), byfirstchar=True)
-        nav_data = navbar(lang=request.accept_languages.best)
         data = {
             "rpms": rpms,
             "links": pager.links_by_char(f"/comparison?distribution={release}&architecture={arch}&graphical={graphical}", page),
@@ -1063,8 +1117,12 @@ def create_app():
 
     @app.route("/check_anitya.html")
     def comparison_anitya():
+        nav_data = navbar(lang=request.accept_languages.best)
+        try:
+            notfollowed = validate_boolean_flag(request.args.get("notfollowed"), default="0")
+        except ValidationError as exc:
+            return bad_request(str(exc), nav_data)
         data = {}
-        notfollowed = request.args.get("notfollowed", "0")
         database_path = os.path.join(config.EXTERNAL_PATH, 'packages.db')
         if notfollowed == "0":
             data["title"] = "Check release-monitoring.org for Mageia packages"
@@ -1083,7 +1141,11 @@ def create_app():
         
     @app.route('/check_anitya_csv')
     def download_csv():
-        notfollowed = request.args.get("notfollowed", "0")
+        nav_data = navbar(lang=request.accept_languages.best)
+        try:
+            notfollowed = validate_boolean_flag(request.args.get("notfollowed"), default="0")
+        except ValidationError as exc:
+            return bad_request(str(exc), nav_data)
         data, data_compare, _ = anitya_data(notfollowed)
         csv_data = 'Name,Our version,Upstream version,Maintainer,Id,Comparison\n'
         for pkg in data:
@@ -1240,17 +1302,20 @@ def create_app():
 
     @app.route("/graph")
     def graph():
-        release = request.args.get("distribution", None)
-        arch = request.args.get("architecture", None)
-        pkg = request.args.get("rpm", "dnf")
-        level = request.args.get("level", 2, type=int)
-        descending = request.args.get("descending", 1, type=int)
+        nav_data = navbar(lang=request.accept_languages.best)
+        try:
+            release    = validate_release(request.args.get("distribution"))
+            arch       = validate_arch(request.args.get("architecture"))
+            pkg        = validate_rpm_name(request.args.get("rpm", "dnf"), allow_empty=False)
+            level      = validate_level(request.args.get("level", 2), min_level=1, max_level=5)
+            descending = int(validate_boolean_flag(request.args.get("descending"), default="1"))
+        except ValidationError as exc:
+            return bad_request(str(exc), nav_data)
         if not release or release == "unspecified":
             release = str(config.TOP_RELEASE)
         if not arch or arch == "indifferent":
             # default to the first arch listed
             arch = next(iter(config.ARCHES.keys()))
-        nav_data = navbar(lang=request.accept_languages.best)
         data = {
             "nav_html": nav_data["html"],
             "nav_css": nav_data["css"],

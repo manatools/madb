@@ -3,14 +3,21 @@ import os
 from datetime import datetime, timedelta
 from libdnf5.common import QueryCmp_GLOB as GLOB
 import madb.config as config
+from madb.validators import validate_release, validate_arch, ValidationError
 
 
 class Dnf5MadbBase():
 
     def __init__(self, release, arch, root, refresh=False):
+        # --- Validate inputs before touching the filesystem or libdnf5 -----
+        # allow_unspecified / allow_indifferent are False here: callers must
+        # already have resolved sentinels to real values before instantiating.
+        try:
+            self.release = validate_release(release, allow_unspecified=False)
+            self.arch    = validate_arch(arch, allow_indifferent=False)
+        except ValidationError as exc:
+            raise ValueError(str(exc)) from exc
 
-        self.release = release
-        self.arch = arch
         self.root = root
 
         # Create a new Base object
@@ -46,7 +53,6 @@ class Dnf5MadbBase():
                 repos[repo_srpms_name].get_config().baseurl = os.path.join(config.MIRROR_URL, release, "SRPMS", section, cl)
                 repos[repo_srpms_name].get_config().name = f"{config.DISTRIBUTION[release]} SRPMS {section.capitalize()} {cl.capitalize()}"
         self._repo_sack.update_and_load_enabled_repos(False)
-
 
     def search_name(self, values, graphical=False, repo=None, exact=True):
         """Search in a list of package attributes for a list of keys.
@@ -162,12 +168,11 @@ class Dnf5MadbBase():
             query.filter_file(["/usr/share/applications/*.desktop"], GLOB)
         return query
 
-
     def repo_enabled(self):
         query = libdnf5.repo.RepoQuery(self._base)
         query.filter_enabled(True)
         return query
-    
+
     def search_whatrequires(self, pkg):
         """
         Search for ascendant dependencies
