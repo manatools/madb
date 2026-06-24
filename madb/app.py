@@ -223,11 +223,11 @@ def create_app():
         }
         try:
             data_bugs, releases, counts = BugsList().qa_updates()
-        except requests.exceptions.Timeout as err:
+        except requests.exceptions.Timeout:
             data["timeout"] = True
-            return render_template("notfound.html", data=data)
-        except requests.exceptions.HTTPError as err:
-            return render_template("notfound.html", data=data)
+            return render_template("notfound.html", data=data), 504
+        except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError):
+            return render_template("notfound.html", data=data), 502
         for version in releases:
             data_bugs[version] = sorted(
                 data_bugs[version],
@@ -300,11 +300,11 @@ def create_app():
             data_bugs, counts["base"], assignees = list_bugs(
                 params_base + param_csv + column_full
             )
-        except requests.exceptions.Timeout as err:
+        except requests.exceptions.Timeout:
             data["timeout"] = True
-            return render_template("notfound.html", data=data)
-        except requests.exceptions.HTTPError as err:
-            return render_template("notfound.html", data=data)
+            return render_template("notfound.html", data=data), 504
+        except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError):
+            return render_template("notfound.html", data=data), 502
         title = "Current Blockers"
         comments = """This page lists all bug reports that have been marked as release blockers, which means that
         they must be fixed before the next release of Mageia. The <strong>bug watcher</strong>
@@ -384,22 +384,22 @@ def create_app():
                     timeout=config.BUGZILLA_TIMEOUT,
                     headers=config.USER_AGENT,
                     )
-            except requests.exceptions.Timeout as err:
+            except requests.exceptions.Timeout:
                 data["timeout"] = True
-                return render_template("notfound.html", data=data)
-            except requests.exceptions.HTTPError as err:
-                return render_template("notfound.html", data=data)
+                return render_template("notfound.html", data=data), 504
+            except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError):
+                return render_template("notfound.html", data=data), 502
             urls[status] = URL + "?" + parse.urlencode(params[status] + column_full)
             counts[status] = len(a.content.split(b"\n")) - 1
         try:
             data_bugs, counts["base"], assignees = list_bugs(
                 params_base + status_open + param_csv + column_full
             )
-        except requests.exceptions.Timeout as err:
+        except requests.exceptions.Timeout:
             data["timeout"] = True
-            return render_template("notfound.html", data=data)
-        except requests.exceptions.HTTPError as err:
-            return render_template("notfound.html", data=data)
+            return render_template("notfound.html", data=data), 504
+        except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError):
+            return render_template("notfound.html", data=data), 502
         title = "Intended for next release, except blockers"
         comments = """This page lists all bug reports that have been marked as intented for next release, except release blockers.
         The <strong>bug watcher</strong> (QA contact field in bugzilla) is someone who commits to update the <strong>bug status comment</strong>
@@ -524,22 +524,22 @@ def create_app():
                     timeout=config.BUGZILLA_TIMEOUT,
                     headers=config.USER_AGENT,
                     )
-            except requests.exceptions.Timeout as err:
+            except requests.exceptions.Timeout:
                 data["timeout"] = True
-                return render_template("notfound.html", data=data)
-            except requests.exceptions.HTTPError as err:
-                return render_template("notfound.html", data=data)
+                return render_template("notfound.html", data=data), 504
+            except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError):
+                return render_template("notfound.html", data=data), 502
             urls[status] = URL + "?" + parse.urlencode(params[status] + column_full)
             counts[status] = len(a.content.split(b"\n")) - 1
         try:
             data_bugs, counts["base"], assignees = list_bugs(
                 params_base + status_open + param_csv + column_full
             )
-        except requests.exceptions.Timeout as err:
+        except requests.exceptions.Timeout:
             data["timeout"] = True
-            return render_template("notfound.html", data=data)
-        except requests.exceptions.HTTPError as err:
-            return render_template("notfound.html", data=data)
+            return render_template("notfound.html", data=data), 504
+        except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError):
+            return render_template("notfound.html", data=data), 502
         title = "High Priority Bugs for next release, except those already having a milestone set."
         comments = """This page lists all bug reports that have been marked with a high priority (except bugs with a milestone, which are already present in the "Intended for..." page).
     The <strong>bug watcher</strong>
@@ -627,11 +627,11 @@ def create_app():
             data_bugs, counts["base"], assignees = list_bugs(
                 params_base + status_open + param_csv + column_full
             )
-        except requests.exceptions.Timeout as err:
+        except requests.exceptions.Timeout:
             data["timeout"] = True
-            return render_template("notfound.html", data=data)
-        except requests.exceptions.HTTPError as err:
-            return render_template("notfound.html", data=data)
+            return render_template("notfound.html", data=data), 504
+        except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError):
+            return render_template("notfound.html", data=data), 502
         title = "About Mageia tools"
         comments = """This page lists all bug reports that have been assigned to Mageia tools maintainers.
         """
@@ -938,9 +938,9 @@ def create_app():
             data_bugs, releases, counts = BugsList().security()
         except requests.exceptions.Timeout:
             data["timeout"] = True
-            return render_template("notfound.html", data=data)
-        except requests.exceptions.HTTPError:
-            return render_template("notfound.html", data=data)
+            return render_template("notfound.html", data=data), 504
+        except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError):
+            return render_template("notfound.html", data=data), 502
         for version in releases:
             data_bugs[version] = sorted(
                 data_bugs[version],
@@ -1273,6 +1273,7 @@ def create_app():
             timeout=config.BUGZILLA_TIMEOUT,
             headers=config.USER_AGENT,
             )
+        a.raise_for_status()
         content = a.content.decode("utf-8")
         bugs = DictReader(StringIO(content))
         assignees = []

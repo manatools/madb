@@ -62,6 +62,7 @@ def load_content_or_cache(url, long=True, timeout=10):
                 timeout=timeout,
                 headers=config.USER_AGENT,
                 )
+            response.raise_for_status()
             with open(filepath, "w") as f:
                 f.write(response.content.decode())
         except Exception as e:
@@ -148,8 +149,7 @@ class BugsList():
             timeout=config.BUGZILLA_TIMEOUT,
             headers=config.USER_AGENT,
             )
-        if f.status_code != requests.codes.ok:
-            f.raise_for_status() 
+        f.raise_for_status()
         content = f.content.decode("utf-8")
         print(content)
         bugs = DictReader(StringIO(content))
@@ -212,16 +212,17 @@ class BugReport():
     def from_number(self, number):
         self.number = number
         url = os.path.join(config.BUGZILLA_URL, "rest/bug", self.number)
-        headers = {'Accept': 'application/json'} + config.USER_AGENT
+        headers = {'Accept': 'application/json', **config.USER_AGENT}
         r = requests.get(
             url,
             params=[("include_fields", _column)],
             headers=headers,
             timeout=config.BUGZILLA_TIMEOUT
             )
+        r.raise_for_status()
         myjson = r.json()
-        if r.status_code == 200 and myjson["faults"] == []:
-            entry =  myjson['bugs'][0]
+        if not myjson.get("faults"):
+            entry = myjson['bugs'][0]
             for rel in self._releases(entry):
                 self.data[rel] = entry
 
