@@ -52,7 +52,7 @@ class Dnf5MadbBase():
                 repos[repo_srpms_name] = self._repo_sack.create_repo(repo_srpms_name)
                 repos[repo_srpms_name].get_config().baseurl = os.path.join(config.MIRROR_URL, release, "SRPMS", section, cl)
                 repos[repo_srpms_name].get_config().name = f"{config.DISTRIBUTION[release]} SRPMS {section.capitalize()} {cl.capitalize()}"
-        self._repo_sack.update_and_load_enabled_repos(False)
+        self._repo_sack.load_repos()
 
     def search_name(self, values, graphical=False, repo=None, exact=True):
         """Search in a list of package attributes for a list of keys.
