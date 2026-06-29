@@ -109,7 +109,7 @@ class BugsList():
     def __init__(self):
         self.bugs = []
 
-    def qa_updates(self):        
+    def qa_updates(self):
         params = [
                 ("bug_status", "REOPENED"),
                 ("bug_status", "NEW"),
@@ -125,8 +125,7 @@ class BugsList():
             ]
         return self._request(params)
 
-
-    def security(self): 
+    def security(self):
         params = [
                 ("bug_status", "REOPENED"),
                 ("bug_status", "NEW"),
@@ -149,9 +148,12 @@ class BugsList():
             timeout=config.BUGZILLA_TIMEOUT,
             headers=config.USER_AGENT,
             )
-        f.raise_for_status()
+
+        if f.status_code != requests.codes.ok:
+            f.raise_for_status()
         content = f.content.decode("utf-8")
-        print(content)
+        if "<!DOCTYPE html>" in content[:15]:
+            return [], [], 0
         bugs = DictReader(StringIO(content))
 
         releases = []
@@ -159,19 +161,19 @@ class BugsList():
         temp_bugs = []
         for bug in bugs:
             entry = bug
-            print(entry)
             key = entry["version"].lower()
             if key not in releases:
                 releases.append(key)
                 self.bugs[key] = []
             # wb = re.findall(r"\bMGA(\d+)TOO", entry["status_whiteboard"])
-            wb = [a[11:-1] for a in entry["flagtypes.name"].split(",") if a.startswith("affects_mga")]
+            wb = [a.strip()[11:-1] for a in entry["flagtypes.name"].split(",") if a.lstrip().startswith("affects_mga")]
+            # print(entry["flagtypes.name"].split(','), wb)
             for key in wb:
                 if key not in releases:
                     releases.append(key)
                     self.bugs[key] = []
             temp_bugs.append(entry)
-        
+
         counts = {}
         for rel in releases:
             self.bugs[rel] = []
@@ -188,6 +190,7 @@ class BugsList():
                 if rel in bug.data.keys():
                     bugs_list[rel].append(bug.data[rel])
         return bugs_list, releases, counts
+
 
 class BugReport():
     column = _column
@@ -231,7 +234,7 @@ class BugReport():
         versions_list = (entry["version"].lower(),)
         if "status_whiteboard" in entry.keys():
             # wb = re.findall(r"\bMGA(\d+)TOO", entry["status_whiteboard"])
-            wb = [a[11:-1] for a in entry["flagtypes.name"].split(",") if a.startswith("affects_mga")]
+            wb = [a.strip()[11:-1] for a in entry["flagtypes.name"].split(",") if a.lstrip().startswith("affects_mga")]
             wbo = re.findall(r"\bMGA(\d+)-(\d+).OK", entry["status_whiteboard"])
             for v, a in wbo:
                 if v != config.DEV_NAME and int(v) == config.TOP_RELEASE + 1:
