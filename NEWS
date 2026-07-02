@@ -1,3 +1,6 @@
+# release 0.10.1
+-   Fix usage of flags "affects_mga" for extracting version number
+
 # release 0.10.0
 -  Top release is now 10
 -  Provide a user agent with http requests
