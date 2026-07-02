@@ -1,5 +1,8 @@
 # release 0.10.1
 -   Fix usage of flags "affects_mga" for extracting version number
+-   Remove deprecated libdnf5::repo::RepoSack::update_and_load_enabled_repos(bool) and replace with load_repos
+-   Improve management of return after sending requests (from Claude)
+-   Improve robustness, adding validators on incoming requests (from Claude)
 
 # release 0.10.0
 -  Top release is now 10
