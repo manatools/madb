@@ -434,7 +434,7 @@ def create_app():
                         data[release] = {}
             srpms =  report.get_srpms(release)
             distro = {}
-            for src_arch in ("x86_64", "i586"):
+            for src_arch in ("x86_64", "i686"):
                 data[release][src_arch] = {}
                 distro[src_arch] = Dnf5MadbBase(release, src_arch, config.DATA_PATH)
                 data[release][src_arch]["srpms"] = distro[src_arch].search_name(srpms, repo=f"{release}-SRPMS-*testing*")
@@ -1155,7 +1155,7 @@ def create_app():
                     pkg.upstream_version,
                     pkg.maintainer,
                     str(pkg.pkg_id),
-                    data_compare[pkg.name]
+                    str(data_compare[pkg.name]),
                     ]) + "\n"
 
         response = Response(csv_data, mimetype='text/csv')
