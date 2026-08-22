@@ -1165,6 +1165,41 @@ def create_app():
         
         return response
 
+    @app.route('/check_anitya_rss/<maintainer>')
+    def download_rss(maintainer):
+        data, data_compare, _ = anitya_data("0")
+        header = """
+<?xml version="1.0" encoding="UTF-8"?>
+
+<rss version="2.0"
+ xmlns:blogChannel="http://backend.userland.com/blogChannelModule"
+>
+
+<channel>
+"""
+        header += f"<title>updates individual report for {maintainer}</title>\n"
+        header += "<link></link>\n"
+        header += f"<description>updates individual report for {maintainer}</description>\n"
+        header += "<language>en</language>\n"
+        header += "<ttl>1440</ttl>\n"
+        items = ""
+        for pkg in [pkg for pkg in data if pkg.maintainer == maintainer]:
+            item = f"""<item>
+<title>{pkg.name} {pkg.upstream_version} is available</title>
+<link>https://release-monitoring.org/project/{pkg.pkg_id}</link>
+<description>Current version is {pkg.our_version}</description>
+<guid isPermaLink="false">youri-updates-{pkg.name}-{pkg.upstream_version}</guid>
+</item>
+"""
+            items += item
+        payload = header + items
+        payload += "</channel>\n</rss>"
+        response = Response(payload, mimetype='text/xml')
+
+        # Définir l'en-tête pour forcer le téléchargement du fichier
+        response.headers['Content-Disposition'] = 'attachment; filename=anitya.rss'
+        return response
+
     def anitya_data(notfollowed):
         database_path = os.path.join(config.EXTERNAL_PATH, 'packages.db')
         last_time = os.path.getmtime(database_path)
@@ -1211,7 +1246,7 @@ def create_app():
 
         # suppression des « D » en fin de chaîne
         x = re.sub(r"D*$", "", x)
-        
+
         template = "000"
         parts = x.split('.')
         micro = ".0"
