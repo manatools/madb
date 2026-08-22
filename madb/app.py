@@ -432,9 +432,16 @@ def create_app():
         for release in releases:
             if "release" not in data.keys():
                         data[release] = {}
-            srpms =  report.get_srpms(release)
+            srpms = report.get_srpms(release)
+            label_32bits = "i686"
+            try:
+                # releases in 32 bits before 10 was named i586
+                if int(release) < 10:
+                    label_32bits = "i586"
+            except ValueError:
+                pass
             distro = {}
-            for src_arch in ("x86_64", "i686"):
+            for src_arch in ("x86_64", label_32bits):
                 data[release][src_arch] = {}
                 distro[src_arch] = Dnf5MadbBase(release, src_arch, config.DATA_PATH)
                 data[release][src_arch]["srpms"] = distro[src_arch].search_name(srpms, repo=f"{release}-SRPMS-*testing*")
