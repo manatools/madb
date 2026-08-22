@@ -1172,6 +1172,21 @@ def create_app():
         
         return response
 
+    @app.route("/check_anitya_rss")
+    def rss_links():
+        nav_data = navbar(lang=request.accept_languages.best)
+        data = {}
+        database_path = os.path.join(config.EXTERNAL_PATH, 'packages.db')
+        data["title"] = "Check release-monitoring.org for Mageia packages"
+        data["title2"] = "RSS links for each maintainer"
+        data['maintainers'] = anitya_maintainers()
+        data["config"] = data_config
+        nav_data = navbar(lang=request.accept_languages.best)
+        data["nav_html"] = nav_data["html"]
+        data["nav_css"] = nav_data["css"]
+        data["count"] = len(data['maintainers'])
+        return render_template("check_anitya_rss.html", data=data)
+
     @app.route('/check_anitya_rss/<maintainer>')
     def download_rss(maintainer):
         data, data_compare, _ = anitya_data("0")
@@ -1204,7 +1219,7 @@ def create_app():
         response = Response(payload, mimetype='text/xml')
 
         # Définir l'en-tête pour forcer le téléchargement du fichier
-        response.headers['Content-Disposition'] = 'attachment; filename=anitya.rss'
+        response.headers['Content-Disposition'] = f'attachment; filename=anitya-{maintainer}.rss'
         return response
 
     def anitya_data(notfollowed):
@@ -1240,6 +1255,17 @@ def create_app():
             except:
                 data_compare[pkg.name] = -2
         return data, data_compare, last_time
+
+    def anitya_maintainers():
+        database_path = os.path.join(config.EXTERNAL_PATH, 'packages.db')
+        last_time = os.path.getmtime(database_path)
+        engine = create_engine('sqlite:///' + database_path)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+        stmt = select(Package.maintainer).distinct().\
+            order_by(Package.maintainer)
+        data = session.execute(stmt).scalars().all()
+        return data
 
     def perl_version(x):
         y = x                       # copie de x
