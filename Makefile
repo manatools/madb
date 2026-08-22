@@ -10,7 +10,7 @@
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
 
-VERSION = 0.10.1
+VERSION = 0.10.2
 
 PACKAGE = madb
 GITPATH = git@github.com:manatools/madb.git

@@ -1,3 +1,10 @@
+# release 0.10.2
+-  [Anitya]  Add a page of RSS fluxes for maintainers, to list packages with different version in anytia database.
+-  [QA Updates] Adapt rpmsforqa to i686/i586 arch change
+-  [Anitya]  Add check_anitya RSS flux for named maintainer
+-  [Fix] column "compare" is numeric, not string, convert it before exporting CSV
+-  [config]  Use directly Mageia server as data source.
+
 # release 0.10.1
 -   Fix usage of flags "affects_mga" for extracting version number
 -   Remove deprecated libdnf5::repo::RepoSack::update_and_load_enabled_repos(bool) and replace with load_repos
