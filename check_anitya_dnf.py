@@ -86,11 +86,13 @@ def update_package(session, id, our_version, upstream_version, updated_on, msg_i
         package.maintainer = maintainer
     session.commit()
 
+
 def cleaning(session, packages_list):
     stmt = delete(Package).where(Package.name.notin_(packages_list))
     session.execute(stmt)
     session.commit()
-    
+
+
 def update_packages_db(force=False):
     """
     Start with a void database
@@ -102,48 +104,42 @@ def update_packages_db(force=False):
     with Session() as session:
         for package in packages:
             logging.debug(package.get_name())
-            upstream_version = ""
-            updated_on = 0
-            pkg_id = 0
-            present = False
-            added = False
             # check if record exists
             name_to_find = package.get_name()
             stmt = select(Package).where(Package.name == name_to_find)
             result = session.execute(stmt).scalar_one_or_none()
             if result:
-                present = True
-                if  (package.get_version() != result.our_version) or force:
+                if (package.get_version() != result.our_version) or force:
                     # update our version
                     logging.debug("Updating")
                     stmt = update(Package).\
                         where(Package.id == result.id).\
-                        values(our_version=package.get_version(), maintainer=maintdb[package.get_name()], summary=package.get_summary())
+                        values(
+                            our_version=package.get_version(),
+                            maintainer=maintdb.get(package.get_name(), "nobody"),
+                            summary=package.get_summary(),
+                            )
                     session.execute(stmt)
                     logging.debug("Updated")
             else:
                 logging.debug("Adding")
-                if package.get_name() in maintdb.keys():
-                    maintainer = maintdb[package.get_name()]
-                else:
-                    maintainer = "nobody"
-                add_package(session, 
-                            package.get_name(), 
-                            package.get_version(), 
-                            "", 
-                            None, 
-                            "", 
-                            None, 
-                            maintainer, 
+                add_package(session,
+                            package.get_name(),
+                            package.get_version(),
+                            "",
+                            None,
+                            "",
+                            None,
+                            maintdb.get(package.get_name(), "nobody"),
                             package.get_summary()
-                        )
+                            )
                 logging.debug("Added")
 
         # delete srpms no more listed
         cleaning(session, [pkg.get_name() for pkg in packages])
         session.commit()
 
-    
+
 def update_anitya_content(with_remote=False):
     """
     Complete anitya information on the whole database
@@ -157,8 +153,6 @@ def update_anitya_content(with_remote=False):
             upstream_version = ""
             updated_on = 0
             pkg_id = 0
-            present = False
-            added = False
             # get upstream info
             anityainfo = anitya_response(package)
             if ((anityainfo[3] != 'none') and (anityainfo[2] != 'None')):
@@ -172,7 +166,7 @@ def update_anitya_content(with_remote=False):
                 session.execute(stmt)
                 session.commit()
 
-    
+
 UPDATE_URL = (
     "https://apps.fedoraproject.org/datagrepper/raw?topic=org."
     "release-monitoring.prod.anitya.project.version.update&"
