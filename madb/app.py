@@ -1190,13 +1190,10 @@ def create_app():
     @app.route('/check_anitya_rss/<maintainer>')
     def download_rss(maintainer):
         data, data_compare, _ = anitya_data("0")
-        header = """
-<?xml version="1.0" encoding="UTF-8"?>
-
+        header = """<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"
  xmlns:blogChannel="http://backend.userland.com/blogChannelModule"
 >
-
 <channel>
 """
         header += f"<title>updates individual report for {maintainer}</title>\n"
@@ -1215,11 +1212,9 @@ def create_app():
 """
             items += item
         payload = header + items
-        payload += "</channel>\n</rss>"
-        response = Response(payload, mimetype='text/xml')
+        payload += "</channel>\n</rss>\n"
+        response = Response(payload, mimetype='application/rss+xml')
 
-        # Définir l'en-tête pour forcer le téléchargement du fichier
-        response.headers['Content-Disposition'] = f'attachment; filename=anitya-{maintainer}.rss'
         return response
 
     def anitya_data(notfollowed):
