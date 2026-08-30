@@ -1,3 +1,8 @@
+# release 0.10.3
+-   [anitya] more robust populating maintainer in database
+    avoid crash when package is not referenced in maintdb.txt
+-   [anitya] improve rendering of RSS flux (mga#34956)
+    
 # release 0.10.2
 -  [Anitya]  Add a page of RSS fluxes for maintainers, to list packages with different version in anytia database.
 -  [QA Updates] Adapt rpmsforqa to i686/i586 arch change
