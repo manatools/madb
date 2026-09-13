@@ -2990,14 +2990,15 @@ table.buglist {
     border-collapse: collapse;
     text-align: center;
     font-size: 13px;
-    width: 100%
+    width: 100%;
 }
 
 .buglist td,
 .buglist th {
     border: 1px solid gray;
     padding: 2px;
-    vertical-align: top
+    vertical-align: top;
+    word-break: break-word;
 }
 
 .enhancement,
