@@ -51,21 +51,28 @@ def validate_release(value: str | None, *, allow_unspecified: bool = True) -> st
     return value
 
 
-def validate_arch(value: str | None, *, allow_indifferent: bool = True) -> str:
-    """Return *value* if it is a known architecture key, else raise ValidationError."""
+def validate_arch(value: str | None, release: str, *, allow_indifferent: bool = True) -> str:
+    """Return *value* if it is a known architecture key, else raise ValidationError.
+       The architecture is dependant of the release."""
     if value is None or value == "":
         return "indifferent" if allow_indifferent else next(iter(config.ARCHES))
 
-    allowed = set(config.ARCHES.keys())
+    if release not in config.ARCHES_BY_RELEASE:
+        raise ValidationError(
+            f"Unknown release '{release}'. "
+            f"Allowed values: {sorted(config.ARCHES_BY_RELEASE.keys())}"
+        )
+
+    allowed = set([config.ARCHES_BY_RELEASE[release][key] for key in config.ARCHES_BY_RELEASE[release].keys()])
     if allow_indifferent:
         allowed.add("indifferent")
 
     if value not in allowed:
         raise ValidationError(
-            f"Unknown architecture '{value}'. "
+            f"Unknown architecture '{value}' for {release}. "
             f"Allowed values: {sorted(allowed)}"
         )
-    return value
+    return config.ARCHES_BY_RELEASE[release][value]
 
 
 # ---------------------------------------------------------------------------

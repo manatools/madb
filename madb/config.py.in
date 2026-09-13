@@ -6,7 +6,7 @@ DATA_PATH = "/var/lib/madb"
 # used for packages.db
 EXTERNAL_PATH = "/madb-persist"
 LOG_PATH = DATA_PATH
-MIRROR_URL = "https://repository.mageia.org/distrib/"
+MIRROR_URL = "http://repository.mageia.org/distrib/"
 # Complete list of used goups
 DEF_GROUPS_FILE = "/usr/share/rpmlint/config.d/distribution.exceptions.conf"
 # Oldness of packages to display as recent updates in home page, starting from build time
@@ -24,8 +24,15 @@ ARCHES = {
     "x86_64": "x86 64bits",
     "i686": "x86 32bits",
     "aarch64": "Arm 64bits",
-    "armv7hl": "Arm 32bits v7hl",
+    "aarch64": "Arm 32bits v7hl",
     "indifferent": "Indifferent",
+}
+# Arches by release
+ARCHES_BY_RELEASE = {
+"8" : {"x86_64":"x86_64", "i686":"i586", "aarch64": "aarch64", "armv7hl": "armv7hl"},
+"9" : {"x86_64":"x86_64", "i686":"i586", "aarch64": "aarch64", "armv7hl": "armv7hl"},
+"10": {"x86_64":"x86_64", "i686":"i686", "aarch64": "aarch64", "armv7hl": "armv7hl"},
+"cauldron": {"x86_64":"x86_64", "i686":"i686", "aarch64": "aarch64", "armv7hl": "armv7hl"},
 }
 # Used as filter in search bar
 DISTRIBUTION = {

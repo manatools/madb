@@ -122,7 +122,7 @@ def create_app():
         nav_data = navbar(lang=request.accept_languages.best)
         try:
             release   = validate_release(request.args.get("distribution", "unspecified"))
-            arch      = validate_arch(request.args.get("architecture", "indifferent"))
+            arch = validate_arch(request.args.get("architecture", "indifferent"), release)
             graphical = validate_boolean_flag(request.args.get("graphical"), default="1")
             exact     = validate_boolean_flag(request.args.get("exact"),     default="0")
         except ValidationError as exc:
@@ -167,7 +167,7 @@ def create_app():
         nav_data = navbar(lang=request.accept_languages.best)
         try:
             release   = validate_release(request.args.get("distribution"))
-            arch      = validate_arch(request.args.get("architecture"))
+            arch = validate_arch(request.args.get("architecture"), release)
             graphical = validate_boolean_flag(request.args.get("graphical"), default="0")
             page = request.args.get("page", 1, type=int)
             if page < 1:
@@ -708,7 +708,7 @@ def create_app():
         nav_data = navbar(lang=request.accept_languages.best)
         try:
             release   = validate_release(request.args.get("distribution", "unspecified"))
-            arch      = validate_arch(request.args.get("architecture", "indifferent"))
+            arch = validate_arch(request.args.get("architecture", "indifferent"), release)
             graphical = validate_boolean_flag(request.args.get("graphical"), default="0")
             exact     = validate_boolean_flag(request.args.get("exact"),     default="0")
             package   = validate_rpm_name(request.args.get("rpm", ""), allow_empty=True)
@@ -743,7 +743,7 @@ def create_app():
         last = None
         for rel in releases_list:
             for iter_arch in arch_list:
-                distro = Dnf5MadbBase(rel, iter_arch, config.DATA_PATH)
+                distro = Dnf5MadbBase(rel, config.ARCHES_BY_RELEASE[rel][iter_arch], config.DATA_PATH)
                 dnf_pkgs = distro.search_name([package], graphical=(graphical == "1"), exact=(exact == "1"))
                 for dnf_pkg in dnf_pkgs:
                     rpms.append(
@@ -754,7 +754,7 @@ def create_app():
                                                    {"rpm": dnf_pkg.get_name(),
                                                     "repo": dnf_pkg.get_repo_id(),
                                                     "distribution": rel,
-                                                    "architecture": iter_arch,
+                                                    "architecture": config.ARCHES_BY_RELEASE[rel][iter_arch],
                                                     "graphical": graphical,
                                                     "version": dnf_pkg.get_evr(),
                                                     "exact": "1"}
@@ -787,7 +787,7 @@ def create_app():
                 "config": data_config,
                 "base_url": "/show",
                 "rpm_search": package,
-                "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}&exact={exact}",
+                "url_end": f"?distribution={release}&architecture={config.ARCHES_BY_RELEASE[rel][iter_arch]}&graphical={graphical}&exact={exact}",
                 "nav_html": nav_data["html"],
                 "nav_css": nav_data["css"],
             }
@@ -795,7 +795,7 @@ def create_app():
         data = {
             "pkg": pkg,
             "config": data_config,
-            "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}&exact={exact}",
+            "url_end": f"?distribution={release}&architecture={ config.ARCHES_BY_RELEASE[rel][iter_arch]}&graphical={graphical}&exact={exact}",
             "rpm_search": package,
             "graphical": graphical,
             "exact": exact,
@@ -810,7 +810,7 @@ def create_app():
         nav_data = navbar(lang=request.accept_languages.best)
         try:
             release   = validate_release(request.args.get("distribution", "unspecified"))
-            arch      = validate_arch(request.args.get("architecture", "indifferent"))
+            arch = validate_arch(request.args.get("architecture", "indifferent"), release)
             graphical = validate_boolean_flag(request.args.get("graphical"), default="1")
             exact     = validate_boolean_flag(request.args.get("exact"),     default="1")
             package   = validate_rpm_name(request.args.get("rpm", ""), allow_empty=True)
@@ -1053,14 +1053,18 @@ def create_app():
         try:
             release   = validate_release(request.args.get("distribution", str(config.TOP_RELEASE)),
                                          allow_unspecified=False)
-            arch      = validate_arch(request.args.get("architecture", "x86_64"),
+            arch1 = validate_arch(request.args.get("architecture", "x86_64"),
+                                      release,
+                                      allow_indifferent=False)
+            arch2 = validate_arch(request.args.get("architecture", "x86_64"),
+                                      config.DEV_NAME,
                                       allow_indifferent=False)
             graphical = validate_boolean_flag(request.args.get("graphical"), default="1")
-            page      = validate_page_char(request.args.get("page", "A"))
+            page = validate_page_char(request.args.get("page", "A"))
         except ValidationError as exc:
             return bad_request(str(exc), nav_data)
-        distro1 = Dnf5MadbBase(release, arch, config.DATA_PATH)
-        distro2 = Dnf5MadbBase(config.DEV_NAME, arch, config.DATA_PATH)
+        distro1 = Dnf5MadbBase(release, arch1, config.DATA_PATH)
+        distro2 = Dnf5MadbBase(config.DEV_NAME, arch2, config.DATA_PATH)
         rpms_temp = {}
         rpms_dev_temp = {}
         label = {}
@@ -1084,7 +1088,7 @@ def create_app():
             rpms_temp[cl] = {x.get_name():{
             "Summary"+cl: x.get_summary(),
             label[cl]: x.get_version(),
-            } for x in distro1.search([], criteria, graphical=(graphical == "1"), repo=f"{release}-{arch}-*-{cl}")}
+            } for x in distro1.search([], criteria, graphical=(graphical == "1"), repo=f"{release}-{arch1}-*-{cl}")}
             rpms1 = pd.DataFrame(rpms_temp[cl])
             if cl == "release":
                 rpms = rpms1
@@ -1096,7 +1100,7 @@ def create_app():
                     "Summarydev"+cl: x.get_summary(),
                     label_dev[cl]: x.get_version(),
                     }
-                for x in distro2.search([], criteria, graphical=(graphical == "1"), repo=f"{config.DEV_NAME}-{arch}-*-{cl}")}
+                for x in distro2.search([], criteria, graphical=(graphical == "1"), repo=f"{config.DEV_NAME}-{arch2}-*-{cl}")}
             rpms2 = pd.DataFrame(rpms_dev_temp[cl])
             rpms = pd.concat([rpms, rpms2])
         # determine classes
@@ -1113,11 +1117,11 @@ def create_app():
         pager = Pagination(list(rpms.index), byfirstchar=True)
         data = {
             "rpms": rpms,
-            "links": pager.links_by_char(f"/comparison?distribution={release}&architecture={arch}&graphical={graphical}", page),
+            "links": pager.links_by_char(f"/comparison?distribution={release}&architecture={arch1}&graphical={graphical}", page),
             "release": release,
-            "arch": arch,
+            "arch": arch1,
             "rel": data_config["distribution"][release],
-            "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}",  # used for setting the search fields
+            "url_end": f"?distribution={release}&architecture={arch1}&graphical={graphical}",  # used for setting the search fields
             "config": data_config,
         }
         return render_template("comparison.html", data=data)
@@ -1369,7 +1373,7 @@ def create_app():
         nav_data = navbar(lang=request.accept_languages.best)
         try:
             release    = validate_release(request.args.get("distribution"))
-            arch       = validate_arch(request.args.get("architecture"))
+            arch = validate_arch(request.args.get("architecture"), release)
             pkg        = validate_rpm_name(request.args.get("rpm", "dnf"), allow_empty=False)
             level      = validate_level(request.args.get("level", 2), min_level=1, max_level=5)
             descending = int(validate_boolean_flag(request.args.get("descending"), default="1"))

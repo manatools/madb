@@ -14,7 +14,7 @@ class Dnf5MadbBase():
         # already have resolved sentinels to real values before instantiating.
         try:
             self.release = validate_release(release, allow_unspecified=False)
-            self.arch    = validate_arch(arch, allow_indifferent=False)
+            self.arch = validate_arch(arch, self.release, allow_indifferent=False)
         except ValidationError as exc:
             raise ValueError(str(exc)) from exc
 
