@@ -1,3 +1,9 @@
+# release 0.10.4
+-  Improve column width in bug lists by adding word-break: break-word; in main.css
+-  Distinct i586 and i686 for 32bits according to release    
+    In validator, pass also release for validate_arch
+    Add ARCHES_BY_RELEASE in config.py.in
+
 # release 0.10.3
 -   [anitya] more robust populating maintainer in database
     avoid crash when package is not referenced in maintdb.txt
