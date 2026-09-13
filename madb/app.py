@@ -19,9 +19,9 @@ from madb.validators import (
 import madb.config as config
 from flask import Flask, render_template, request, Response, send_from_directory, redirect
 import requests
-from bs4 import BeautifulSoup 
+from bs4 import BeautifulSoup
 from csv import DictReader
-from datetime import datetime, timedelta, date
+from datetime import datetime, date
 from io import StringIO
 import collections
 from urllib import parse
@@ -49,6 +49,7 @@ clean_thread = threading.Thread(target=clean_cache)
 
 Base = declarative_base()
 
+
 # table Package for release-monitoring
 class Package(Base):
     __tablename__ = 'packages'
@@ -61,6 +62,7 @@ class Package(Base):
     pkg_id = Column(Integer)
     maintainer = Column(String(40))
     summary = Column(String(80))
+
 
 def create_app():
     app = Flask(__name__)
@@ -121,10 +123,10 @@ def create_app():
     def home():
         nav_data = navbar(lang=request.accept_languages.best)
         try:
-            release   = validate_release(request.args.get("distribution", "unspecified"))
+            release = validate_release(request.args.get("distribution", "unspecified"))
             arch = validate_arch(request.args.get("architecture", "indifferent"), release)
             graphical = validate_boolean_flag(request.args.get("graphical"), default="1")
-            exact     = validate_boolean_flag(request.args.get("exact"),     default="0")
+            exact = validate_boolean_flag(request.args.get("exact"),     default="0")
         except ValidationError as exc:
             return bad_request(str(exc), nav_data)
         rpm = request.args.get("rpm", "")
@@ -171,13 +173,13 @@ def create_app():
             graphical = validate_boolean_flag(request.args.get("graphical"), default="0")
             page = request.args.get("page", 1, type=int)
             if page < 1:
-                raise ValidationError(f"Le numéro de page doit être ≥ 1, reçu : {page}.")
+                raise ValidationError(f"Page number should be ≥ 1, received : {page}.")
         except ValidationError as exc:
             return bad_request(str(exc), nav_data)
         rpm = request.args.get("rpm", "")
         type_list = request.args.get("type", "updates")
         if len(type_list) > 64:
-            return bad_request("Paramètre 'type' trop long.", nav_data)
+            return bad_request("Parameter 'type' too long.", nav_data)
         testing = "testing" in type_list
         backports = "backports" in type_list
         if backports:
@@ -642,7 +644,7 @@ def create_app():
         title = "About Mageia tools"
         comments = """This page lists all bug reports that have been assigned to Mageia tools maintainers.
         """
-        data.update( {
+        data.update({
             "urls": urls,
             "counts": counts,
             "bugs": data_bugs,
@@ -677,7 +679,7 @@ def create_app():
                 "title": "By group",
                 "topic": f"Subgroups of {req_group}" if req_group else "Main groups",
                 "req_group": req_group,
-                "groups": sorted(set([ match[level] for match in matches])),
+                "groups": sorted(set([match[level] for match in matches])),
                 "url_end": f"?distribution={release}&architecture={arch}&graphical={graphical}",
                 "base_url": "/group",
                 "group": req_group,
@@ -707,11 +709,11 @@ def create_app():
     def show():
         nav_data = navbar(lang=request.accept_languages.best)
         try:
-            release   = validate_release(request.args.get("distribution", "unspecified"))
+            release = validate_release(request.args.get("distribution", "unspecified"))
             arch = validate_arch(request.args.get("architecture", "indifferent"), release)
             graphical = validate_boolean_flag(request.args.get("graphical"), default="0")
-            exact     = validate_boolean_flag(request.args.get("exact"),     default="0")
-            package   = validate_rpm_name(request.args.get("rpm", ""), allow_empty=True)
+            exact = validate_boolean_flag(request.args.get("exact"), default="0")
+            package = validate_rpm_name(request.args.get("rpm", ""), allow_empty=True)
         except ValidationError as exc:
             return bad_request(str(exc), nav_data)
         if package == "":
@@ -809,11 +811,11 @@ def create_app():
     def rpmshow():
         nav_data = navbar(lang=request.accept_languages.best)
         try:
-            release   = validate_release(request.args.get("distribution", "unspecified"))
+            release = validate_release(request.args.get("distribution", "unspecified"))
             arch = validate_arch(request.args.get("architecture", "indifferent"), release)
             graphical = validate_boolean_flag(request.args.get("graphical"), default="1")
-            exact     = validate_boolean_flag(request.args.get("exact"),     default="1")
-            package   = validate_rpm_name(request.args.get("rpm", ""), allow_empty=True)
+            exact = validate_boolean_flag(request.args.get("exact"),     default="1")
+            package = validate_rpm_name(request.args.get("rpm", ""), allow_empty=True)
             repo = request.args.get("repo", "")
             if len(repo) > 256:
                 raise ValidationError("Paramètre 'repo' trop long.")
@@ -874,7 +876,6 @@ def create_app():
                     section = special
             advisories = adv.adv_from_src_name(last.get_sourcerpm() or last.get_name(), release , section)
             description = last.get_description()
-            rpm = last.get_nevra()
             media = [
                 ["Repository name", last.get_repo_name()],
                 ["Media arch", arch],
@@ -955,7 +956,7 @@ def create_app():
                 reverse=True,
             )
         title = "Security issues"
-        data.update( {
+        data.update({
             "counts": counts,
             "bugs": data_bugs,
             "releases": releases,
@@ -969,6 +970,7 @@ def create_app():
     @app.route("/comparison")
     def comparison():
         repo_classes = ('release', 'updates', 'updates_testing', 'backports', 'backports_testing')
+
         def merge_summaries(rpm):
             if pd.isnull(rpm["Summaryrelease"]):
                 keys = rpm.keys()
@@ -1045,20 +1047,22 @@ def create_app():
                 dev = list(distro2.search_name([rpm.name], repo= "*release*"))
                 if len(dev) != 0:
                     return versions_compare(rpm)
-                return  "dropped"
+                return "dropped"
             else:
                 return rpm["classes"]
 
         nav_data = navbar(lang=request.accept_languages.best)
         try:
-            release   = validate_release(request.args.get("distribution", str(config.TOP_RELEASE)),
+            release = validate_release(request.args.get("distribution", str(config.TOP_RELEASE)),
                                          allow_unspecified=False)
             arch1 = validate_arch(request.args.get("architecture", "x86_64"),
-                                      release,
-                                      allow_indifferent=False)
+                                    release,
+                                    allow_indifferent=False
+                                    )
             arch2 = validate_arch(request.args.get("architecture", "x86_64"),
-                                      config.DEV_NAME,
-                                      allow_indifferent=False)
+                                    config.DEV_NAME,
+                                    allow_indifferent=False
+                                    )
             graphical = validate_boolean_flag(request.args.get("graphical"), default="1")
             page = validate_page_char(request.args.get("page", "A"))
         except ValidationError as exc:
@@ -1085,9 +1089,9 @@ def create_app():
         else:
             criteria = [page + "*", page.lower() + "*"]
         for cl in repo_classes:
-            rpms_temp[cl] = {x.get_name():{
-            "Summary"+cl: x.get_summary(),
-            label[cl]: x.get_version(),
+            rpms_temp[cl] = {x.get_name(): {
+                "Summary"+cl: x.get_summary(),
+                label[cl]: x.get_version(),
             } for x in distro1.search([], criteria, graphical=(graphical == "1"), repo=f"{release}-{arch1}-*-{cl}")}
             rpms1 = pd.DataFrame(rpms_temp[cl])
             if cl == "release":
@@ -1096,7 +1100,7 @@ def create_app():
                 rpms = pd.concat([rpms, rpms1])
         for cl in repo_classes:
             rpms_dev_temp[cl] = {
-                x.get_name():{
+                x.get_name(): {
                     "Summarydev"+cl: x.get_summary(),
                     label_dev[cl]: x.get_version(),
                     }
@@ -1134,7 +1138,6 @@ def create_app():
         except ValidationError as exc:
             return bad_request(str(exc), nav_data)
         data = {}
-        database_path = os.path.join(config.EXTERNAL_PATH, 'packages.db')
         if notfollowed == "0":
             data["title"] = "Check release-monitoring.org for Mageia packages"
             data["title2"] = "Display source packages in Mageia Cauldron when the version differs from the one published by release-monitoring."
@@ -1149,7 +1152,7 @@ def create_app():
         data["nav_css"] = nav_data["css"]
         data["count"] = len(data['packages'])
         return render_template("check_anitya.html", data=data)
-        
+
     @app.route('/check_anitya_csv')
     def download_csv():
         nav_data = navbar(lang=request.accept_languages.best)
@@ -1170,17 +1173,16 @@ def create_app():
                     ]) + "\n"
 
         response = Response(csv_data, mimetype='text/csv')
-        
+
         # Définir l'en-tête pour forcer le téléchargement du fichier
         response.headers['Content-Disposition'] = 'attachment; filename=anitya.csv'
-        
+
         return response
 
     @app.route("/check_anitya_rss")
     def rss_links():
         nav_data = navbar(lang=request.accept_languages.best)
         data = {}
-        database_path = os.path.join(config.EXTERNAL_PATH, 'packages.db')
         data["title"] = "Check release-monitoring.org for Mageia packages"
         data["title2"] = "RSS links for each maintainer"
         data['maintainers'] = anitya_maintainers()
@@ -1257,7 +1259,6 @@ def create_app():
 
     def anitya_maintainers():
         database_path = os.path.join(config.EXTERNAL_PATH, 'packages.db')
-        last_time = os.path.getmtime(database_path)
         engine = create_engine('sqlite:///' + database_path)
         Session = sessionmaker(bind=engine)
         session = Session()
@@ -1271,7 +1272,7 @@ def create_app():
         # suppression des caractères alphabétiques en fin de chaîne
         x = re.sub(r"[A-Za-z]*$", "", x)
 
-        #suppression du préfixe $x dans $y
+        # suppression du préfixe $x dans $y
         # On construit dynamiquement le motif à partir de la valeur actuelle de x.
         if y.startswith(x):
             y = y[len(x):]
@@ -1372,10 +1373,10 @@ def create_app():
     def graph():
         nav_data = navbar(lang=request.accept_languages.best)
         try:
-            release    = validate_release(request.args.get("distribution"))
+            release = validate_release(request.args.get("distribution"))
             arch = validate_arch(request.args.get("architecture"), release)
-            pkg        = validate_rpm_name(request.args.get("rpm", "dnf"), allow_empty=False)
-            level      = validate_level(request.args.get("level", 2), min_level=1, max_level=5)
+            pkg = validate_rpm_name(request.args.get("rpm", "dnf"), allow_empty=False)
+            level = validate_level(request.args.get("level", 2), min_level=1, max_level=5)
             descending = int(validate_boolean_flag(request.args.get("descending"), default="1"))
         except ValidationError as exc:
             return bad_request(str(exc), nav_data)
@@ -1397,13 +1398,13 @@ def create_app():
             "url_end": f"?distribution={release}&architecture={arch}&graphical=0",
         }
         graph = RpmGraph(release, arch, level, descending)
-            
+
         # Get Chart Components 
         graph_run = graph.render_vis(pkg)
         if graph_run is None:
             return render_template( 
-                template_name_or_list='notfound.html', 
-                data = data
+                template_name_or_list='notfound.html',
+                data=data,
                 ) 
         # script, content = components(graph_run)
         graph_run.save_graph("/tmp/graph.html")
@@ -1412,15 +1413,15 @@ def create_app():
         with open("/tmp/graph.html") as f:
             soup = BeautifulSoup(f.read(), 'html.parser')
             head = "\n".join([str(a) for a in soup.head.find_all(["script", "style", "link"])])
-            body_script = head +"\n" + str(soup.body.script)
-            body_script = body_script.replace("lib/","static/lib/")
+            body_script = head + "\n" + str(soup.body.script)
+            body_script = body_script.replace("lib/", "static/lib/")
 
-        # Return the components to the HTML template 
-        return render_template( 
-            template_name_or_list='graph.html', 
+        # Return the components to the HTML template
+        return render_template(
+            template_name_or_list='graph.html',
             content=body_script,
             data=data
-        ) 
+        )
 
 
     @app.template_filter()
@@ -1428,6 +1429,3 @@ def create_app():
         return datetime.fromtimestamp(timestamp).date()
 
     return app
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0")
