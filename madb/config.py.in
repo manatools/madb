@@ -24,7 +24,7 @@ ARCHES = {
     "x86_64": "x86 64bits",
     "i686": "x86 32bits",
     "aarch64": "Arm 64bits",
-    "aarch64": "Arm 32bits v7hl",
+    "armv7hl": "Arm 32bits v7hl",
     "indifferent": "Indifferent",
 }
 # Arches by release
