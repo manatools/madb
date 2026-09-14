@@ -1,3 +1,6 @@
+# release 0.10.5
+-  Improve response time from buglists: remove usage of dnfdatabase, replace getting srpm names by string manipulation.
+
 # release 0.10.4
 -  Improve column width in bug lists by adding word-break: break-word; in main.css
 -  Distinct i586 and i686 for 32bits according to release    
