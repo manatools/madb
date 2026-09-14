@@ -1,7 +1,6 @@
 import re
 import madb.config as config
 from madb.dnf5madbbase import Dnf5MadbBase
-import yaml
 import requests
 import hashlib
 import os
@@ -11,15 +10,15 @@ import string
 from csv import DictReader
 from io import StringIO
 import collections
-from datetime import datetime, timedelta, date
+from datetime import datetime
 import logging
+
 
 def groups():
     """
     Return a list of lists, each member being the parts of the group
     """
     grp = re.compile(r"'(.+)',")
-    fin = re.compile(r"\)")
     list_grp = []
     with open(config.DEF_GROUPS_FILE, "r") as de:
         reading_group = False
@@ -32,24 +31,22 @@ def groups():
                 reading_group = True
     return list_grp
 
-def advisories():
-    pass
-    #with open(, "r") as f:
-
 
 CACHE_DIR = os.path.join(config.EXTERNAL_PATH, "cache")
 LONG_CACHE_DIR = os.path.join(config.EXTERNAL_PATH, "cache/long")
 CACHE_TTL = 60 * 60 * 24  # Cache expiration time: 1 day
-LONG_CACHE_TTL = 60 * 60 * 24 * 100 # Cache expiration time: 100 days
+LONG_CACHE_TTL = 60 * 60 * 24 * 100  # Cache expiration time: 100 days
 CACHE_SIZE = 5
 os.makedirs(CACHE_DIR, exist_ok=True)
 os.makedirs(LONG_CACHE_DIR, exist_ok=True)
+
 
 #  absolute path of cached file for specified URL
 def _get_cache_filepath(url, long=True):
     filename = hashlib.sha256(url.encode("utf-8")).hexdigest()[:10]
     filepath = os.path.join(LONG_CACHE_DIR, filename) if long else os.path.join(CACHE_DIR, filename)
     return filepath
+
 
 # Load cache content or from URL after expiration
 def load_content_or_cache(url, long=True, timeout=10):
@@ -74,6 +71,7 @@ def load_content_or_cache(url, long=True, timeout=10):
         content = f.read()
     return content
 
+
 # Clean the cache
 def clean_cache():
     time.sleep(10)
@@ -82,6 +80,7 @@ def clean_cache():
             if time.time() - os.path.getctime(os.path.join(CACHE_DIR, cached_file)) > CACHE_TTL:
                 os.remove(cached_file)
         time.sleep(3600 * 24)
+
 
 _column = ",".join(
         [
@@ -265,9 +264,9 @@ class BugReport():
                     self.data[rel]["OK_64"] += f" {v}"
                 if a == "32":
                     self.data[rel]["OK_32"] += f" {v}"
-        if  rel not in self.data.keys():
+        if rel not in self.data.keys():
             return {"status": "unspecified", "severity_weight": 0}
-        if type(rel) == "int":
+        if type(rel) is int:
             rel = str(rel)
         self.data[rel]["versions_symbol"] = ""
         # Build field Versions
@@ -391,22 +390,22 @@ class Pagination():
             self._w_start = []
             self._w_end = []
             self._weeks = []
-            now = int(time.time()) # in seconds
-            previous = now - 7 * 24 * 3600 # in seconds
+            now = int(time.time())  # in seconds
+            previous = now - 7 * 24 * 3600  # in seconds
             i = 0
             self._w_start.append(0)
             first = True
             for rpm in data:
                 bt = int(rpm.get_build_time())
                 if first:
-                    previous = bt - 7* 24 * 3600
+                    previous = bt - 7 * 24 * 3600
                     first = False
-                    self._weeks.append((now - bt) // (7* 24 * 3600))
+                    self._weeks.append((now - bt) // (7 * 24 * 3600))
                 elif bt < previous:
-                    previous = bt - 7* 24 * 3600
+                    previous = bt - 7 * 24 * 3600
                     self._w_end.append(i - 1)
                     self._w_start.append(i)
-                    self._weeks.append((now - bt) // (7* 24 * 3600))
+                    self._weeks.append((now - bt) // (7 * 24 * 3600))
                 i += 1
 
             if i == 0:
@@ -416,7 +415,6 @@ class Pagination():
                 self._weeks.append(1)
             else:
                 self._w_end.append(i - 1)
-                older = min([rpm.get_build_time() for rpm in data])
                 self.pages_max = len(self._w_start)
         elif byfirstchar:
             self._char_list = ["0"] + list(string.ascii_uppercase)
@@ -424,13 +422,13 @@ class Pagination():
     def data_page(self, page):
         if page >= 1 and page <= self.pages_max:
             return self.data[self._start(page):self._end(page) + 1]
-    
+
     def links(self, base, page):
-        pages_list =chain(range(1, 2) , \
-            range(10, page + 1, 10), \
-            range(max(2, page // 10 * 10 + 1), min((page //10) * 10 + 10, self.pages_max )), \
-            range((page + 10) // 10 * 10 , self.pages_max, 10), \
-            range(self.pages_max, self.pages_max + 1))
+        pages_list = chain(range(1, 2),
+                           range(10, page + 1, 10),
+                           range(max(2, page // 10 * 10 + 1), min((page // 10) * 10 + 10, self.pages_max )),
+                           range((page + 10) // 10 * 10, self.pages_max, 10),
+                           range(self.pages_max, self.pages_max + 1))
         full_links = """
     <div id="pagerbuttons">
         <ul>
@@ -464,7 +462,7 @@ class Pagination():
 
     def counts(self, page):
         """
-        Indexes are given starting from 1 
+        Indexes are given starting from 1
         """
         if self.byfirstchar:
             return ""
@@ -479,4 +477,3 @@ class Pagination():
         if self.byweek:
             return self._w_end[page - 1]
         return page * self.page_size if page < self.pages_max else self.lentgh
-
