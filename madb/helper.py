@@ -202,7 +202,7 @@ class BugReport():
             "major": 3,
             "critical": 4,
         }
-    distro = {}
+
     def __init__(self):
         """
         data: Dict
@@ -230,7 +230,6 @@ class BugReport():
                 self.data[rel] = entry
 
     def _releases(self, entry):
-        result = {}
         versions_list = (entry["version"].lower(),)
         if "status_whiteboard" in entry.keys():
             # wb = re.findall(r"\bMGA(\d+)TOO", entry["status_whiteboard"])
@@ -356,23 +355,18 @@ class BugReport():
     def _srpms(self, field, release):
         """
         Return a set with the names of source packages in said release
+        Clean each entry to provide only the name
         """
-        results = []
-        self._madbBase(release)
-        distro = self.distro[release]
-        # extract list from bug report field, removing extra src.rpm
-        srpms = [srpm.strip().removesuffix(".rpm").removesuffix(".src") + "*" for srpm in re.split(';|,| ', field) if srpm.strip() != ""]
-        # remove bad entries
-        srpms = [x for x in srpms if x != "*"]
-        # get only the source package names
-        srpms_names = [x.get_name() for x in distro.search_nevra(srpms, repo=f"{release}-SRPMS-*")]
-        results += srpms_names
-        return list(set(results))
-    
-    def _madbBase(self, release):
-        # init Dnf5MadbBase only one time
-        if not release in self.distro.keys():
-            self.distro[release] = Dnf5MadbBase(release, "x86_64", config.DATA_PATH)
+        srpms = []
+        for srpm in re.split(';|,| ', field):
+            srpm = srpm.strip().removesuffix(".rpm").removesuffix(".src").removesuffix(".tainted").removesuffix(".nonfree").strip()
+            if srpm != "":
+                name_evr, _, rel_suffix = srpm.rpartition('.')
+                name_v, _, release = name_evr.rpartition('-')
+                name, _, version = name_v.rpartition('-')
+                srpms.append(name)
+        return list(set(srpms))
+
 
 class Pagination():
     def __init__(self, data, page_size=0, pages_number=0, byweek=False, byfirstchar=False):
