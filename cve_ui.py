@@ -47,7 +47,6 @@ from PyQt6.QtWidgets import (
     QDialogButtonBox
 )
 
-import sys
 import cve_check as cc
 import madb.config as config
 
@@ -169,11 +168,11 @@ class LoadingWheel(QWidget):
         painter.end()
 
 
-# --- Fenêtre de démonstration ---
-class FalseMainWindow(QWidget):
+# --- Fenêtre de mise à jour ---
+class UpdateWindow(QDialog):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Demo Roue Animée PyQt6")
+        self.setWindowTitle("Mise à jour des données CVEs et des paquets")
         self.resize(300, 200)
 
         layout = QVBoxLayout(self)
@@ -184,13 +183,14 @@ class FalseMainWindow(QWidget):
 
         # Boutons de contrôle
         self.btn_start = QPushButton("Démarrer", self)
-        self.btn_start.clicked.connect(self.spinner.start)
+        self.btn_start.clicked.connect(self.start)
         layout.addWidget(self.btn_start)
 
-        self.btn_stop = QPushButton("Arrêter", self)
+        self.btn_stop = QPushButton("Fermer", self)
         self.btn_stop.clicked.connect(self.spinner.stop)
         layout.addWidget(self.btn_stop)
 
+    def start(self):
         # Démarre l'animation d'entrée
         self.spinner.start()
 
@@ -241,10 +241,15 @@ class TicketSubmission(QDialog):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, entries, bugzilla_url, repo_path):
+    def __init__(self, bugzilla_url, repo_path):
         super().__init__()
-        self.entries_by_id = {entry['id']: entry for entry in entries}
-        self.ordered_entries = entries
+
+        # fetch_bugzilla=False : chargement initial rapide, les tickets sont
+        # recherchés à la demande (voir BugzillaWorker) plutôt que pour
+        # toutes les entrées au démarrage.
+        self.ordered_entries = cc.build_report_entries(repo_path, fetch_bugzilla=False)
+
+        self.entries_by_id = {entry['id']: entry for entry in self.ordered_entries}
         self.bugzilla_url = bugzilla_url
         self.repo_path = repo_path
         self.current_entry_id = None
@@ -363,15 +368,21 @@ class MainWindow(QMainWindow):
         self.update_worker.finished.connect(self.update_thread.quit)
         self.update_worker.failed.connect(self.update_thread.quit)
         self.update_thread.start()
+        # self.dialogue = UpdateWindow()
+        # self.dialogue.exec()
 
     def _on_update_failed(self):
+        # self.dialogue.spinner.stop()
+        # self.dialogue.close()
         pass
 
     def _on_update_finished(self):
-        pass
+        # self.dialogue.spinner.stop()
+        # self.dialogue.close()
+        self.tree.clear()
+        self._populate_tree()
 
     # -- sélection ------------------------------------------------------
-
     def _on_selection_changed(self):
         items = self.tree.selectedItems()
         if not items:
@@ -412,6 +423,8 @@ class MainWindow(QMainWindow):
                                     error=message,
                                     loading=bool(self.bugzilla_url)
                                     )
+                if self.bugzilla_url:
+                    self._fetch_bugzilla(entries[0])
 
     # -- rendu ------------------------------------------------------------
 
@@ -489,13 +502,13 @@ class MainWindow(QMainWindow):
             pass
         elif not tickets:
             parts.append('<p><i>Aucun ticket trouvé.</i></p>')
-            parts.append(f'<p><a href="create/{entry["id"]}/{entry["package"]["name"]}">Créer un nouveau ticket pour le CVE {entry["cve_id"]}</a></p>')
         else:
             items = ''.join(
                 f'<li><a href="{esc(t["url"])}">#{t["id"]}</a> {esc(t["title"])} <a href="put/{t["id"]}/{entry["cve_id"]}/{entry["id"]}">Ajouter le CVE au ticket</a></li>'
                 for t in tickets
             )
             parts.append(f'<ul>{items}</ul>')
+        parts.append(f'<p><a href="create/{entry["id"]}/{entry["package"]["name"]}">Créer un nouveau ticket pour le CVE {entry["cve_id"]}</a></p>')
 
         self.package_view.setHtml(''.join(parts))
 
@@ -647,13 +660,8 @@ def main():
     )
     bugzilla_url = getattr(config, 'BUGZILLA_URL', None)
 
-    # fetch_bugzilla=False : chargement initial rapide, les tickets sont
-    # recherchés à la demande (voir BugzillaWorker) plutôt que pour
-    # toutes les entrées au démarrage.
-    entries = cc.build_report_entries(repo_path, fetch_bugzilla=False)
-
     app = QApplication([sys.argv[0]] + qt_args)
-    window = MainWindow(entries, bugzilla_url, repo_path)
+    window = MainWindow(bugzilla_url, repo_path)
     window.show()
     sys.exit(app.exec())
 
