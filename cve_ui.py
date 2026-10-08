@@ -61,16 +61,25 @@ def esc(value):
 class UpdateWorker(QObject):
     """Exécuté dans un QThread séparé : une mise à jour peut
     prendre plusieurs minutes, elle ne doit jamais geler l'UI."""
-    finished = pyqtSignal(str, list)
-    failed = pyqtSignal(str, str)
+    finished = pyqtSignal(str)
+    failed = pyqtSignal(str)
 
     def __init__(self, repo_path):
         super().__init__()
         self.repo_path = repo_path
 
     def run(self):
-        cc.update_packages_db(force=True)
-        cc.check_cves(repo_path=self.repo_path)
+        try:
+            cc.update_packages_db(force=True)
+            checked_count, alerts, candidate_count = cc.check_cves(repo_path=self.repo_path)
+            message = f"{checked_count} nouvelle(s) alerte(s) CVE examinée(s). "
+            if alerts:
+                message += "{len(alerts)} paquet(s) potentiellement affecté(s)"
+            else:
+                message += "Aucun nouveau paquet de la base ne semble affecté."
+            self.finished.emit(message)
+        except Exception as exc:  # défensif : ne doit jamais faire planter le thread
+            self.failed.emit(str(exc))
 
 
 class BugzillaWorker(QObject):
@@ -113,6 +122,8 @@ class LoadingWheel(QWidget):
         self.timer.timeout.connect(self.rotate)
         # Fixe une taille minimale par défaut
         self.setMinimumSize(40, 40)
+        #  non visible initialement
+        self.hide()
 
     def start(self):
         """Démarre l'animation"""
@@ -193,6 +204,11 @@ class UpdateWindow(QDialog):
     def start(self):
         # Démarre l'animation d'entrée
         self.spinner.start()
+
+    def showEvent(self, event):
+        self.setGeometry(self.parentWidget().rect())
+        self.raise_()
+        super().showEvent(event)
 
 
 class TicketSubmission(QDialog):
@@ -367,20 +383,19 @@ class MainWindow(QMainWindow):
         self.update_worker.failed.connect(self._on_update_failed)
         self.update_worker.finished.connect(self.update_thread.quit)
         self.update_worker.failed.connect(self.update_thread.quit)
+        self.statusBar().showMessage("Mis à jour de la base de données en cours...")
         self.update_thread.start()
-        # self.dialogue = UpdateWindow()
-        # self.dialogue.exec()
 
-    def _on_update_failed(self):
-        # self.dialogue.spinner.stop()
-        # self.dialogue.close()
-        pass
+    def _on_update_failed(self, trace):
+        print(trace)
+        self.statusBar().clearMessage()
+        self.statusBar().showMessage(trace, msecs=10000)
 
-    def _on_update_finished(self):
-        # self.dialogue.spinner.stop()
-        # self.dialogue.close()
+    def _on_update_finished(self, message):
         self.tree.clear()
         self._populate_tree()
+        self.statusBar().clearMessage()
+        self.statusBar().showMessage(message, msecs=10000)
 
     # -- sélection ------------------------------------------------------
     def _on_selection_changed(self):
@@ -415,7 +430,7 @@ class MainWindow(QMainWindow):
                     message = f"Ticket {message} créé"
             else:
                 bug_id, cve, entry_id = items[1:]
-                message = self._insert_cve(cve, bug_id)
+                message = self._insert_cve(cve, bug_id, entry_id)
             entries = [entry for entry in self.ordered_entries if entry["id"]==entry_id]
             if entries:
                 self._render_package(entries,
@@ -568,7 +583,7 @@ class MainWindow(QMainWindow):
         sep = ", " if "," in field else " "
         return f"{field}{sep}{cve}"
 
-    def _insert_cve(self, cve, bug_id) -> int:
+    def _insert_cve(self, cve, bug_id, entry_id) -> int:
         BASE = self.bugzilla_url + "/rest"
         if not self.CVE_RE.fullmatch(cve):
             return f"Format de CVE invalide : {cve}"
@@ -607,6 +622,9 @@ class MainWindow(QMainWindow):
 
         # 3. Soumission (last_change_time évite d'écraser une modif concurrente)
         payload["last_change_time"] = bug["last_change_time"]
+        #  Ajout d'un commentaire
+        current_cve = self.entries_by_id[entry_id]
+        payload["comment"] = {"body": f"New alert {cve}\n{self._comment_for_new_cve(current_cve)}"}
         payload["api_key"] = api_key
         r = s.put(f"{BASE}/bug/{bug_id}", json=payload, timeout=30)
         if not r.ok:
@@ -624,13 +642,9 @@ class MainWindow(QMainWindow):
         if not api_key:
             return "Variable BUGZILLA_API_KEY non définie."
 
-        # get URLs
-        urls = ["", "References:"] +  \
-               cc.get_cve_reference_urls(cc.load_cve_by_id(self.repo_path, cve))
-
         dialogue = TicketSubmission(
             summary=f"{pkg_name}, security alert {cve}",
-            description="<BR />\n".join([current_cve.get('cve').get('description')] + urls),
+            description=self._comment_for_new_cve(current_cve),
             cve=cve,
             )
         if dialogue.exec() == QDialog.DialogCode.Accepted:
@@ -649,6 +663,11 @@ class MainWindow(QMainWindow):
         if r.json():
             return r.json().get("id")
 
+    def _comment_for_new_cve(self, current_cve: str):
+        # get URLs
+        urls = ["", "References:"] +  \
+               cc.get_cve_reference_urls(cc.load_cve_by_id(self.repo_path, current_cve["cve_id"]))
+        return "<BR />\n".join([current_cve.get('cve').get('description')] + urls)
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
