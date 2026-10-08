@@ -367,6 +367,22 @@ def load_exceptions(path):
     return exceptions
 
 
+def load_strangers(path):
+    """Charge la table des étrangers vendor, product depuis un
+    fichier CSV à deux colonnes (vendor, product)."""
+    strangers = []
+    if path and os.path.exists(path):
+        with open(path, newline='', encoding='utf-8') as f:
+            for row in csv.reader(f):
+                if not row or row[0].strip().startswith('#'):
+                    continue
+                if len(row) < 2:
+                    continue
+                vendor, product = row[0].strip(), row[1].strip()
+                strangers.append( (vendor, product,) )
+    return strangers
+
+
 def iter_cve_files(repo_path):
     """Parcourt l'arborescence cves/ du dépôt et retourne le chemin de
     chaque fichier JSON de CVE."""
@@ -434,6 +450,13 @@ def get_affected_product(affected_record):
     contenir plusieurs entrées 'affected', chacune concernant un produit
     (donc potentiellement un paquet) différent."""
     return affected_record.get('product')
+
+
+def get_affected_vendor(affected_record):
+    """Le nom de produit d'une entrée 'affected' donnée. Un même CVE peut
+    contenir plusieurs entrées 'affected', chacune concernant un produit
+    (donc potentiellement un paquet) différent."""
+    return affected_record.get('vendor')
 
 
 def get_affected_repo_url(affected_record):
@@ -1020,22 +1043,34 @@ def check_package_affected(our_version, affected_record):
     return verdict
 
 
-def examine_cve(session, cve_id, cve_json, exceptions, index):
+def examine_cve(session, cve_id, cve_json, exceptions, strangers, index):
     """Examine un CVE déjà chargé : pour chaque entrée 'affected', tente
     le rapprochement avec un paquet (résolution confiante ou candidats),
     journalise dans CveMatchLog, et enregistre les candidats dans
     CveCandidate. Ne touche pas à ProcessedCve (à la charge de
-    l'appelant). Retourne (alertes, nb_candidats_ajoutés)."""
+    l'appelant).
+    Elimination directe des strangers, identifiés par un vendor et le
+    cas échéant un produit.
+    Retourne (alertes, nb_candidats_ajoutés)."""
     alerts = []
     candidate_count = 0
     cve_reference_urls = get_cve_reference_urls(cve_json)
     cve_product_reference_urls = get_cve_product_reference_urls(cve_json)
-
+    print(f'Affectés par {cve_id} : {len(get_affected_entries(cve_json))}')
     for affected_record in get_affected_entries(cve_json):
         product = get_affected_product(affected_record)
+        vendor = get_affected_vendor(affected_record)
         if not product:
             continue
 
+        stranger_test = False
+        for stranger_vendor, stranger_product in strangers:
+            if stranger_vendor == vendor:
+                if stranger_product in product:
+                    stranger_test = True
+                    break
+        if stranger_test:
+            continue
         repo_url = get_affected_repo_url(affected_record)
         url_candidates = ([repo_url] if repo_url else []) + cve_reference_urls
         authoritative_urls = ([repo_url] if repo_url else []) + cve_product_reference_urls
@@ -1102,12 +1137,13 @@ def examine_cve(session, cve_id, cve_json, exceptions, index):
     return alerts, candidate_count
 
 
-def process_new_cves(repo_path, exceptions_path, initial_days):
+def process_new_cves(repo_path, exceptions_path, strangers_path, initial_days):
     """Parcourt les CVE non encore traités, cherche une correspondance avec
     un paquet de la base, et vérifie si la version installée (our_version)
     est concernée. Retourne (nombre_de_cve_examines, liste_des_alertes,
     nombre_de_candidats_a_revoir)."""
     exceptions = load_exceptions(exceptions_path)
+    strangers = load_strangers(strangers_path)
     alerts = []
     checked_count = 0
     candidate_count = 0
@@ -1163,7 +1199,7 @@ def process_new_cves(repo_path, exceptions_path, initial_days):
                     continue
 
             checked_count += 1
-            cve_alerts, cve_candidate_count = examine_cve(session, cve_id, cve_json, exceptions, index)
+            cve_alerts, cve_candidate_count = examine_cve(session, cve_id, cve_json, exceptions, strangers, index)
             alerts.extend(cve_alerts)
             candidate_count += cve_candidate_count
 
@@ -1179,7 +1215,7 @@ def process_new_cves(repo_path, exceptions_path, initial_days):
     return checked_count, alerts, candidate_count
 
 
-def rematch_all(repo_path, exceptions_path):
+def rematch_all(repo_path, exceptions_path, stranger_path):
     """Revide cve_match_log et cve_candidates, puis rejoue le
     rapprochement product/paquet sur tous les CVE déjà EXAMINÉS
     (c'est-à-dire ceux qui ont laissé une trace dans cve_match_log avant
@@ -1193,6 +1229,7 @@ def rematch_all(repo_path, exceptions_path):
     début. Retourne (nombre_de_cve_rejoues, liste_des_alertes,
     nombre_de_candidats)."""
     exceptions = load_exceptions(exceptions_path)
+    strangers = load_strangers(stranger_path)
 
     with Session() as session:
         examined_ids = set(session.execute(select(CveMatchLog.cve_id)).scalars().all())
@@ -1228,7 +1265,7 @@ def rematch_all(repo_path, exceptions_path):
             cve_id = get_cve_id(cve_json) or filename_cve_id
             rematched_count += 1
 
-            cve_alerts, cve_candidate_count = examine_cve(session, cve_id, cve_json, exceptions, index)
+            cve_alerts, cve_candidate_count = examine_cve(session, cve_id, cve_json, exceptions, strangers, index)
             alerts.extend(cve_alerts)
             candidate_count += cve_candidate_count
 
@@ -1265,8 +1302,8 @@ def summarize_match_log(near_miss_count=15):
         by_resolution.setdefault(row.resolution, []).append(row)
 
     print(f"{len(rows)} tentative(s) de rapprochement enregistrée(s) :")
-    for resolution in ('exception', 'exact', 'fuzzy_candidates', 'no_match'):
-        print(f" - {resolution}: {len(by_resolution.get(resolution, []))}")
+    # for resolution in ('exception', 'exact', 'fuzzy_candidates', 'no_match'):
+    #     print(f" - {resolution}: {len(by_resolution.get(resolution, []))}")
 
     no_match = by_resolution.get('no_match', [])
     if no_match:
@@ -2175,7 +2212,7 @@ def confirm_candidate(cve_id, package_name, exceptions_path):
     print(f"Exception ajoutée : '{product}' -> {package_name} (dans {exceptions_path}).")
 
 
-def check_cves(repo_path=None, repo_url=None, exceptions_path=None, initial_days=None):
+def check_cves(repo_path=None, repo_url=None, exceptions_path=None, stranger_path=None, initial_days=None):
     repo_path = repo_path or getattr(
         config, 'CVE_REPO_PATH', os.path.join(config.EXTERNAL_PATH, 'cvelistV5')
     )
@@ -2185,12 +2222,15 @@ def check_cves(repo_path=None, repo_url=None, exceptions_path=None, initial_days
     exceptions_path = exceptions_path or getattr(
         config, 'CVE_EXCEPTIONS_PATH', os.path.join(config.EXTERNAL_PATH, 'exceptions.csv')
     )
+    strangers_path = exceptions_path or getattr(
+        config, 'CVE_STARNGERS_PATH', os.path.join(config.EXTERNAL_PATH, 'strangers.csv')
+    )
     initial_days = initial_days if initial_days is not None else getattr(
         config, 'CVE_INITIAL_DAYS', 30
     )
 
     sync_repo(repo_path, repo_url)
-    checked_count, alerts, candidate_count = process_new_cves(repo_path, exceptions_path, initial_days)
+    checked_count, alerts, candidate_count = process_new_cves(repo_path, exceptions_path, strangers_path, initial_days)
 
     print(f"{checked_count} nouvelle(s) alerte(s) CVE examinée(s).")
     if alerts:
@@ -2276,7 +2316,10 @@ if __name__ == '__main__':
         exceptions_path = args.exceptions or getattr(
             config, 'CVE_EXCEPTIONS_PATH', os.path.join(config.EXTERNAL_PATH, 'exceptions.csv')
         )
-        rematched_count, alerts, candidate_count = rematch_all(repo_path, exceptions_path)
+        strangers_path = args.exceptions or getattr(
+            config, 'CVE_STRANGERS_PATH', os.path.join(config.EXTERNAL_PATH, 'strangers.csv')
+        )
+        rematched_count, alerts, candidate_count = rematch_all(repo_path, exceptions_path, strangers_path)
         print(f"{rematched_count} CVE rejoué(s).")
         if alerts:
             print(f"{len(alerts)} paquet(s) potentiellement affecté(s) :")
