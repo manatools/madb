@@ -261,9 +261,9 @@ def get_distro_targets():
     module) pour ne pas payer ce coût sur les commandes qui n'en ont pas
     besoin (--list-candidates, --export-html...)."""
     return [
-        (Dnf5MadbBase(config.DEV_NAME, "x86_64", config.DATA_PATH), config.TOP_RELEASE + 1, refresh=True),
-        (Dnf5MadbBase(str(config.TOP_RELEASE), "x86_64", config.DATA_PATH), config.TOP_RELEASE, refresh=True),
-        (Dnf5MadbBase(str(config.TOP_RELEASE - 1), "x86_64", config.DATA_PATH), config.TOP_RELEASE - 1, refresh=True),
+        (Dnf5MadbBase(config.DEV_NAME, "x86_64", config.DATA_PATH, refresh=True), config.TOP_RELEASE + 1),
+        (Dnf5MadbBase(str(config.TOP_RELEASE), "x86_64", config.DATA_PATH, refresh=True), config.TOP_RELEASE),
+        (Dnf5MadbBase(str(config.TOP_RELEASE - 1), "x86_64", config.DATA_PATH, refresh=True), config.TOP_RELEASE - 1),
     ]
 
 
