@@ -231,6 +231,9 @@ class TicketSubmission(QDialog):
         layout.addWidget(QLabel("CVE"), 3, 0)
         self.cve_field = QLineEdit(cve)
         layout.addWidget(self.cve_field, 3, 1)
+        layout.addWidget(QLabel("Status comment"), 4, 0)
+        self.status_field = QLineEdit()
+        layout.addWidget(self.status_field, 4, 1)
         layout1.addLayout(layout)
 
         boutons = QDialogButtonBox(
@@ -252,6 +255,7 @@ class TicketSubmission(QDialog):
             "summary": self.summary_field.text(),
             "description": self.description_field.toPlainText(),
             "cf_cve": self.cve_field.text(),
+            "cf_statuscomment": self.status_field.text(),
             }
         return payload
 
@@ -300,7 +304,7 @@ class MainWindow(QMainWindow):
         self.cve_view = QTextBrowser()
         self.cve_view.setOpenExternalLinks(True)
         self.package_view = QTextBrowser()
-        self.package_view.setOpenExternalLinks(False)
+        self.package_view.setOpenLinks(False)
         self.package_view.anchorClicked.connect(self._manage_click)
 
         right_splitter = QSplitter(Qt.Orientation.Vertical)
@@ -423,11 +427,14 @@ class MainWindow(QMainWindow):
             QDesktopServices.openUrl(link)
         else:
             items = link.toString().split('/')
+            print(items)
             if items[0] == "create":
                 entry_id, pkg = items[1:]
                 message = self._create_ticket(entry_id, pkg)
                 if type(message) is int:
-                    message = f"Ticket {message} créé"
+                    self.statusBar().showMessage(f"Ticket {message} créé", msecs=5000)
+                else:
+                    self.statusBar().showMessage(f"Problème : {message}", msecs=10000)
             else:
                 bug_id, cve, entry_id = items[1:]
                 message = self._insert_cve(cve, bug_id, entry_id)
@@ -640,7 +647,7 @@ class MainWindow(QMainWindow):
 
         api_key = os.environ.get("BUGZILLA_API_KEY")
         if not api_key:
-            return "Variable BUGZILLA_API_KEY non définie."
+            return "Variable d'environnement BUGZILLA_API_KEY non définie."
 
         dialogue = TicketSubmission(
             summary=f"{pkg_name}, security alert {cve}",
