@@ -7,14 +7,13 @@ checking Mageia packages versions.
 import requests
 import sys
 import json
-import time
 import os
 import logging
 from madb.dnf5madbbase import Dnf5MadbBase
 import madb.config as config
 
-from sqlalchemy import Column, Integer, String, DateTime, create_engine, update, select, delete, text
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String, DateTime, create_engine, update, select, delete
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
@@ -172,7 +171,7 @@ UPDATE_URL = (
     "release-monitoring.prod.anitya.project.version.update&"
     "delta=604800&rows_per_page=75"
 )
-
+anitya_url = 'https://release-monitoring.org'
 def get_maintdb():
     maintdb_url = 'http://pkgsubmit.mageia.org/data/maintdb.txt'
     response = requests.get(maintdb_url)
@@ -191,9 +190,9 @@ def get_srpms(reload = True):
     return pkgs_list
 
 def anitya_response(package):
+    global anitya_url
     anitya_id = 'none'
     anitya_version = 'none'
-    anitya_url = 'https://release-monitoring.org'
     name = package.name
     updated_on = ""
 
@@ -224,21 +223,25 @@ def check_messages():
 
     for message in updates["raw_messages"]:
         session = Session()
-        name_to_find = message["msg"]["project"]["name"]
-        stmt = select(Package).where(Package.name == name_to_find)
+        id_to_find = message["msg"]["project"]["id"]
+        stmt = select(Package).where(Package.pkg_id == id_to_find)
         result = session.execute(stmt).scalar_one_or_none()
         if result and message["msg_id"] != result.msg_id:
-            logging.debug(f"Updating {name_to_find}")
+            if len(message["msg"]["project"]['stable_versions']) == 0:
+                # no new version
+                continue
+            logging.debug(f"Updating {message["msg"]["project"]['name']} ({id_to_find})")
             update_package(
                 session,
                 result.id,
                 "",
                 message["msg"]["project"]['stable_versions'][0],
-                datetime.fromtimestamp( message["msg"]["project"]["updated_on"]),
+                datetime.fromtimestamp(message["msg"]["project"]["updated_on"]),
                 message["msg_id"],
-                message["msg"]["project"]["id"],
+                id_to_find,
                 ""
                 )
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -258,7 +261,7 @@ if __name__ == '__main__':
 
     logger = logging.getLogger(__name__)
     log_level = getattr(logging, args.loglevel.upper())
-    logging.basicConfig(filename=os.path.join(config.LOG_PATH,'anitya.log'),
+    logging.basicConfig(filename=os.path.join(config.LOG_PATH, 'anitya.log'),
                     encoding='utf-8',
                     level=log_level,
                     format='%(asctime)s %(levelname)-8s %(message)s',
