@@ -51,6 +51,17 @@ Chaque paquet est recherché dans trois versions de la distribution, identifiée
 
 Un même paquet peut donc apparaître jusqu'à trois fois dans la base, avec une version installée différente selon la distribution — et être affecté par un CVE dans l'une et pas dans l'autre.
 
+### Clé d'accès au Bugzilla
+
+L'interface graphique permet de soumettre des requêtes au Bugzilla. Pour cela, il est nécessaire de créer une clé d'API dans le compte de l'utilisateur sur le Bugzilla, puis d'exporter celle-ci en variable d'environnement.
+
+User preferences - Onglet "API Keys" - "Generate a new API key with optional description"
+
+La commande est alors :
+```
+export BUGZILLA_API_KEY=<clé utilisateur>
+```
+
 ---
 
 ## cve\_check.py — outil en ligne de commande
