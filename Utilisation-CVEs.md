@@ -6,8 +6,8 @@ Outils de veille de sécurité pour les paquets Mageia : rapprochement automatiq
 
 Les deux outils partagent la même base de données SQLite (`packages.db`, dans `config.EXTERNAL_PATH`) et le même clone local du dépôt CVE (`cvelistV5`).
 
-- **`cve_check.py`** : outil en ligne de commande. C'est lui qui fait tout le travail de fond — synchronise le dépôt CVE, met à jour la liste des paquets, calcule les rapprochements CVE ↔ paquet, détecte les versions affectées. Conçu pour tourner périodiquement (cron, tâche planifiée).
-- **`cve_ui.py`** : interface graphique PyQt6. Ne fait aucun calcul lui-même — il se contente de lire l'état déjà calculé par `cve_check.py` et de le présenter pour la revue humaine, avec un lien direct vers les tickets Bugzilla associés.
+- **`cve_check.py`** : outil en ligne de commande. C'est lui qui fait tout le travail de fond — synchronise le dépôt CVE, met à jour la liste des paquets, calcule les rapprochements CVE ↔ paquet, détecte les versions affectées. Conçu pour tourner périodiquement (cron, tâche planifiée) ou à la demande.
+- **`cve_ui.py`** : interface graphique PyQt6. Ne fait aucun calcul lui-même — il se contente de lire l'état déjà calculé par `cve_check.py` et de le présenter pour la revue humaine, avec un lien direct vers les tickets Bugzilla associés, pour les mettre à jour ou pour en créer.
 
 En pratique : on lance `cve_check.py` régulièrement pour tenir la base à jour, et on ouvre `cve_ui.py` quand on veut consulter ou trier les résultats.
 
@@ -16,18 +16,20 @@ En pratique : on lance `cve_check.py` régulièrement pour tenir la base à jour
 ### Dépendances Python
 
 ```
-pip install semver rapidfuzz sqlalchemy --break-system-packages
-pip install PyQt6 --break-system-packages   # pour cve_ui.py uniquement
+urpm install python3-semver python3-rapidfuzz python3-sqlalchemy
+urpm install python3-qt6-gui python3-qt6-core python3-qt6-widgets   # pour cve_ui.py uniquement
 ```
 
 ### Fichier de configuration (`madb/config.py`)
+
+Le modèle de fichier existe dans `madb/config.py.in`.
 
 Variables **obligatoires**, utilisées directement sans valeur par défaut :
 
 | Variable | Rôle |
 | --- | --- |
 | `DATA_PATH` | chemin des données dnf5/madb (passé à `Dnf5MadbBase`) |
-| `EXTERNAL_PATH` | répertoire de travail : y sont stockés `packages.db`, le clone `cvelistV5/` et `exceptions.csv` par défaut |
+| `EXTERNAL_PATH` | répertoire de travail : y sont stockés `packages.db`, le clone `cvelistV5/`, `exceptions.csv` et `strangers.csv` par défaut |
 | `DEV_NAME` | nom du dépôt de la version de développement (ex. `"cauldron"`) |
 | `TOP_RELEASE` | numéro entier de la dernière version stable (ex. `10`) |
 
@@ -40,6 +42,10 @@ Variables **optionnelles** (valeur par défaut si absentes) :
 | `CVE_EXCEPTIONS_PATH` | `EXTERNAL_PATH/exceptions.csv` |
 | `CVE_INITIAL_DAYS` | `30` |
 | `BUGZILLA_URL` | tickets Bugzilla désactivés si absente |
+
+### Des exclusions d'office
+
+Le fichier  `strangers.csv` contient une liste d'entrées permettant de spécifer des couples (Editeur / produit) qui ne concerne pas une distribution Linux. L'éditeur est vérifié pour une corerspondance exacte, tandis que le produit a une correspondance si l'expression de `strangers.csv` est contenue dans le nom du produit référencé par le fichier CVE. Le fichier de départ est fourni, il faut l'installer dans `EXTERNAL_PATH`.
 
 ### Les trois versions suivies
 
@@ -105,7 +111,7 @@ Affiche les candidats en attente, triés par score de confiance décroissant.
 python cve_check.py --confirm CVE-2026-12345 nom_du_paquet
 ```
 
-Valide un candidat : ajoute la correspondance à `exceptions.csv` et retire les candidats devenus inutiles pour ce `product`.
+Valide un candidat : ajoute la correspondance à `exceptions.csv` et retire les candidats devenus inutiles pour ce `product`. Le fichier de départ est fourni, il faut l'installer dans `EXTERNAL_PATH`.
 
 ### Diagnostiquer un rapprochement qui semble manquant
 
@@ -148,18 +154,6 @@ Produit une page HTML consultable hors ligne (liste des alertes confirmées puis
 | `--export-html [CHEMIN]` | Génère le rapport HTML |
 | `--fetch-bugzilla` | Avec `--export-html` : inclut les tickets Bugzilla (lent) |
 
-### Workflow périodique conseillé
-
-```
-# une fois par jour, par exemple via cron
-python cve_check.py --update-packages
-
-# de temps en temps, après avoir traité des candidats
-python cve_check.py --list-candidates
-python cve_check.py --confirm CVE-xxxx-yyyy nom_du_paquet
-python cve_check.py --rematch
-```
-
 ---
 
 ## cve\_ui.py — interface graphique
@@ -178,15 +172,51 @@ L'interface lit l'état actuel de la base **telle que laissée par le dernier pa
 - **Colonne de gauche** : une liste à deux groupes, « Alertes confirmées » puis « Candidats à revoir » (avec leur score). Une seule ligne par CVE et par produit concerné — un même CVE affectant plusieurs distributions n'apparaît qu'une fois ici.
 - **Panneau supérieur droit** : détail du CVE sélectionné — titre, éditeur, produit, description, plages de versions affectées, lien vers la source.
 - **Panneau inférieur droit** : le ou les paquets correspondants, avec **une ligne par distribution** où le paquet existe (numéro de version, version installée) puisque le statut peut différer d'une distribution à l'autre. Les tickets Bugzilla liés (champ *Source RPM* ou *CVE*, ou mention dans le titre) s'affichent en dessous.
+- **Barre d'état** : une barre de statut est affichée tout en bas. Elle est prévue pour recevoir des messages sur le déroulement des interactions.
 
 ### Tickets Bugzilla à la demande
 
 Contrairement à `--export-html --fetch-bugzilla`, l'interface ne recherche les tickets Bugzilla qu'**au moment où vous sélectionnez une entrée**, dans un thread séparé qui ne bloque pas l'affichage (« Recherche en cours… » le temps de la requête). Si `BUGZILLA_URL` n'est pas défini dans `config.py`, cette partie est simplement désactivée (message dans la barre d'état).
 
+### Interaction avec le Bugzilla
+
+Le panneau du paquet contient un des liens permettant d'interagir avec le service de gestion de tickets de Mageia.
+
+#### Configuration
+
+Il est nécessaire, pour modifier les tickets du Bugzilla, d'y [créer une clé d'API](https://bugs.mageia.org/userprefs.cgi?tab=apikey). Une fois cette clé créée, il faut l'exporter comme variable d'environnement :
+    
+```
+    export BUGZILLA_API_KEY="ma-cle-d-API"
+```
+
+dans la console qui lance cve_ui.py. Il peut être intéressant de créer une entrée de menu qui inclut la déclaration de cette variable d'environnement.
+
+#### Lien de mise à jour
+
+Le panneau des paquets contient le cas échéant un lien vers les tickets qui ont été identifiés par l'interrogation du Bugzilla. Il est proposé également un lien qui ajoute l'alerte au ticket. Le titre et le champ CVE sont modifié, et un commentaire contenant la description du CVE ainsi que les références est ajouté.
+
+#### Lien de création d'un ticket
+
+Le panneau des paquets contient un lien de création d'un nouveau ticket dans le Bugzilla. Ce lien permet d'ouvrir une fenêtre contenant des champs à renseigner pour la création du ticket. Les champs sont alimentés par les informations lues du CVE. Le ticket est créé d'office pour un composant "Security".
+
+---
+
+## Workflow périodique conseillé
+
+```
+# A chaque utilisation, commencer par mettre à jour la base de données par l'interface graphique. Cela peut prendre quelques minutes.
+
+# de temps en temps, après avoir traité des candidats avec
+python cve_check.py --confirm CVE-xxxx-yyyy nom_du_paquet
+
+python cve_check.py --rematch
+```
+
 ---
 
 ## Points d'attention
-
+- l'interaction avec le Bugzilla peut être compromise par l'intervention de de `mgantibot`. Il est nécessaire de se déconnecter / reconnecter sur le Bugzilla depuis la machine qui fait le traitement afin de faire reconnaître l'adresse IP comme étant de confiance. L'effet n'est pas instantané. 
 - **`exceptions.csv` se construit avec le temps.** Les premiers passages produisent davantage de candidats ; la liste se réduit au fil des `--confirm`. Pensez à relancer `--rematch` après une session de revue pour que les alertes reflètent les dernières décisions.
 - **Un candidat n'est jamais une alerte.** Tant qu'une correspondance n'est pas confirmée (exception explicite ou nom identique corroboré), elle n'apparaît que dans les candidats — même si elle semble évidente.
-- **`cve_ui.py` ne modifie rien.** La revue et la confirmation des candidats se font côté `cve_check.py` (`--confirm`) ; l'interface graphique est un outil de consultation.
+- **`cve_ui.py` ne modifie rien.** La revue et la confirmation des candidats se font côté `cve_check.py` (`--confirm`) ; l'interface graphique est un outil de consultation et d'interaction avec le Bugzilla.
