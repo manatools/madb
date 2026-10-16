@@ -2217,7 +2217,7 @@ def check_cves(repo_path=None, repo_url=None, exceptions_path=None, stranger_pat
         config, 'CVE_REPO_PATH', os.path.join(config.EXTERNAL_PATH, 'cvelistV5')
     )
     repo_url = repo_url or getattr(
-        config, 'CVE_REPO_URL', 'git@github.com:CVEProject/cvelistV5.git'
+        config, 'CVE_REPO_URL', 'https://github.com/CVEProject/cvelistV5.git'
     )
     exceptions_path = exceptions_path or getattr(
         config, 'CVE_EXCEPTIONS_PATH', os.path.join(config.EXTERNAL_PATH, 'exceptions.csv')
