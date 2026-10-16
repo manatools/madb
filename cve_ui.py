@@ -74,7 +74,7 @@ class UpdateWorker(QObject):
             checked_count, alerts, candidate_count = cc.check_cves(repo_path=self.repo_path)
             message = f"{checked_count} nouvelle(s) alerte(s) CVE examinée(s). "
             if alerts:
-                message += "{len(alerts)} paquet(s) potentiellement affecté(s)"
+                message += f"{len(alerts)} paquet(s) potentiellement affecté(s)"
             else:
                 message += "Aucun nouveau paquet de la base ne semble affecté."
             self.finished.emit(message)
@@ -212,7 +212,7 @@ class UpdateWindow(QDialog):
 
 
 class TicketSubmission(QDialog):
-    def __init__(self, summary="", description="", cve="", parent=None):
+    def __init__(self, summary="", description="", cve="", source="", parent=None):
         super().__init__(parent)
         layout1 = QVBoxLayout(self)
         self.setWindowTitle("Créer un ticket")
@@ -234,6 +234,9 @@ class TicketSubmission(QDialog):
         layout.addWidget(QLabel("Status comment"), 4, 0)
         self.status_field = QLineEdit()
         layout.addWidget(self.status_field, 4, 1)
+        layout.addWidget(QLabel("Source RPM"), 5, 0)
+        self.source_field = QLineEdit(source)
+        layout.addWidget(self.source_field, 5, 1)
         layout1.addLayout(layout)
 
         boutons = QDialogButtonBox(
@@ -256,6 +259,7 @@ class TicketSubmission(QDialog):
             "description": self.description_field.toPlainText(),
             "cf_cve": self.cve_field.text(),
             "cf_statuscomment": self.status_field.text(),
+            "cf_rpmpkg": self.source_field.text(),
             }
         return payload
 
@@ -330,8 +334,7 @@ class MainWindow(QMainWindow):
                 first_item.setSelected(True)
         else:
             self.cve_view.setHtml(
-                "<p><i>Aucune donnée. Lancez un traitement (--update-packages) "
-                "côté cve_check.py puis relancez cette interface.</i></p>")
+                "<p><i>Aucune donnée. Lancez un traitement par Base - Mise à jour</i></p>")
 
     # -- construction de la liste ------------------------------------
 
@@ -396,6 +399,11 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(trace, msecs=10000)
 
     def _on_update_finished(self, message):
+        print(f"Mise à jour terminée : {message}")
+        #  Reload data
+        self.ordered_entries = cc.build_report_entries(self.repo_path, fetch_bugzilla=False)
+        self.entries_by_id = {entry['id']: entry for entry in self.ordered_entries}
+        # Clear tree and rebuild it
         self.tree.clear()
         self._populate_tree()
         self.statusBar().clearMessage()
@@ -493,10 +501,6 @@ class MainWindow(QMainWindow):
             parts.append('<p><i>Paquet introuvable dans la base (a peut-être été retiré depuis).</i></p>')
             self.package_view.setHtml(''.join(parts))
             return
-        # if len(pkgs_name) != 1:
-        #     parts.append(f'<p><i>Anomalie, plusieurs paquets listés : {", ".join(pkgs_name)}.</i></p>')
-        #     self.package_view.setHtml(''.join(parts))
-        #     return
         for pkg_name in pkgs_name:
             versions = []
             for entry in entries:
@@ -648,11 +652,24 @@ class MainWindow(QMainWindow):
         api_key = os.environ.get("BUGZILLA_API_KEY")
         if not api_key:
             return "Variable d'environnement BUGZILLA_API_KEY non définie."
+        #  champ Source RPM par défaut
+        entries = [entry for entry in self.ordered_entries if entry["id"]==id]
+        print(entries)
+        pkgs_name = {entry.get('package').get('name') for entry in entries}
+        print(pkgs_name)
+        for pkg_name in pkgs_name:
+            versions = []
+            for entry in entries:
+                if entry['package']['name'] == pkg_name:
+                    versions.append(
+                        f'{pkg_name}-{entry['package']['version']}.mga{entry['distro']}'
+                        )
 
         dialogue = TicketSubmission(
             summary=f"{pkg_name}, security alert {cve}",
             description=self._comment_for_new_cve(current_cve),
             cve=cve,
+            source=' '.join(versions),
             )
         if dialogue.exec() == QDialog.DialogCode.Accepted:
             payload = dialogue.payload()
