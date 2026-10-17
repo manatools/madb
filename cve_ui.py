@@ -38,9 +38,11 @@ from PyQt6.QtWidgets import (
     QStatusBar,
     QTextBrowser,
     QTextEdit,
+    QToolButton,
     QTreeWidget,
     QTreeWidgetItem,
     QWidget,
+    QHBoxLayout,
     QVBoxLayout,
     QGridLayout,
     QPushButton,
@@ -298,7 +300,24 @@ class MainWindow(QMainWindow):
         exit_action.triggered.connect(self.close)  # Connexion au signal de fermeture
         update_menu.addAction(exit_action)
 
+        self.filtre = QLineEdit()
+        self.filtre.setPlaceholderText("Filtrer sur le  CVE ou le produit…")
+        self.bouton_effacer = QToolButton()
+        self.bouton_effacer.setText("🧹")
+        self.bouton_effacer.setToolTip("Effacer le filtre")
+        self.bouton_effacer.clicked.connect(self._filter_clear)
+        self.filtre.returnPressed.connect(self._filtrer)
+
+        ligne_filtre = QHBoxLayout()
+        ligne_filtre.addWidget(self.filtre)
+        ligne_filtre.addWidget(self.bouton_effacer)
+        tree_widget = QWidget()
+        tree_layout = QVBoxLayout()
+        tree_layout.addLayout(ligne_filtre)
+
         self.tree = QTreeWidget()
+        tree_layout.addWidget(self.tree)
+        tree_widget.setLayout(tree_layout)
         self.tree.setHeaderHidden(True)
         self.tree.setMinimumWidth(340)
         self.tree.setMaximumWidth(460)
@@ -317,7 +336,7 @@ class MainWindow(QMainWindow):
         right_splitter.setSizes([480, 340])
 
         main_splitter = QSplitter(Qt.Orientation.Horizontal)
-        main_splitter.addWidget(self.tree)
+        main_splitter.addWidget(tree_widget)
         main_splitter.addWidget(right_splitter)
         main_splitter.setSizes([380, 900])
         self.setCentralWidget(main_splitter)
@@ -338,10 +357,13 @@ class MainWindow(QMainWindow):
 
     # -- construction de la liste ------------------------------------
 
-    def _populate_tree(self):
+    def _populate_tree(self, filtre=None):
         confirmed_uniques = {(e["id"], e["product"], e["cve_id"]) for e in self.ordered_entries if e['kind'] == 'confirmed'}
         candidates_uniques = {(e["id"], e["product"], e.get('score'), e["cve_id"]) for e in self.ordered_entries if e['kind'] == 'candidate'}
-
+        if filtre:
+            filtre = filtre.upper()
+            confirmed_uniques = {e for e in confirmed_uniques if (filtre in e[2] or filtre in e[1].upper())}
+            candidates_uniques = {e for e in candidates_uniques if (filtre in e[3] or filtre in e[1].upper())}
         bold = QFont()
         bold.setBold(True)
 
@@ -409,6 +431,15 @@ class MainWindow(QMainWindow):
         self.statusBar().clearMessage()
         self.statusBar().showMessage(message, msecs=10000)
 
+    # -- filtrer les CVE ------------------------------------------------------
+    def _filtrer(self):
+        self.tree.clear()
+        self._populate_tree(filtre=self.filtre.text())
+
+    def _filter_clear(self):
+        self.tree.clear()
+        self.filtre.clear()
+        self._populate_tree(filtre="")
     # -- sélection ------------------------------------------------------
     def _on_selection_changed(self):
         items = self.tree.selectedItems()
