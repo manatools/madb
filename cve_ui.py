@@ -435,7 +435,6 @@ class MainWindow(QMainWindow):
             QDesktopServices.openUrl(link)
         else:
             items = link.toString().split('/')
-            print(items)
             if items[0] == "create":
                 entry_id, pkg = items[1:]
                 message = self._create_ticket(entry_id, pkg)
@@ -505,11 +504,11 @@ class MainWindow(QMainWindow):
             versions = []
             for entry in entries:
                 if entry['package']['name'] == pkg_name:
-                    versions.append((entry['package']['version'], entry['distro']))
+                    versions.append((entry['package']['version'], entry['package']['release'], entry['distro']))
             parts.append(f'<h2 style="font-family:monospace;">{esc(pkg_name)}</h2>')
-            for pkg_version, distro in versions:
+            for pkg_version, pkg_release, distro in versions:
                 distro_txt = f" (Mageia {distro})"
-                parts.append(f'<p style="color:#5b6270;">Version fournie {esc(distro_txt)} : {esc(pkg_version)}</p>')
+                parts.append(f'<p style="color:#5b6270;">Version fournie {esc(distro_txt)} : {esc(pkg_version)}-{esc(pkg_release)}</p>')
             pkg = entry.get('package')
             if pkg is not None:
                 if pkg.get('summary'):
@@ -654,15 +653,13 @@ class MainWindow(QMainWindow):
             return "Variable d'environnement BUGZILLA_API_KEY non définie."
         #  champ Source RPM par défaut
         entries = [entry for entry in self.ordered_entries if entry["id"]==id]
-        print(entries)
         pkgs_name = {entry.get('package').get('name') for entry in entries}
-        print(pkgs_name)
         for pkg_name in pkgs_name:
             versions = []
             for entry in entries:
                 if entry['package']['name'] == pkg_name:
                     versions.append(
-                        f'{pkg_name}-{entry['package']['version']}.mga{entry['distro']}'
+                        f'{pkg_name}-{entry['package']['version']}-{entry['package']['release']}'
                         )
 
         dialogue = TicketSubmission(

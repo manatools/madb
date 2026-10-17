@@ -45,6 +45,7 @@ class Package(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(80))
     our_version = Column(String(20))
+    our_release = Column(String(20))
     upstream_version = Column(String(20))
     updated_on = Column(DateTime)
     pkg_id = Column(Integer)
@@ -182,6 +183,9 @@ def ensure_schema(engine):
             conn.commit()
         if 'distro' not in cols:
             _migrate_packages_add_distro(conn)
+        if 'our_release' not in cols:
+            conn.execute(text("ALTER TABLE packages ADD COLUMN our_release VARCHAR(20)"))
+            conn.commit()
 
         for table in ('cve_match_log', 'cve_candidates'):
             table_cols = [row[1] for row in conn.execute(text(f"PRAGMA table_info({table})"))]
@@ -212,11 +216,12 @@ def _safe_get_description(package):
 
 
 # Fonction d'ajout d'un package
-def add_package(session, name, our_version, upstream_version, updated_on, pkg_id, summary, url=None, description=None, distro=None):
+def add_package(session, name, our_version, our_release, upstream_version, updated_on, pkg_id, summary, url=None, description=None, distro=None):
     package = Package(name=name,
-                      our_version=our_version, 
-                      upstream_version=upstream_version, 
-                      updated_on=updated_on, 
+                      our_version=our_version,
+                      our_release=our_release,
+                      upstream_version=upstream_version,
+                      updated_on=updated_on,
                       pkg_id=pkg_id,
                       summary=summary,
                       url=url,
@@ -292,6 +297,7 @@ def update_packages_db(force=False):
                             where(Package.id == result.id).\
                             values(
                                 our_version=package.get_version(),
+                                our_release=package.get_release(),
                                 summary=package.get_summary(),
                                 url=package.get_url(),
                                 description=_safe_get_description(package),
@@ -303,6 +309,7 @@ def update_packages_db(force=False):
                     add_package(session,
                                 name_to_find,
                                 package.get_version(),
+                                package.get_release(),
                                 "",
                                 None,
                                 None,
@@ -1102,7 +1109,7 @@ def examine_cve(session, cve_id, cve_json, exceptions, strangers, index):
                         'cve_id': cve_id,
                         'package': pkg.name,
                         'distro': pkg.distro,
-                        'our_version': pkg.our_version,
+                        'our_version': f"{pkg.our_version}-{pkg.our_release}",
                     })
             continue
 
@@ -1514,6 +1521,7 @@ def _package_payload(pkg, bugzilla_tickets=None):
         'description': pkg.description,
         'url': pkg.url,
         'version': pkg.our_version,
+        'release': pkg.our_release,
         'bugzilla_tickets': bugzilla_tickets or [],
     }
 
