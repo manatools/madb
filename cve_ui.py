@@ -506,9 +506,12 @@ class MainWindow(QMainWindow):
                 if entry['package']['name'] == pkg_name:
                     versions.append((entry['package']['version'], entry['package']['release'], entry['distro']))
             parts.append(f'<h2 style="font-family:monospace;">{esc(pkg_name)}</h2>')
-            for pkg_version, pkg_release, distro in versions:
-                distro_txt = f" (Mageia {distro})"
-                parts.append(f'<p style="color:#5b6270;">Version fournie {esc(distro_txt)} : {esc(pkg_version)}-{esc(pkg_release)}</p>')
+            if versions:
+                parts.append("Versions fournies :<ul>")
+                for pkg_version, pkg_release, distro in versions:
+                    distro_txt = f" (Mageia {distro})"
+                    parts.append(f'<li style="color:#5b6270;"> {esc(distro_txt)} : {esc(pkg_version)}-{esc(pkg_release)}</li>')
+                parts.append("</ul>")
             pkg = entry.get('package')
             if pkg is not None:
                 if pkg.get('summary'):
