@@ -29,6 +29,7 @@ from PyQt6.QtGui import (
 )
 from PyQt6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QComboBox,
     QLabel,
     QLineEdit,
@@ -214,16 +215,23 @@ class UpdateWindow(QDialog):
 
 
 class TicketSubmission(QDialog):
-    def __init__(self, summary="", description="", cve="", source="", parent=None):
+    def __init__(self, summary="", description="", cve="", source="", publications=[], parent=None):
         super().__init__(parent)
         layout1 = QVBoxLayout(self)
         self.setWindowTitle("Créer un ticket")
         self.setMinimumWidth(800)
         layout = QGridLayout()
         layout.addWidget(QLabel("Version"), 0, 0)
-        self.version_field = QComboBox()
-        self.version_field.addItems(["Cauldron", "10", "9"])
-        layout.addWidget(self.version_field, 0, 1)
+        self.cases = []
+        cb_layout = QHBoxLayout()
+        available = (config.TOP_RELEASE - 1, config.TOP_RELEASE, config.TOP_RELEASE + 1)
+        for valeur in available:
+            case = QCheckBox("Cauldron" if valeur == config.TOP_RELEASE + 1 else str(valeur))
+            if valeur in publications:
+                case.setChecked(True)
+            cb_layout.addWidget(case)
+            self.cases.append((valeur, case))
+        layout.addLayout(cb_layout, 0, 1)
         layout.addWidget(QLabel("Summary"), 1, 0)
         self.summary_field = QLineEdit(summary)
         layout.addWidget(self.summary_field, 1, 1)
@@ -253,16 +261,38 @@ class TicketSubmission(QDialog):
         layout1.addWidget(boutons)
 
     def payload(self):
+        valeurs_cochees = [
+            valeur for valeur, case in self.cases if case.isChecked()
+        ]
+        flags = []
+        if config.TOP_RELEASE + 1 in valeurs_cochees:
+            version = "Cauldron"
+            for num_pub in (config.TOP_RELEASE, config.TOP_RELEASE - 1):
+                if num_pub in valeurs_cochees:
+                    flags.append({
+                        "name": f"affects_mga{num_pub}",
+                        "status": "+",
+                    })
+        elif config.TOP_RELEASE in valeurs_cochees:
+            version = str(config.TOP_RELEASE)
+            if config.TOP_RELEASE - 1 in valeurs_cochees:
+                flags.append({
+                    "name": f"affects_mga{config.TOP_RELEASE - 1}",
+                    "status": "+",
+                })
         payload = {
             "product": "Mageia",
             "component": "Security",
-            "version": self.version_field.currentText(),
+            "version": version,
             "summary": self.summary_field.text(),
             "description": self.description_field.toPlainText(),
             "cf_cve": self.cve_field.text(),
-            "cf_statuscomment": self.status_field.text(),
             "cf_rpmpkg": self.source_field.text(),
             }
+        if flags:
+            payload["flags"] = flags
+        if self.status_field.text():
+            payload["cf_statuscomment"] = self.status_field.text(),
         return payload
 
 
@@ -440,6 +470,7 @@ class MainWindow(QMainWindow):
         self.tree.clear()
         self.filtre.clear()
         self._populate_tree(filtre="")
+
     # -- sélection ------------------------------------------------------
     def _on_selection_changed(self):
         items = self.tree.selectedItems()
@@ -471,8 +502,10 @@ class MainWindow(QMainWindow):
                 message = self._create_ticket(entry_id, pkg)
                 if type(message) is int:
                     self.statusBar().showMessage(f"Ticket {message} créé", msecs=5000)
+                    print(f"Ticket {message} créé")
                 else:
                     self.statusBar().showMessage(f"Problème : {message}", msecs=10000)
+                    print(f"Problème : {message}")
             else:
                 bug_id, cve, entry_id = items[1:]
                 message = self._insert_cve(cve, bug_id, entry_id)
@@ -688,10 +721,12 @@ class MainWindow(QMainWindow):
         #  champ Source RPM par défaut
         entries = [entry for entry in self.ordered_entries if entry["id"]==id]
         pkgs_name = {entry.get('package').get('name') for entry in entries}
+        publications = set()
         for pkg_name in pkgs_name:
             versions = []
             for entry in entries:
                 if entry['package']['name'] == pkg_name:
+                    publications.add(entry['distro'])
                     versions.append(
                         f'{pkg_name}-{entry['package']['version']}-{entry['package']['release']}'
                         )
@@ -701,6 +736,7 @@ class MainWindow(QMainWindow):
             description=self._comment_for_new_cve(current_cve, with_br=True),
             cve=cve,
             source=' '.join(versions),
+            publications=publications,
             )
         if dialogue.exec() == QDialog.DialogCode.Accepted:
             payload = dialogue.payload()
@@ -721,7 +757,6 @@ class MainWindow(QMainWindow):
     def _comment_for_new_cve(self, current_cve: str, with_br=False):
         # get URLs
         joiner = "<BR />\n" if with_br else "\n"
-        print(joiner)
         urls = ["", "References:"] + cc.get_cve_reference_urls(cc.load_cve_by_id(self.repo_path, current_cve["cve_id"]))
         return joiner.join([current_cve.get('cve').get('description')] + urls)
 
