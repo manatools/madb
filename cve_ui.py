@@ -567,7 +567,7 @@ class MainWindow(QMainWindow):
                 for t in tickets
             )
             parts.append(f'<ul>{items}</ul>')
-        parts.append(f'<p><a href="create/{entry["id"]}/{entry["package"]["name"]}">Créer un nouveau ticket pour le CVE {entry["cve_id"]}</a></p>')
+        parts.append(f'<p><a href="create/{entry["id"]}/{entry["package"]["name"]}">Créer un nouveau ticket pour l\'alerte {entry["cve_id"]}</a></p>')
 
         self.package_view.setHtml(''.join(parts))
 
@@ -698,7 +698,7 @@ class MainWindow(QMainWindow):
 
         dialogue = TicketSubmission(
             summary=f"{pkg_name}, security alert {cve}",
-            description=self._comment_for_new_cve(current_cve),
+            description=self._comment_for_new_cve(current_cve, with_br=True),
             cve=cve,
             source=' '.join(versions),
             )
@@ -718,11 +718,13 @@ class MainWindow(QMainWindow):
         if r.json():
             return r.json().get("id")
 
-    def _comment_for_new_cve(self, current_cve: str):
+    def _comment_for_new_cve(self, current_cve: str, with_br=False):
         # get URLs
-        urls = ["", "References:"] +  \
-               cc.get_cve_reference_urls(cc.load_cve_by_id(self.repo_path, current_cve["cve_id"]))
-        return "<BR />\n".join([current_cve.get('cve').get('description')] + urls)
+        joiner = "<BR />\n" if with_br else "\n"
+        print(joiner)
+        urls = ["", "References:"] + cc.get_cve_reference_urls(cc.load_cve_by_id(self.repo_path, current_cve["cve_id"]))
+        return joiner.join([current_cve.get('cve').get('description')] + urls)
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
