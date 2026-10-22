@@ -272,7 +272,7 @@ def get_distro_targets():
     ]
 
 
-def update_packages_db(force=False):
+def update_packages_db():
     """Peuple/actualise la base pour chacune des versions de distribution
     suivies (get_distro_targets). Un paquet est identifié par (name,
     distro) : un même nom peut donc avoir plusieurs lignes, une par
@@ -290,7 +290,16 @@ def update_packages_db(force=False):
                 )
                 result = session.execute(stmt).scalar_one_or_none()
                 if result:
-                    if (package.get_version() != result.our_version) or force:
+                    pkg_version_sem = parse_semver(package.get_version())
+                    our_version_sem = parse_semver(result.our_version)
+                    if pkg_version_sem is None or our_version_sem is None:
+                        #  Fallback, l'une des version au moins n'est pas
+                        #  sémantique, comparons de manière alphabétique
+                        #  C'est le cas par exemple de 26.07.1
+                        compare = package.get_version() > result.our_version
+                    else:
+                        compare = pkg_version_sem.compare(our_version_sem) > 0
+                    if compare:
                         # update our version
                         logging.debug("Updating")
                         stmt = update(Package).\
@@ -2345,7 +2354,7 @@ if __name__ == '__main__':
         raise SystemExit(0)
 
     if args.update_packages:
-        update_packages_db(force=True)
+        update_packages_db()
 
     check_cves(
         repo_path=args.repo_path,
