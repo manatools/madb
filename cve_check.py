@@ -296,10 +296,14 @@ def update_packages_db():
                         #  Fallback, l'une des version au moins n'est pas
                         #  sémantique, comparons de manière alphabétique
                         #  C'est le cas par exemple de 26.07.1
-                        compare = package.get_version() > result.our_version
+                        greater_version = package.get_version() > result.our_version
+                        same_version = (package.get_version() == result.our_version)
                     else:
-                        compare = pkg_version_sem.compare(our_version_sem) > 0
-                    if compare:
+                        compare = pkg_version_sem.compare(our_version_sem)
+                        greater_version = (compare > 0)
+                        same_version = (compare == 0)
+                    greater_release = package.get_release() > result.our_release
+                    if greater_version or (same_version and greater_release):
                         # update our version
                         logging.debug("Updating")
                         stmt = update(Package).\
