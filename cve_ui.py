@@ -700,7 +700,6 @@ class MainWindow(QMainWindow):
         )
         r.raise_for_status()
         bug = r.json()["bugs"][0]
-        print(bug)
         old_summary = bug["summary"]
         old_source = bug["cf_rpmpkg"]
         old_cf = bug.get("cf_cve") or ""
@@ -744,7 +743,6 @@ class MainWindow(QMainWindow):
             payload["api_key"] = api_key
         else:
             return
-        print(payload)
         r = s.put(f"{BASE}/bug/{bug_id}", json=payload, timeout=30)
         if not r.ok:
             return f"Erreur {r.status_code} : {r.text}"
