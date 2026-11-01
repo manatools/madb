@@ -53,6 +53,8 @@ from PyQt6.QtWidgets import (
 import cve_check as cc
 import madb.config as config
 
+CVE_FIELD_SIZE = 255
+TITLE_FIELD_SIZE = 255
 
 def esc(value):
     """Échappement HTML sûr pour l'insertion dans un QTextBrowser, y
@@ -73,7 +75,7 @@ class UpdateWorker(QObject):
 
     def run(self):
         try:
-            cc.update_packages_db(force=True)
+            cc.update_packages_db()
             checked_count, alerts, candidate_count = cc.check_cves(repo_path=self.repo_path)
             message = f"{checked_count} nouvelle(s) alerte(s) CVE examinée(s). "
             if alerts:
@@ -215,10 +217,14 @@ class UpdateWindow(QDialog):
 
 
 class TicketSubmission(QDialog):
-    def __init__(self, summary="", description="", cve="", source="", publications=[], parent=None):
+    def __init__(self, summary="", description="", cve="", source="", publications=[], update=False, parent=None):
         super().__init__(parent)
+        self.update = update
         layout1 = QVBoxLayout(self)
-        self.setWindowTitle("Créer un ticket")
+        if update:
+            self.setWindowTitle("Modifier un ticket")
+        else:
+            self.setWindowTitle("Créer un ticket")
         self.setMinimumWidth(800)
         layout = QGridLayout()
         layout.addWidget(QLabel("Version"), 0, 0)
@@ -227,19 +233,21 @@ class TicketSubmission(QDialog):
         available = (config.TOP_RELEASE - 1, config.TOP_RELEASE, config.TOP_RELEASE + 1)
         for valeur in available:
             case = QCheckBox("Cauldron" if valeur == config.TOP_RELEASE + 1 else str(valeur))
-            if valeur in publications:
+            if str(valeur) in publications:
                 case.setChecked(True)
             cb_layout.addWidget(case)
             self.cases.append((valeur, case))
         layout.addLayout(cb_layout, 0, 1)
         layout.addWidget(QLabel("Summary"), 1, 0)
         self.summary_field = QLineEdit(summary)
+        self.summary_field.setMaxLength(TITLE_FIELD_SIZE)
         layout.addWidget(self.summary_field, 1, 1)
         layout.addWidget(QLabel("Description"), 2, 0)
         self.description_field = QTextEdit(description)
         layout.addWidget(self.description_field, 2, 1)
         layout.addWidget(QLabel("CVE"), 3, 0)
         self.cve_field = QLineEdit(cve)
+        self.cve_field.setMaxLength(CVE_FIELD_SIZE)
         layout.addWidget(self.cve_field, 3, 1)
         layout.addWidget(QLabel("Status comment"), 4, 0)
         self.status_field = QLineEdit()
@@ -280,19 +288,27 @@ class TicketSubmission(QDialog):
                     "name": f"affects_mga{config.TOP_RELEASE - 1}",
                     "status": "+",
                 })
-        payload = {
+        if self.update:
+            payload = {
+                "comment": {"body": self.description_field.toPlainText()},
+            }
+        else:
+            payload = {
             "product": "Mageia",
             "component": "Security",
-            "version": version,
-            "summary": self.summary_field.text(),
             "description": self.description_field.toPlainText(),
+            }
+        payload = {
+            **payload,
+            "summary": self.summary_field.text(),
             "cf_cve": self.cve_field.text(),
             "cf_rpmpkg": self.source_field.text(),
+            "cf_statuscomment": self.status_field.text(),
             }
+        if version:
+            payload["version"] = version
         if flags:
             payload["flags"] = flags
-        if self.status_field.text():
-            payload["cf_statuscomment"] = self.status_field.text(),
         return payload
 
 
@@ -642,23 +658,27 @@ class MainWindow(QMainWindow):
 
     def add_to_summary(self, summary: str, cve: str) -> str:
         """Insère la CVE juste après la dernière CVE du titre, sinon à la fin."""
+        if len(summary) + len(cve) + 1 >= TITLE_FIELD_SIZE:
+            return summary, False
         if cve in (m.upper() for m in self.CVE_RE.findall(summary)):
-            return summary
+            return summary, True
         matches = list(self.CVE_RE.finditer(summary))
         if matches:
             end = matches[-1].end()
-            return f"{summary[:end]}, {cve}{summary[end:]}"
-        return f"{summary} {cve}"
+            return f"{summary[:end]}, {cve}{summary[end:]}", False
+        return f"{summary} {cve}", False
 
     def add_to_cf_cve(self, field: str, cve: str) -> str:
         """Ajoute la CVE au champ en reprenant le séparateur déjà utilisé."""
+        if len(field) + len(cve) + 1 >= CVE_FIELD_SIZE:
+            return field, False
         field = (field or "").strip()
         if cve in (m.upper() for m in self.CVE_RE.findall(field)):
-            return field
+            return field, True
         if not field:
-            return cve
+            return cve, False
         sep = ", " if "," in field else " "
-        return f"{field}{sep}{cve}"
+        return f"{field}{sep}{cve}", False
 
     def _insert_cve(self, cve, bug_id, entry_id) -> int:
         BASE = self.bugzilla_url + "/rest"
@@ -675,16 +695,19 @@ class MainWindow(QMainWindow):
         # 1. Lecture
         r = s.get(
             f"{BASE}/bug/{bug_id}",
-            params={"include_fields": "id,summary,cf_cve,last_change_time"},
+            params={"include_fields": "id,summary,cf_cve,last_change_time,cf_rpmpkg,version,flags"},
             timeout=30,
         )
         r.raise_for_status()
         bug = r.json()["bugs"][0]
-
+        print(bug)
         old_summary = bug["summary"]
+        old_source = bug["cf_rpmpkg"]
         old_cf = bug.get("cf_cve") or ""
-        new_summary = self.add_to_summary(old_summary, cve)
-        new_cf = self.add_to_cf_cve(old_cf, cve)
+        old_version = bug.get("version")
+        old_flags = bug.get("flags")
+        new_summary, already_summary = self.add_to_summary(old_summary, cve)
+        new_cf, already_cve = self.add_to_cf_cve(old_cf, cve)
 
         payload = {}
         if new_summary != old_summary:
@@ -692,7 +715,7 @@ class MainWindow(QMainWindow):
         if new_cf != old_cf.strip():
             payload["cf_cve"] = new_cf
 
-        if not payload:
+        if already_summary and already_cve:
             return "Rien à modifier : la CVE est déjà présente partout."
 
         #  Emplacement pour vérification
@@ -702,10 +725,32 @@ class MainWindow(QMainWindow):
         #  Ajout d'un commentaire
         current_cve = self.entries_by_id[entry_id]
         payload["comment"] = {"body": f"New alert {cve}\n{self._comment_for_new_cve(current_cve)}"}
-        payload["api_key"] = api_key
+        if old_version == "Cauldron":
+            publications = [str(config.TOP_RELEASE + 1)]
+        else:
+            publications = [old_version,]
+        others = [flag["name"][11:] for flag in old_flags if ("affects_mga" in flag["name"] and flag["status"] == "+")]
+        publications += others
+        dialogue = TicketSubmission(
+            summary=new_summary,
+            description=self._comment_for_new_cve(current_cve, with_br=True),
+            cve=new_cf,
+            source=old_source,
+            publications=publications,
+            update=True,
+            )
+        if dialogue.exec() == QDialog.DialogCode.Accepted:
+            payload = dialogue.payload()
+            payload["api_key"] = api_key
+        else:
+            return
+        print(payload)
         r = s.put(f"{BASE}/bug/{bug_id}", json=payload, timeout=30)
         if not r.ok:
             return f"Erreur {r.status_code} : {r.text}"
+        response = r.json()
+        if "error" in response:
+            print(response)
         return ""
 
     def _create_ticket(self, id, pkg_name):
@@ -758,7 +803,7 @@ class MainWindow(QMainWindow):
         # get URLs
         joiner = "<BR />\n" if with_br else "\n"
         urls = ["", "References:"] + cc.get_cve_reference_urls(cc.load_cve_by_id(self.repo_path, current_cve["cve_id"]))
-        return joiner.join([current_cve.get('cve').get('description')] + urls)
+        return joiner.join([f"New CVE {current_cve['cve_id']}", current_cve.get('cve').get('description')] + urls)
 
 
 def main():
