@@ -302,7 +302,8 @@ def update_packages_db():
                         compare = pkg_version_sem.compare(our_version_sem)
                         greater_version = (compare > 0)
                         same_version = (compare == 0)
-                    greater_release = package.get_release() > result.our_release
+                    if same_version:
+                        greater_release = package.get_release().split(".mga")[0] > result.our_release.split(".mga")[0]
                     if greater_version or (same_version and greater_release):
                         # update our version
                         logging.debug("Updating")
