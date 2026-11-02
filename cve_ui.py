@@ -518,7 +518,7 @@ class MainWindow(QMainWindow):
 
     def _manage_click(self, link):
         scheme = link.scheme()
-        if scheme == 'https':
+        if scheme in ('http', 'https'):
             QDesktopServices.openUrl(link)
         else:
             items = link.toString().split('/')
@@ -583,7 +583,7 @@ class MainWindow(QMainWindow):
         return ""
 
     def _render_package(self, entries, tickets, loading=False, error=None):
-        pkgs_name = {entry.get('package').get('name') for entry in entries}
+        pkgs_name = {entry['package'].get('name') for entry in entries if entry.get('package')}
         parts = []
         if not pkgs_name:
             parts.append('<p><i>Paquet introuvable dans la base (a peut-être été retiré depuis).</i></p>')
@@ -725,7 +725,8 @@ class MainWindow(QMainWindow):
             payload["cf_cve"] = new_cf
 
         if already_summary and already_cve:
-            return "Rien à modifier : la CVE est déjà présente partout."
+            self.statusBar().showMessage("Rien à modifier : la CVE est déjà présente partout.")
+            return
 
         #  Emplacement pour vérification
 
@@ -758,7 +759,7 @@ class MainWindow(QMainWindow):
             return f"Erreur {r.status_code} : {r.text}"
         response = r.json()
         if "error" in response:
-            print(response)
+            print(response["message"])
         return ""
 
     def _create_ticket(self, id, pkg_name):
