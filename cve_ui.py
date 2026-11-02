@@ -113,109 +113,6 @@ class BugzillaWorker(QObject):
             self.failed.emit(self.entry_id, str(exc))
 
 
-class LoadingWheel(QWidget):
-    def __init__(self, parent=None, color=QColor("#3498db"), speed=60):
-        super().__init__(parent)
-        self.color = color
-        self.angle = 0
-        self.counter = 0
-
-        # Nombre de lignes/bâtonnets de la roue
-        self.lines_count = 12
-        # Timer pour animer la roue (60 ms par étape par défaut)
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.rotate)
-        # Fixe une taille minimale par défaut
-        self.setMinimumSize(40, 40)
-        #  non visible initialement
-        self.hide()
-
-    def start(self):
-        """Démarre l'animation"""
-        self.timer.start(60)
-        self.show()
-
-    def stop(self):
-        """Arrête l'animation"""
-        self.timer.stop()
-        self.hide()
-
-    def rotate(self):
-        # Fait avancer l'index de surbrillance
-        self.counter = (self.counter + 1) % self.lines_count
-        self.update() # Force le widget à se redessiner
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-
-        # On se place au centre du widget
-        width = self.width()
-        height = self.height()
-        side = min(width, height)
-        painter.translate(width / 2, height / 2)
-
-        # Calcul des dimensions des batonnets proportionnellement à la taille du widget
-        radius = (side / 2) * 0.8
-        line_length = radius * 0.4
-        line_width = side / 15
-
-        pen = QPen()
-        pen.setWidthF(line_width)
-        pen.setCapStyle(Qt.PenCapStyle.RoundCap) # Bords arrondis
-
-        # Dessin des 12 segments circulaires
-        for i in range(self.lines_count):
-            # Calcul de l'opacité (effet de dégradé/traînée)
-            # La ligne active est la plus opaque, les précédentes s'estompent
-            opacity = int(255 * ((i + self.counter) % self.lines_count) / self.lines_count)
-
-            current_color = QColor(self.color)
-            current_color.setAlpha(max(30, opacity)) # Opacité min à 30 pour la visibilité
-            pen.setColor(current_color)
-            painter.setPen(pen)
-
-            # Dessin de la ligne verticale
-            painter.drawLine(0, int(radius - line_length), 0, int(radius))
-
-            # Rotation pour la ligne suivante (360° / 12 = 30°)
-            painter.rotate(360.0 / self.lines_count)
-
-        painter.end()
-
-
-# --- Fenêtre de mise à jour ---
-class UpdateWindow(QDialog):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Mise à jour des données CVEs et des paquets")
-        self.resize(300, 200)
-
-        layout = QVBoxLayout(self)
-
-        # Création de notre roue animée personnalisée
-        self.spinner = LoadingWheel(self, color=QColor("#2ecc71"))
-        layout.addWidget(self.spinner, alignment=Qt.AlignmentFlag.AlignCenter)
-
-        # Boutons de contrôle
-        self.btn_start = QPushButton("Démarrer", self)
-        self.btn_start.clicked.connect(self.start)
-        layout.addWidget(self.btn_start)
-
-        self.btn_stop = QPushButton("Fermer", self)
-        self.btn_stop.clicked.connect(self.spinner.stop)
-        layout.addWidget(self.btn_stop)
-
-    def start(self):
-        # Démarre l'animation d'entrée
-        self.spinner.start()
-
-    def showEvent(self, event):
-        self.setGeometry(self.parentWidget().rect())
-        self.raise_()
-        super().showEvent(event)
-
-
 class TicketSubmission(QDialog):
     def __init__(
             self,
@@ -587,6 +484,7 @@ class MainWindow(QMainWindow):
         parts = []
         if not pkgs_name:
             parts.append('<p><i>Paquet introuvable dans la base (a peut-être été retiré depuis).</i></p>')
+            print(entries)
             self.package_view.setHtml(''.join(parts))
             return
         for pkg_name in pkgs_name:
