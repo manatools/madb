@@ -217,7 +217,16 @@ class UpdateWindow(QDialog):
 
 
 class TicketSubmission(QDialog):
-    def __init__(self, summary="", description="", cve="", source="", publications=[], update=False, parent=None):
+    def __init__(
+            self,
+            summary="",
+            description="",
+            cve="",
+            source="",
+            status="",
+            publications=[],
+            update=False,
+            parent=None):
         super().__init__(parent)
         self.update = update
         layout1 = QVBoxLayout(self)
@@ -250,7 +259,7 @@ class TicketSubmission(QDialog):
         self.cve_field.setMaxLength(CVE_FIELD_SIZE)
         layout.addWidget(self.cve_field, 3, 1)
         layout.addWidget(QLabel("Status comment"), 4, 0)
-        self.status_field = QLineEdit()
+        self.status_field = QLineEdit(status)
         layout.addWidget(self.status_field, 4, 1)
         layout.addWidget(QLabel("Source RPM"), 5, 0)
         self.source_field = QLineEdit(source)
@@ -695,7 +704,7 @@ class MainWindow(QMainWindow):
         # 1. Lecture
         r = s.get(
             f"{BASE}/bug/{bug_id}",
-            params={"include_fields": "id,summary,cf_cve,last_change_time,cf_rpmpkg,version,flags"},
+            params={"include_fields": "id,summary,cf_cve,last_change_time,cf_rpmpkg,version,flags,cf_statuscomment"},
             timeout=30,
         )
         r.raise_for_status()
@@ -705,6 +714,7 @@ class MainWindow(QMainWindow):
         old_cf = bug.get("cf_cve") or ""
         old_version = bug.get("version")
         old_flags = bug.get("flags")
+        old_status = bug.get("cf_statuscomment")
         new_summary, already_summary = self.add_to_summary(old_summary, cve)
         new_cf, already_cve = self.add_to_cf_cve(old_cf, cve)
 
@@ -720,10 +730,8 @@ class MainWindow(QMainWindow):
         #  Emplacement pour vérification
 
         # 3. Soumission (last_change_time évite d'écraser une modif concurrente)
-        payload["last_change_time"] = bug["last_change_time"]
         #  Ajout d'un commentaire
         current_cve = self.entries_by_id[entry_id]
-        payload["comment"] = {"body": f"New alert {cve}\n{self._comment_for_new_cve(current_cve)}"}
         if old_version == "Cauldron":
             publications = [str(config.TOP_RELEASE + 1)]
         else:
@@ -735,6 +743,7 @@ class MainWindow(QMainWindow):
             description=self._comment_for_new_cve(current_cve, with_br=True),
             cve=new_cf,
             source=old_source,
+            status=old_status,
             publications=publications,
             update=True,
             )
@@ -743,6 +752,7 @@ class MainWindow(QMainWindow):
             payload["api_key"] = api_key
         else:
             return
+        payload["last_change_time"] = bug["last_change_time"]
         r = s.put(f"{BASE}/bug/{bug_id}", json=payload, timeout=30)
         if not r.ok:
             return f"Erreur {r.status_code} : {r.text}"
